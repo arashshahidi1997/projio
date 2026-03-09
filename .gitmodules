@@ -8,3 +8,8 @@
 	url = /storage/share/git/ria-store/alias/notio
 	datalad-id = 6bb9c824-e98a-496c-a4fe-2f7285bf2bd0
 	datalad-url = "ria+file:///storage/share/git/ria-store#~notio"
+[submodule "packages/indexio"]
+	path = packages/indexio
+	url = /storage/share/git/ria-store/alias/indexio
+	datalad-id = a2e8758a-46b6-401f-9757-85f523d7c813
+	datalad-url = "ria+file:///storage/share/git/ria-store#~indexio"
