@@ -3,3 +3,8 @@
 	url = /storage/share/git/ria-store/alias/biblio
 	datalad-id = 790bdc7b-349b-4787-91ae-4753b0a31348
 	datalad-url = "ria+file:///storage/share/git/ria-store#~biblio"
+[submodule "packages/notio"]
+	path = packages/notio
+	url = /storage/share/git/ria-store/alias/notio
+	datalad-id = 6bb9c824-e98a-496c-a4fe-2f7285bf2bd0
+	datalad-url = "ria+file:///storage/share/git/ria-store#~notio"
