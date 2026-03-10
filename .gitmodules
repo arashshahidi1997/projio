@@ -13,7 +13,3 @@
 	url = /storage/share/git/ria-store/alias/indexio
 	datalad-id = a2e8758a-46b6-401f-9757-85f523d7c813
 	datalad-url = "ria+file:///storage/share/git/ria-store#~indexio"
-[submodule "example-repo"]
-	path = example-repo
-	url = ./example-repo
-	datalad-id = 43b33e61-05ab-472a-9cdf-b588ca1f7106
