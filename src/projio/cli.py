@@ -1,0 +1,172 @@
+"""projio CLI — init / status / site / helpers / mcp."""
+from __future__ import annotations
+
+import argparse
+from typing import Iterable
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="projio",
+        description="Project knowledge orchestrator for research repositories.",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p_init = sub.add_parser("init", help="Scaffold .projio/ workspace files.")
+    p_init.add_argument("root", nargs="?", default=".", help="Project root (default: .).")
+    p_init.add_argument(
+        "--kind",
+        choices=("generic", "tool", "study"),
+        default="generic",
+        help="Project scaffold kind (default: generic).",
+    )
+    p_init.add_argument("--force", action="store_true", help="Overwrite existing files.")
+
+    p_status = sub.add_parser("status", help="Show project, index, and git status.")
+    p_status.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+
+    p_config = sub.add_parser("config", help="Manage projio config files.")
+    p_config.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    config_sub = p_config.add_subparsers(dest="config_command", required=True)
+    p_config_init_user = config_sub.add_parser("init-user", help="Scaffold ~/.config/projio/config.yml.")
+    p_config_init_user.add_argument("--force", action="store_true", help="Overwrite existing user config.")
+    config_sub.add_parser("show", help="Print merged user + project config.")
+
+    p_site = sub.add_parser("site", help="MkDocs operations.")
+    site_sub = p_site.add_subparsers(dest="site_command", required=True)
+    p_site_build = site_sub.add_parser("build", help="Build the MkDocs site.")
+    p_site_build.add_argument("-C", "--root", default=".", help="Project root.")
+    p_site_build.add_argument("--strict", action="store_true", help="Fail on warnings.")
+    p_site_serve = site_sub.add_parser("serve", help="Serve the MkDocs site locally.")
+    p_site_serve.add_argument("-C", "--root", default=".", help="Project root.")
+    p_site_publish = site_sub.add_parser("publish", help="Publish site to GitHub Pages.")
+    p_site_publish.add_argument("-C", "--root", default=".", help="Project root.")
+
+    p_sibling = sub.add_parser("sibling", help="Manage Datalad siblings.")
+    p_sibling.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    sibling_sub = p_sibling.add_subparsers(dest="sibling_command", required=True)
+
+    p_sibling_github = sibling_sub.add_parser("github", help="Create a GitHub sibling.")
+    p_sibling_github.add_argument("--project", help="Target GitHub repo name.")
+    p_sibling_github.add_argument("--sibling", help="Sibling name.")
+    p_sibling_github.add_argument("--credential", help="Datalad credential name.")
+    p_sibling_github.add_argument("--access-protocol", help="GitHub access protocol.")
+    p_sibling_github.add_argument("--yes", action="store_true", help="Execute instead of preview.")
+
+    p_sibling_gitlab = sibling_sub.add_parser("gitlab", help="Create a GitLab sibling.")
+    p_sibling_gitlab.add_argument("--project", help="Target GitLab project path.")
+    p_sibling_gitlab.add_argument("--sibling", help="Sibling name.")
+    p_sibling_gitlab.add_argument("--site", help="GitLab site profile.")
+    p_sibling_gitlab.add_argument("--layout", help="GitLab layout.")
+    p_sibling_gitlab.add_argument("--access", help="GitLab access mode.")
+    p_sibling_gitlab.add_argument("--credential", help="Datalad credential name.")
+    p_sibling_gitlab.add_argument("--yes", action="store_true", help="Execute instead of preview.")
+
+    p_sibling_ria = sibling_sub.add_parser("ria", help="Create a RIA sibling.")
+    p_sibling_ria.add_argument("--sibling", help="Sibling name.")
+    p_sibling_ria.add_argument("--alias", help="RIA alias.")
+    p_sibling_ria.add_argument("--storage-url", help="RIA storage URL.")
+    p_sibling_ria.add_argument("--shared", help="RIA shared mode.")
+    p_sibling_ria.add_argument("--yes", action="store_true", help="Execute instead of preview.")
+
+    p_docs = sub.add_parser("docs", help="Project docs helpers.")
+    p_docs.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    docs_sub = p_docs.add_subparsers(dest="docs_command", required=True)
+    p_docs_mkdocs = docs_sub.add_parser("mkdocs-init", help="Scaffold MkDocs files.")
+    p_docs_mkdocs.add_argument("--force", action="store_true", help="Overwrite existing files.")
+
+    p_auth = sub.add_parser("auth", help="Authentication diagnostics.")
+    p_auth.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    auth_sub = p_auth.add_subparsers(dest="auth_command", required=True)
+    auth_sub.add_parser("doctor", help="Show helper credential resolution status.")
+
+    p_mcp = sub.add_parser("mcp", help="Start the FastMCP server (stdio).")
+    p_mcp.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+
+    return parser
+
+
+def main(argv: Iterable[str] | None = None) -> None:
+    args = _build_parser().parse_args(list(argv) if argv is not None else None)
+
+    if args.command == "init":
+        from .init import scaffold
+        scaffold(args.root, kind=args.kind, force=args.force)
+        return
+
+    if args.command == "status":
+        from .status import print_report
+        print_report(args.root)
+        return
+
+    if args.command == "config":
+        from . import config as config_mod
+        if args.config_command == "init-user":
+            config_mod.scaffold_user_config(force=args.force)
+        elif args.config_command == "show":
+            config_mod.print_effective_config(args.root)
+        return
+
+    if args.command == "site":
+        from . import site as site_mod
+        if args.site_command == "build":
+            site_mod.build(args.root, strict=args.strict)
+        elif args.site_command == "serve":
+            site_mod.serve(args.root)
+        elif args.site_command == "publish":
+            site_mod.publish(args.root)
+        return
+
+    if args.command == "sibling":
+        from .helpers import siblings
+        if args.sibling_command == "github":
+            siblings.sibling_github(
+                root=args.root,
+                sibling=args.sibling,
+                project=args.project,
+                credential=args.credential,
+                access_protocol=args.access_protocol,
+                yes=args.yes,
+            )
+        elif args.sibling_command == "gitlab":
+            siblings.sibling_gitlab(
+                root=args.root,
+                sibling=args.sibling,
+                project=args.project,
+                site=args.site,
+                layout=args.layout,
+                access=args.access,
+                credential=args.credential,
+                yes=args.yes,
+            )
+        elif args.sibling_command == "ria":
+            siblings.sibling_ria(
+                root=args.root,
+                sibling=args.sibling,
+                alias=args.alias,
+                storage_url=args.storage_url,
+                shared=args.shared,
+                yes=args.yes,
+            )
+        return
+
+    if args.command == "docs":
+        from .helpers.docs import mkdocs_init
+        if args.docs_command == "mkdocs-init":
+            mkdocs_init(args.root, force=args.force)
+        return
+
+    if args.command == "auth":
+        from .helpers.auth import auth_doctor
+        if args.auth_command == "doctor":
+            auth_doctor(args.root)
+        return
+
+    if args.command == "mcp":
+        import os
+        os.environ.setdefault("PROJIO_ROOT", str(args.root))
+        from .mcp.server import main as mcp_main
+        mcp_main()
+        return
+
+    raise SystemExit(2)

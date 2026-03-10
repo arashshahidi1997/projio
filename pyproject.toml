@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "projio"
+version = "0.1.0"
+description = "Project knowledge orchestrator and MCP server for research repositories"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Arash" }]
+license = { text = "MIT" }
+keywords = ["mcp", "research", "project", "knowledge", "rag"]
+dependencies = [
+    "pyyaml>=6",
+    "fastmcp>=2.0",
+]
+
+[project.optional-dependencies]
+indexio = ["indexio"]
+biblio  = ["biblio-tools"]
+notio   = ["notio"]
+all     = ["indexio", "biblio-tools", "notio"]
+dev     = ["pytest", "twine", "build"]
+
+[project.scripts]
+projio = "projio.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
