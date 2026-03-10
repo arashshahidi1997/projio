@@ -31,7 +31,9 @@ def test_tool_kind_scaffolds_package_files(tmp_path: Path) -> None:
     assert (tmp_path / "tests").exists()
     assert (tmp_path / "src" / tmp_path.name / "__init__.py").exists()
     makefile_text = (tmp_path / "Makefile").read_text(encoding="utf-8")
-    assert ".PHONY: test build check" in makefile_text
+    assert ".PHONY: test build check publish-test publish clean" in makefile_text
+    assert "$(PYTHON) -m twine upload --repository testpypi dist/*" in makefile_text
+    assert "$(PYTHON) -m twine upload dist/*" in makefile_text
 
 
 def test_study_kind_scaffolds_thin_study_overlay(tmp_path: Path) -> None:

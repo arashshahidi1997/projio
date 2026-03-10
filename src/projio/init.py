@@ -124,7 +124,7 @@ mcp:
 
 TOOL_MAKEFILE_APPEND = """
 
-.PHONY: test build check
+.PHONY: test build check publish-test publish clean
 
 test:
 \tPYTHONPATH=src $(PYTHON) -m pytest tests -q
@@ -134,6 +134,15 @@ build:
 
 check:
 \t$(PYTHON) -m twine check dist/*
+
+publish-test:
+\t$(PYTHON) -m twine upload --repository testpypi dist/*
+
+publish:
+\t$(PYTHON) -m twine upload dist/*
+
+clean:
+\trm -rf build dist .pytest_cache .mypy_cache src/*.egg-info
 """
 
 DEFAULT_MKDOCS = """\
