@@ -1,0 +1,42 @@
+site_name: projio
+site_description: Project knowledge orchestrator and MCP server for research repositories
+site_url: https://arashshahidi1997.github.io/projio/
+repo_url: https://github.com/arashshahidi1997/projio
+repo_name: arashshahidi1997/projio
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Tutorials:
+      - tutorials/index.md
+      - Quickstart: tutorials/quickstart.md
+      - Project Setup Workflow: tutorials/project-setup.md
+  - How-To Guides:
+      - how-to/index.md
+      - Initialize A Workspace: how-to/init.md
+      - Configure The MCP Server: how-to/mcp.md
+      - Manage DataLad Siblings: how-to/siblings.md
+      - Build The Documentation Site: how-to/site.md
+  - Explanation:
+      - explanation/index.md
+      - Ecosystem Architecture: explanation/architecture.md
+      - Search Before Creation: explanation/search-before-creation.md
+  - Reference:
+      - reference/index.md
+      - CLI: reference/cli.md
+      - Configuration: reference/configuration.md
+      - MCP Tools: reference/mcp-tools.md
+  - Log:
+      - log/index.md

@@ -69,8 +69,13 @@ def runtime_conventions() -> JsonDict:
     """Parse Makefile variables and targets from the project root, return as dict."""
     root = get_project_root()
     makefile = root / "Makefile"
+    projio_mk = root / ".projio" / "projio.mk"
     exists = makefile.exists()
-    vars_ = _parse_makefile_vars(makefile.read_text(encoding="utf-8")) if exists else {}
+    vars_: dict[str, str] = {}
+    if projio_mk.exists():
+        vars_.update(_parse_makefile_vars(projio_mk.read_text(encoding="utf-8")))
+    if exists:
+        vars_.update(_parse_makefile_vars(makefile.read_text(encoding="utf-8")))
     command_keys = {
         "python": "PYTHON",
         "datalad": "DATALAD",

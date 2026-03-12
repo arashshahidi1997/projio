@@ -11,18 +11,51 @@ from projio.init import scaffold
 def test_existing_init_scaffolds_workspace(tmp_path: Path) -> None:
     scaffold(tmp_path)
     assert (tmp_path / ".projio" / "config.yml").exists()
+    assert (tmp_path / ".projio" / "projio.mk").exists()
     assert (tmp_path / "mkdocs.yml").exists()
     assert (tmp_path / "Makefile").exists()
     assert (tmp_path / "docs" / "index.md").exists()
     config_text = (tmp_path / ".projio" / "config.yml").read_text(encoding="utf-8")
     assert "project_kind: generic" in config_text
+    makefile_text = (tmp_path / "Makefile").read_text(encoding="utf-8")
+    assert "-include .projio/projio.mk" in makefile_text
+    mk_text = (tmp_path / ".projio" / "projio.mk").read_text(encoding="utf-8")
+    assert "$(DATALAD) save" in mk_text
+    assert "$(DATALAD) push" in mk_text
 
 
 def test_init_does_not_overwrite_existing_makefile_without_force(tmp_path: Path) -> None:
     makefile = tmp_path / "Makefile"
     makefile.write_text("CUSTOM=1\n", encoding="utf-8")
     scaffold(tmp_path)
-    assert makefile.read_text(encoding="utf-8") == "CUSTOM=1\n"
+    text = makefile.read_text(encoding="utf-8")
+    assert text.startswith("CUSTOM=1")  # original content preserved
+    assert "-include .projio/projio.mk" in text  # include injected
+
+
+def test_include_injected_into_existing_makefile(tmp_path: Path) -> None:
+    makefile = tmp_path / "Makefile"
+    makefile.write_text("PYTHON ?= python3\n\nsave:\n\techo hi\n", encoding="utf-8")
+    scaffold(tmp_path)
+    text = makefile.read_text(encoding="utf-8")
+    assert text.startswith("PYTHON ?= python3")
+    assert "-include .projio/projio.mk" in text
+
+
+def test_include_not_duplicated_on_reinit(tmp_path: Path) -> None:
+    scaffold(tmp_path)
+    scaffold(tmp_path)  # re-init
+    text = (tmp_path / "Makefile").read_text(encoding="utf-8")
+    assert text.count("-include .projio/projio.mk") == 1
+
+
+def test_projio_mk_always_overwritten_on_reinit(tmp_path: Path) -> None:
+    scaffold(tmp_path)
+    mk = tmp_path / ".projio" / "projio.mk"
+    mk.write_text("# stale content\n", encoding="utf-8")
+    scaffold(tmp_path)  # no --force
+    text = mk.read_text(encoding="utf-8")
+    assert "$(DATALAD) save" in text  # updated, not stale
 
 
 def test_tool_kind_scaffolds_package_files(tmp_path: Path) -> None:
@@ -30,7 +63,9 @@ def test_tool_kind_scaffolds_package_files(tmp_path: Path) -> None:
     assert (tmp_path / "pyproject.toml").exists()
     assert (tmp_path / "tests").exists()
     assert (tmp_path / "src" / tmp_path.name / "__init__.py").exists()
+    assert (tmp_path / ".projio" / "projio.mk").exists()
     makefile_text = (tmp_path / "Makefile").read_text(encoding="utf-8")
+    assert "-include .projio/projio.mk" in makefile_text
     assert ".PHONY: test build check publish-test publish clean" in makefile_text
     assert "$(PYTHON) -m twine upload --repository testpypi dist/*" in makefile_text
     assert "$(PYTHON) -m twine upload dist/*" in makefile_text

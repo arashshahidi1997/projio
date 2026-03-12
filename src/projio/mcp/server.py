@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from . import biblio, context, notio, rag
+from . import biblio, codio, context, notio, rag
 
 server = FastMCP("projio")
 
@@ -72,6 +72,48 @@ def note_latest_tool(note_type: str = ""):
 def note_search_tool(query: str, k: int = 5):
     """Semantic search over notes via indexio."""
     return notio.note_search(query=query, k=k)
+
+
+# --- Codio tools ---
+
+@server.tool("codio_list")
+def codio_list_tool(kind: str = "", language: str = "", capability: str = "", priority: str = "", runtime_import: str = ""):
+    """List libraries from the code reuse registry with optional filters."""
+    return codio.codio_list(
+        kind=kind or None, language=language or None,
+        capability=capability or None, priority=priority or None,
+        runtime_import=runtime_import or None,
+    )
+
+
+@server.tool("codio_get")
+def codio_get_tool(name: str):
+    """Full merged record for a single library from the code reuse registry."""
+    return codio.codio_get(name)
+
+
+@server.tool("codio_registry")
+def codio_registry_tool():
+    """Full snapshot of the code reuse registry (catalog + profiles)."""
+    return codio.codio_registry()
+
+
+@server.tool("codio_vocab")
+def codio_vocab_tool():
+    """Controlled vocabulary for the code reuse registry fields."""
+    return codio.codio_vocab()
+
+
+@server.tool("codio_validate")
+def codio_validate_tool():
+    """Validate code reuse registry consistency."""
+    return codio.codio_validate()
+
+
+@server.tool("codio_discover")
+def codio_discover_tool(query: str, language: str = ""):
+    """Search for libraries matching a capability query."""
+    return codio.codio_discover(query=query, language=language or None)
 
 
 # --- Context tools ---

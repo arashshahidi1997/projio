@@ -2,7 +2,7 @@
 
 Project knowledge orchestrator and MCP server for research repositories.
 
-Generates project scaffolding (`.projio/` workspace, `Makefile`, `mkdocs.yml`, and optional kind-specific starters), builds project websites, and exposes a FastMCP server (stdio) that gives Claude unified access to indexio, biblio, and notio tools.
+Generates project scaffolding (`.projio/` workspace, `Makefile`, `mkdocs.yml`, and optional kind-specific starters), builds project websites, and exposes a FastMCP server (stdio) that gives Claude unified access to indexio, biblio, notio, and codio tools.
 
 ## Install
 
@@ -74,6 +74,12 @@ Helper commands are preview-first. Pass `--yes` to execute the generated `datala
 | `note_list` | List recent notes (requires notio) |
 | `note_latest` | Most recent note content (requires notio) |
 | `note_search` | Semantic search over notes |
+| `codio_list` | Filtered library listing (requires codio) |
+| `codio_get` | Full library record (requires codio) |
+| `codio_registry` | Full registry snapshot (requires codio) |
+| `codio_vocab` | Controlled vocabulary for registry fields (requires codio) |
+| `codio_validate` | Registry consistency check (requires codio) |
+| `codio_discover` | Capability search across libraries (requires codio) |
 | `project_context` | Project config + README snapshot |
 | `runtime_conventions` | Parsed Makefile vars and commands |
 

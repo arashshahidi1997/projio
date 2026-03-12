@@ -8,20 +8,39 @@ version = "0.1.0"
 description = "Project knowledge orchestrator and MCP server for research repositories"
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "Arash" }]
-license = { text = "MIT" }
-keywords = ["mcp", "research", "project", "knowledge", "rag"]
+authors = [{ name = "Arash Shahidi" }]
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["mcp", "research", "project", "knowledge", "rag", "datalad"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Utilities",
+]
 dependencies = [
     "pyyaml>=6",
     "fastmcp>=2.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/arashshahidi1997/projio"
+Repository = "https://github.com/arashshahidi1997/projio"
+Issues = "https://github.com/arashshahidi1997/projio/issues"
+
 [project.optional-dependencies]
 indexio = ["indexio"]
 biblio  = ["biblio-tools"]
 notio   = ["notio"]
-all     = ["indexio", "biblio-tools", "notio"]
-dev     = ["pytest", "twine", "build"]
+codio   = ["codio"]
+all     = ["indexio", "biblio-tools", "notio", "codio"]
+docs    = ["mkdocs>=1.6", "mkdocs-material>=9.5"]
+dev     = ["pytest", "twine", "build", "mkdocs>=1.6", "mkdocs-material>=9.5"]
 
 [project.scripts]
 projio = "projio.cli:main"
