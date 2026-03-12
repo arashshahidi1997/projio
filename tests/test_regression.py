@@ -119,19 +119,19 @@ def test_init_command_dispatches_kind(monkeypatch) -> None:
 
 
 def test_existing_site_command_still_dispatches(monkeypatch) -> None:
-    calls: list[tuple[str, str, bool | None]] = []
+    calls: list[tuple[str, ...]] = []
 
-    monkeypatch.setattr("projio.site.build", lambda root, strict=False: calls.append(("build", root, strict)))
-    monkeypatch.setattr("projio.site.serve", lambda root: calls.append(("serve", root, None)))
-    monkeypatch.setattr("projio.site.publish", lambda root: calls.append(("publish", root, None)))
+    monkeypatch.setattr("projio.site.build", lambda root, strict=False, framework=None: calls.append(("build", root, strict, framework)))
+    monkeypatch.setattr("projio.site.serve", lambda root, port=None, framework=None, background=False, host=None: calls.append(("serve", root, port, framework)))
+    monkeypatch.setattr("projio.site.publish", lambda root, framework=None: calls.append(("publish", root, framework)))
 
     cli.main(["site", "build", "-C", "/tmp/demo", "--strict"])
     cli.main(["site", "serve", "-C", "/tmp/demo"])
     cli.main(["site", "publish", "-C", "/tmp/demo"])
 
     assert calls == [
-        ("build", "/tmp/demo", True),
-        ("serve", "/tmp/demo", None),
+        ("build", "/tmp/demo", True, None),
+        ("serve", "/tmp/demo", None, None),
         ("publish", "/tmp/demo", None),
     ]
 

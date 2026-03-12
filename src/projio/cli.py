@@ -32,15 +32,38 @@ def _build_parser() -> argparse.ArgumentParser:
     p_config_init_user.add_argument("--force", action="store_true", help="Overwrite existing user config.")
     config_sub.add_parser("show", help="Print merged user + project config.")
 
-    p_site = sub.add_parser("site", help="MkDocs operations.")
+    p_site = sub.add_parser("site", help="Doc-site operations (MkDocs, Sphinx, Vite).")
     site_sub = p_site.add_subparsers(dest="site_command", required=True)
-    p_site_build = site_sub.add_parser("build", help="Build the MkDocs site.")
+
+    _fw_choices = ("mkdocs", "sphinx", "vite")
+
+    p_site_build = site_sub.add_parser("build", help="Build the doc site.")
     p_site_build.add_argument("-C", "--root", default=".", help="Project root.")
     p_site_build.add_argument("--strict", action="store_true", help="Fail on warnings.")
-    p_site_serve = site_sub.add_parser("serve", help="Serve the MkDocs site locally.")
+    p_site_build.add_argument("--framework", choices=_fw_choices, default=None,
+                              help="Override framework detection.")
+
+    p_site_serve = site_sub.add_parser("serve", help="Serve the doc site locally.")
     p_site_serve.add_argument("-C", "--root", default=".", help="Project root.")
+    p_site_serve.add_argument("--port", type=int, default=None, help="Port (default: auto-find from base_port).")
+    p_site_serve.add_argument("--framework", choices=_fw_choices, default=None,
+                              help="Override framework detection.")
+    p_site_serve.add_argument("--background", action="store_true", help="Run server in background.")
+
     p_site_publish = site_sub.add_parser("publish", help="Publish site to GitHub Pages.")
     p_site_publish.add_argument("-C", "--root", default=".", help="Project root.")
+
+    p_site_stop = site_sub.add_parser("stop", help="Stop a running doc server.")
+    p_site_stop.add_argument("-C", "--root", default=".", help="Project root.")
+    p_site_stop.add_argument("--port", type=int, default=None, help="Stop server on this port.")
+    p_site_stop.add_argument("--pid", type=int, default=None, help="Stop server with this PID.")
+    p_site_stop.add_argument("--all", action="store_true", dest="stop_all", help="Stop all servers.")
+
+    p_site_list = site_sub.add_parser("list", help="List running doc servers.")
+    p_site_list.add_argument("-C", "--root", default=".", help="Project root.")
+
+    p_site_detect = site_sub.add_parser("detect", help="Detect doc-site framework.")
+    p_site_detect.add_argument("-C", "--root", default=".", help="Project root.")
 
     p_sibling = sub.add_parser("sibling", help="Manage Datalad siblings.")
     p_sibling.add_argument("-C", "--root", default=".", help="Project root (default: .).")
@@ -110,11 +133,36 @@ def main(argv: Iterable[str] | None = None) -> None:
     if args.command == "site":
         from . import site as site_mod
         if args.site_command == "build":
-            site_mod.build(args.root, strict=args.strict)
+            site_mod.build(args.root, strict=args.strict, framework=args.framework)
         elif args.site_command == "serve":
-            site_mod.serve(args.root)
+            result = site_mod.serve(
+                args.root, port=args.port, framework=args.framework,
+                background=args.background,
+            )
+            if args.background:
+                print(f"Server started: {result['url']} (PID {result['pid']})")
         elif args.site_command == "publish":
             site_mod.publish(args.root)
+        elif args.site_command == "stop":
+            if args.stop_all:
+                info = site_mod.stop_all(args.root)
+                print(f"Stopped {info['stopped']} server(s)")
+            else:
+                info = site_mod.stop(args.root, port=args.port, pid=args.pid)
+                if info["stopped"]:
+                    print(f"Stopped server PID {info['pid']} on port {info['port']}")
+                else:
+                    print(f"Error: {info.get('error', 'unknown')}")
+        elif args.site_command == "list":
+            servers = site_mod.list_servers(args.root)
+            if not servers:
+                print("No running servers.")
+            for s in servers:
+                print(f"  {s['framework']}  port={s['port']}  pid={s['pid']}  since {s['started_at']}")
+        elif args.site_command == "detect":
+            from pathlib import Path
+            fw = site_mod.detect_framework(Path(args.root).expanduser().resolve())
+            print(f"Detected framework: {fw}")
         return
 
     if args.command == "sibling":

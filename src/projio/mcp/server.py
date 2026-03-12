@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from . import biblio, codio, context, notio, rag
+from . import biblio, codio, context, notio, rag, site as site_mcp
 
 server = FastMCP("projio")
 
@@ -128,6 +128,35 @@ def project_context_tool():
 def runtime_conventions_tool():
     """Parse Makefile variables and targets from the project root."""
     return context.runtime_conventions()
+
+
+# --- Site tools ---
+
+@server.tool("site_detect")
+def site_detect_tool():
+    """Detect the doc-site framework used by the project (mkdocs, sphinx, vite)."""
+    return site_mcp.site_detect()
+
+
+@server.tool("site_serve")
+def site_serve_tool(port: int = 0, framework: str = ""):
+    """Start the project doc server in background. Returns URL and PID."""
+    return site_mcp.site_serve(
+        port=port or None,
+        framework=framework or None,
+    )
+
+
+@server.tool("site_stop")
+def site_stop_tool(port: int = 0, pid: int = 0):
+    """Stop a running doc server by port or PID."""
+    return site_mcp.site_stop(port=port or None, pid=pid or None)
+
+
+@server.tool("site_list")
+def site_list_tool():
+    """List running doc servers for this project."""
+    return site_mcp.site_list()
 
 
 def main() -> None:

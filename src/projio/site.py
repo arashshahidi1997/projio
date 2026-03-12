@@ -1,30 +1,511 @@
-"""MkDocs build/serve/publish wrappers."""
+"""Doc-site server management: detection, port iteration, process lifecycle."""
 from __future__ import annotations
 
+import json
+import os
+import signal
+import socket
 import subprocess
 import sys
+import importlib.util
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
+
+import yaml
 
 
-def _run(cmd: list[str], cwd: Path) -> None:
-    result = subprocess.run(cmd, cwd=cwd)
+# ---------------------------------------------------------------------------
+# Framework detection
+# ---------------------------------------------------------------------------
+
+def detect_framework(root: Path) -> str:
+    """Detect which doc-site framework a project uses.
+
+    Returns ``"mkdocs"``, ``"sphinx"``, ``"vite"``, or ``"unknown"``.
+    First match wins (priority order: mkdocs → sphinx → vite).
+    """
+    # MkDocs
+    if (root / "mkdocs.yml").exists() or (root / "mkdocs.yaml").exists():
+        return "mkdocs"
+
+    # Sphinx
+    if (root / "docs" / "conf.py").exists():
+        return "sphinx"
+    makefile = root / "Makefile"
+    if makefile.exists():
+        try:
+            text = makefile.read_text(encoding="utf-8", errors="replace")
+            if "sphinx-build" in text or "sphinx_build" in text:
+                return "sphinx"
+        except OSError:
+            pass
+
+    # Vite / React
+    for pkg_dir in (root, root / "docs"):
+        pkg_json = pkg_dir / "package.json"
+        if pkg_json.exists():
+            try:
+                data = json.loads(pkg_json.read_text(encoding="utf-8"))
+                all_deps = {
+                    **data.get("dependencies", {}),
+                    **data.get("devDependencies", {}),
+                }
+                if "vite" in all_deps or "react-scripts" in all_deps:
+                    return "vite"
+            except (OSError, json.JSONDecodeError):
+                pass
+
+    return "unknown"
+
+
+# ---------------------------------------------------------------------------
+# Port management
+# ---------------------------------------------------------------------------
+
+def _is_port_free(port: int, host: str = "127.0.0.1") -> bool:
+    """Return *True* if *host:port* is available for binding."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind((host, port))
+            return True
+        except OSError:
+            return False
+
+
+def find_free_port(
+    base: int = 8000,
+    max_attempts: int = 50,
+    host: str = "127.0.0.1",
+) -> int:
+    """Find a free port starting from *base*, incrementing up to *max_attempts*."""
+    for offset in range(max_attempts):
+        port = base + offset
+        if _is_port_free(port, host):
+            return port
+    raise RuntimeError(
+        f"No free port found in range {base}–{base + max_attempts - 1}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Server state persistence (.projio/servers.json)
+# ---------------------------------------------------------------------------
+
+def _servers_path(root: Path) -> Path:
+    return root / ".projio" / "servers.json"
+
+
+def _pid_alive(pid: int) -> bool:
+    """Check whether a process is still running (Unix)."""
+    try:
+        os.kill(pid, 0)
+        return True
+    except (ProcessLookupError, PermissionError):
+        return False
+
+
+def _prune_dead(servers: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [s for s in servers if _pid_alive(s["pid"])]
+
+
+def _read_servers(root: Path) -> list[dict[str, Any]]:
+    path = _servers_path(root)
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    live = _prune_dead(data if isinstance(data, list) else [])
+    _write_servers(root, live)
+    return live
+
+
+def _write_servers(root: Path, servers: list[dict[str, Any]]) -> None:
+    path = _servers_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(servers, indent=2) + "\n", encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Config helpers
+# ---------------------------------------------------------------------------
+
+def _load_site_config(root: Path) -> dict[str, Any]:
+    """Load site-specific config (base_port, host) from projio config."""
+    try:
+        from .config import load_effective_config, get_nested
+        cfg = load_effective_config(root)
+        return {
+            "base_port": get_nested(cfg, "site", "base_port", default=8000),
+            "host": get_nested(cfg, "site", "host", default="127.0.0.1"),
+            "chatbot": {
+                "enabled": get_nested(cfg, "site", "chatbot", "enabled", default=False),
+                "backend_url": get_nested(cfg, "site", "chatbot", "backend_url", default=None),
+                "host": get_nested(cfg, "site", "chatbot", "host", default="127.0.0.1"),
+                "port": get_nested(cfg, "site", "chatbot", "port", default=9100),
+                "title": get_nested(cfg, "site", "chatbot", "title", default="Docs Assistant"),
+                "storage_key": get_nested(cfg, "site", "chatbot", "storage_key", default=f"{root.name}_chat_v1"),
+                "indexio_config": get_nested(cfg, "indexio", "config", default=".indexio/config.yaml"),
+                "corpus": get_nested(cfg, "site", "chatbot", "corpus", default=None),
+                "store": get_nested(cfg, "site", "chatbot", "store", default=None),
+            },
+        }
+    except FileNotFoundError:
+        return {
+            "base_port": 8000,
+            "host": "127.0.0.1",
+            "chatbot": {
+                "enabled": False,
+                "backend_url": None,
+                "host": "127.0.0.1",
+                "port": 9100,
+                "title": "Docs Assistant",
+                "storage_key": f"{root.name}_chat_v1",
+                "indexio_config": ".indexio/config.yaml",
+                "corpus": None,
+                "store": None,
+            },
+        }
+
+
+def _mkdocs_config_path(root: Path) -> Path:
+    if (root / "mkdocs.yml").exists():
+        return root / "mkdocs.yml"
+    return root / "mkdocs.yaml"
+
+
+def _projio_site_dir(root: Path) -> Path:
+    return root / ".projio" / "site"
+
+
+def _mkdocs_chat_hook_path(root: Path) -> Path:
+    return _projio_site_dir(root) / "indexio_chat_hook.py"
+
+
+def _mkdocs_override_config_path(root: Path) -> Path:
+    return root / ".projio.mkdocs.yml"
+
+
+def _write_mkdocs_chat_hook(root: Path, *, backend_url: str, title: str, storage_key: str) -> Path:
+    hook_path = _mkdocs_chat_hook_path(root)
+    hook_path.parent.mkdir(parents=True, exist_ok=True)
+    api_url = f"{backend_url.rstrip('/')}/chat/"
+    js_url = f"{backend_url.rstrip('/')}/chatbot/chatbot.js"
+    css_url = f"{backend_url.rstrip('/')}/chatbot/chatbot.css"
+    snippet = (
+        "<script>"
+        f"window.INDEXIO_CHAT = {json.dumps({'apiUrl': api_url, 'title': title, 'storageKey': storage_key})};"
+        "</script>"
+        f'<script src="{js_url}"></script>'
+        f'<link href="{css_url}" rel="stylesheet">'
+    )
+    hook_path.write_text(
+        (
+            '"""Generated by projio to inject the indexio chatbot widget into MkDocs pages."""\n'
+            "from __future__ import annotations\n\n"
+            f"SNIPPET = {snippet!r}\n\n"
+            "def on_page_content(html, page, config, files):\n"
+            "    if SNIPPET in html:\n"
+            "        return html\n"
+            "    if '</body>' in html:\n"
+            "        return html.replace('</body>', SNIPPET + '</body>')\n"
+            "    return html + SNIPPET\n"
+        ),
+        encoding="utf-8",
+    )
+    return hook_path
+
+
+def _mkdocs_config_with_chatbot(
+    root: Path, *, backend_url: str, title: str, storage_key: str
+) -> Path:
+    config_path = _mkdocs_config_path(root)
+    payload = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    if not isinstance(payload, dict):
+        raise TypeError(f"Expected mapping in {config_path}")
+    hook_path = _write_mkdocs_chat_hook(
+        root,
+        backend_url=backend_url,
+        title=title,
+        storage_key=storage_key,
+    )
+    hooks = list(payload.get("hooks") or [])
+    rel_hook = str(hook_path.relative_to(root))
+    if rel_hook not in hooks:
+        hooks.append(rel_hook)
+    payload["hooks"] = hooks
+    override_path = _mkdocs_override_config_path(root)
+    override_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    return override_path
+
+
+def _indexio_serve_cmd(root: Path, chatbot_cfg: dict[str, Any], *, host: str, port: int) -> list[str]:
+    if importlib.util.find_spec("indexio") is None:
+        raise RuntimeError("site chatbot requires the indexio package to be installed")
+    cmd = [
+        sys.executable,
+        "-m",
+        "indexio",
+        "serve",
+        "--root",
+        ".",
+        "--config",
+        str(chatbot_cfg["indexio_config"]),
+        "--host",
+        host,
+        "--port",
+        str(port),
+        "--title",
+        str(chatbot_cfg["title"]),
+    ]
+    if chatbot_cfg.get("corpus"):
+        cmd.extend(["--corpus", str(chatbot_cfg["corpus"])])
+    if chatbot_cfg.get("store"):
+        cmd.extend(["--store", str(chatbot_cfg["store"])])
+    return cmd
+
+
+def _prepare_site_chatbot(
+    root: Path,
+    *,
+    framework: str,
+    site_cfg: dict[str, Any],
+    for_serve: bool,
+) -> dict[str, Any]:
+    chatbot_cfg = dict(site_cfg.get("chatbot") or {})
+    if framework != "mkdocs" or not chatbot_cfg.get("enabled"):
+        return {"config_path": None, "chat_proc": None, "backend_url": None}
+
+    backend_url = chatbot_cfg.get("backend_url")
+    chat_proc = None
+    if backend_url is None and for_serve:
+        chat_host = str(chatbot_cfg.get("host") or site_cfg["host"])
+        chat_port = find_free_port(base=int(chatbot_cfg.get("port", 9100)), host=chat_host)
+        chat_cmd = _indexio_serve_cmd(root, chatbot_cfg, host=chat_host, port=chat_port)
+        chat_proc = subprocess.Popen(chat_cmd, cwd=root)
+        backend_url = f"http://{chat_host}:{chat_port}"
+    elif backend_url is None:
+        print("[projio-site] Chatbot enabled, but no site.chatbot.backend_url configured; skipping widget injection.")
+        return {"config_path": None, "chat_proc": None, "backend_url": None}
+
+    config_path = _mkdocs_config_with_chatbot(
+        root,
+        backend_url=str(backend_url),
+        title=str(chatbot_cfg["title"]),
+        storage_key=str(chatbot_cfg["storage_key"]),
+    )
+    return {"config_path": config_path, "chat_proc": chat_proc, "backend_url": backend_url}
+
+
+# ---------------------------------------------------------------------------
+# Framework-specific commands
+# ---------------------------------------------------------------------------
+
+def _serve_cmd(framework: str, host: str, port: int, root: Path, *, config_path: Path | None = None) -> list[str]:
+    """Build the subprocess command list for each framework."""
+    if framework == "mkdocs":
+        cmd = [sys.executable, "-m", "mkdocs", "serve", "--dev-addr", f"{host}:{port}"]
+        if config_path is not None:
+            cmd.extend(["-f", str(config_path)])
+        return cmd
+    if framework == "sphinx":
+        return [
+            sys.executable, "-m", "sphinx_autobuild",
+            "docs", "docs/_build/html",
+            "--host", host, "--port", str(port),
+        ]
+    if framework == "vite":
+        return ["npx", "vite", "--host", host, "--port", str(port)]
+    raise ValueError(f"Cannot serve unknown framework: {framework}")
+
+
+def _build_cmd(
+    framework: str,
+    root: Path,
+    *,
+    strict: bool = False,
+    config_path: Path | None = None,
+) -> list[str]:
+    """Build the subprocess command list for building docs."""
+    if framework == "mkdocs":
+        cmd = [sys.executable, "-m", "mkdocs", "build"]
+        if config_path is not None:
+            cmd.extend(["-f", str(config_path)])
+        if strict:
+            cmd.append("--strict")
+        return cmd
+    if framework == "sphinx":
+        return [sys.executable, "-m", "sphinx", "-b", "html", "docs", "docs/_build/html"]
+    if framework == "vite":
+        return ["npx", "vite", "build"]
+    raise ValueError(f"Cannot build unknown framework: {framework}")
+
+
+# ---------------------------------------------------------------------------
+# Process lifecycle
+# ---------------------------------------------------------------------------
+
+def serve(
+    root: str | Path,
+    *,
+    port: int | None = None,
+    host: str | None = None,
+    framework: str | None = None,
+    background: bool = False,
+) -> dict[str, Any]:
+    """Start a doc server.
+
+    Returns ``{"pid", "port", "framework", "url"}`` when *background* is True.
+    Blocks (foreground) when *background* is False.
+    """
+    root = Path(root).expanduser().resolve()
+    site_cfg = _load_site_config(root)
+
+    if host is None:
+        host = site_cfg["host"]
+    if framework is None:
+        framework = detect_framework(root)
+    if framework == "unknown":
+        raise RuntimeError(
+            "Could not detect doc-site framework. "
+            "Expected mkdocs.yml, docs/conf.py, or package.json with vite."
+        )
+    if port is None:
+        port = find_free_port(base=site_cfg["base_port"], host=host)
+    integration = _prepare_site_chatbot(root, framework=framework, site_cfg=site_cfg, for_serve=True)
+    cmd = _serve_cmd(framework, host, port, root, config_path=integration["config_path"])
+
+    if not background:
+        if integration["backend_url"]:
+            print(f"[projio-site] Chatbot backend: {integration['backend_url']}")
+        try:
+            result = subprocess.run(cmd, cwd=root)
+            if result.returncode != 0:
+                sys.exit(result.returncode)
+            return {"pid": 0, "port": port, "framework": framework, "url": f"http://{host}:{port}"}
+        finally:
+            chat_proc = integration["chat_proc"]
+            if chat_proc is not None:
+                try:
+                    chat_proc.terminate()
+                except OSError:
+                    pass
+
+    proc = subprocess.Popen(cmd, cwd=root)
+    record: dict[str, Any] = {
+        "pid": proc.pid,
+        "service": "site",
+        "framework": framework,
+        "port": port,
+        "root": str(root),
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "command": cmd,
+    }
+    servers = _read_servers(root)
+    servers.append(record)
+    chat_proc = integration["chat_proc"]
+    if chat_proc is not None:
+        servers.append(
+            {
+                "pid": chat_proc.pid,
+                "service": "chatbot",
+                "framework": "indexio-chat",
+                "port": int(str(integration["backend_url"]).rsplit(":", 1)[1]),
+                "root": str(root),
+                "started_at": datetime.now(timezone.utc).isoformat(),
+                "command": _indexio_serve_cmd(root, site_cfg["chatbot"], host=site_cfg["chatbot"]["host"], port=int(str(integration["backend_url"]).rsplit(":", 1)[1])),
+            }
+        )
+    _write_servers(root, servers)
+    result = {
+        "pid": proc.pid,
+        "port": port,
+        "framework": framework,
+        "url": f"http://{host}:{port}",
+    }
+    if integration["backend_url"]:
+        result["chatbot_url"] = integration["backend_url"]
+    return result
+
+
+def stop(
+    root: str | Path,
+    *,
+    port: int | None = None,
+    pid: int | None = None,
+) -> dict[str, Any]:
+    """Stop a running doc server by port or PID."""
+    root = Path(root).expanduser().resolve()
+    servers = _read_servers(root)
+    target = None
+    for s in servers:
+        if (port is not None and s["port"] == port) or (pid is not None and s["pid"] == pid):
+            target = s
+            break
+    if target is None:
+        return {"stopped": False, "error": "No matching server found"}
+    try:
+        os.kill(target["pid"], signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    servers = [s for s in servers if s is not target]
+    _write_servers(root, servers)
+    return {"stopped": True, "pid": target["pid"], "port": target["port"]}
+
+
+def list_servers(root: str | Path) -> list[dict[str, Any]]:
+    """Return live server records for the given project root."""
+    root = Path(root).expanduser().resolve()
+    return _read_servers(root)
+
+
+def stop_all(root: str | Path) -> dict[str, Any]:
+    """Stop all tracked servers for a project."""
+    root = Path(root).expanduser().resolve()
+    servers = _read_servers(root)
+    count = 0
+    for s in servers:
+        try:
+            os.kill(s["pid"], signal.SIGTERM)
+            count += 1
+        except ProcessLookupError:
+            pass
+    _write_servers(root, [])
+    return {"stopped": count}
+
+
+# ---------------------------------------------------------------------------
+# Build & publish (enhanced with framework detection)
+# ---------------------------------------------------------------------------
+
+def build(root: str | Path, *, strict: bool = False, framework: str | None = None) -> None:
+    """Build docs. Auto-detects framework if not specified."""
+    root = Path(root).expanduser().resolve()
+    if framework is None:
+        framework = detect_framework(root)
+    if framework == "unknown":
+        raise RuntimeError("Could not detect doc-site framework.")
+    site_cfg = _load_site_config(root)
+    integration = _prepare_site_chatbot(root, framework=framework, site_cfg=site_cfg, for_serve=False)
+    cmd = _build_cmd(framework, root, strict=strict, config_path=integration["config_path"])
+    result = subprocess.run(cmd, cwd=root)
     if result.returncode != 0:
         sys.exit(result.returncode)
 
 
-def build(root: str | Path, *, strict: bool = False) -> None:
+def publish(root: str | Path, *, framework: str | None = None) -> None:
+    """Publish docs. Currently only mkdocs gh-deploy is supported."""
     root = Path(root).expanduser().resolve()
-    cmd = [sys.executable, "-m", "mkdocs", "build"]
-    if strict:
-        cmd.append("--strict")
-    _run(cmd, cwd=root)
-
-
-def serve(root: str | Path) -> None:
-    root = Path(root).expanduser().resolve()
-    _run([sys.executable, "-m", "mkdocs", "serve"], cwd=root)
-
-
-def publish(root: str | Path) -> None:
-    root = Path(root).expanduser().resolve()
-    _run([sys.executable, "-m", "mkdocs", "gh-deploy", "--force"], cwd=root)
+    if framework is None:
+        framework = detect_framework(root)
+    if framework != "mkdocs":
+        raise RuntimeError(
+            f"Publish is currently only supported for mkdocs (detected: {framework}). "
+            "Use your framework's deploy tooling directly."
+        )
+    cmd = [sys.executable, "-m", "mkdocs", "gh-deploy", "--force"]
+    result = subprocess.run(cmd, cwd=root)
+    if result.returncode != 0:
+        sys.exit(result.returncode)

@@ -18,6 +18,16 @@ projio site build -C . --strict
 projio site serve -C .
 ```
 
+For MkDocs projects, `projio` can also inject the `indexio` chatbot widget and auto-start a local chatbot backend when `.projio/config.yml` contains:
+
+```yaml
+site:
+  chatbot:
+    enabled: true
+```
+
+For static site builds, also set `site.chatbot.backend_url` to the deployed chatbot server URL if you want the built site to include the widget.
+
 ## Publish to GitHub Pages
 
 ```bash

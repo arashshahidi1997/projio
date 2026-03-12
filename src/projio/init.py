@@ -15,7 +15,7 @@ project_kind: {kind}
 description: ""
 
 indexio:
-  config: infra/indexio/config.yaml   # path to indexio config
+  config: .indexio/config.yaml        # path to indexio config
   persist_dir: .projio/index           # chroma db location
 
 biblio:
@@ -31,6 +31,17 @@ codio:
   catalog_path: .codio/catalog.yml
   profiles_path: .codio/profiles.yml
   notes_dir: docs/reference/codelib/libraries/
+
+site:
+  base_port: 8000
+  host: "127.0.0.1"
+  chatbot:
+    enabled: false
+    backend_url: null
+    host: "127.0.0.1"
+    port: 9100
+    title: "Docs Assistant"
+    storage_key: "{name}_chat_v1"
 
 helpers:
   sibling:
@@ -57,7 +68,7 @@ project_kind: study
 description: ""
 
 indexio:
-  config: infra/indexio/config.yaml   # path to indexio config
+  config: .indexio/config.yaml        # path to indexio config
   persist_dir: .projio/index           # chroma db location
 
 biblio:
@@ -67,6 +78,17 @@ biblio:
 notio:
   enabled: false
   notes_dir: notes/
+
+site:
+  base_port: 8000
+  host: "127.0.0.1"
+  chatbot:
+    enabled: false
+    backend_url: null
+    host: "127.0.0.1"
+    port: 9100
+    title: "Docs Assistant"
+    storage_key: "{name}_chat_v1"
 
 helpers:
   sibling:
@@ -97,7 +119,7 @@ MSG     ?= Update
 
 .PHONY: save push
 .PHONY: projio-init projio-config-user projio-config-show projio-status projio-auth
-.PHONY: projio-gh projio-gl projio-ria site-build site-serve mcp
+.PHONY: projio-gh projio-gl projio-ria site-build site-serve site-stop site-list site-detect mcp
 
 # --- DataLad targets ---
 save:
@@ -136,6 +158,15 @@ site-build:
 
 site-serve:
 \t$(PROJIO) site serve -C .
+
+site-stop:
+\t$(PROJIO) site stop -C . --all
+
+site-list:
+\t$(PROJIO) site list -C .
+
+site-detect:
+\t$(PROJIO) site detect -C .
 
 mcp:
 \t$(PROJIO) mcp -C .
