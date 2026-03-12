@@ -13,3 +13,8 @@
 	url = /storage/share/git/ria-store/alias/indexio
 	datalad-id = a2e8758a-46b6-401f-9757-85f523d7c813
 	datalad-url = "ria+file:///storage/share/git/ria-store#~indexio"
+[submodule "packages/codio"]
+	path = packages/codio
+	url = /storage/share/git/ria-store/alias/codio
+	datalad-id = b8c89e9e-022a-431c-9522-193cd5a622eb
+	datalad-url = "ria+file:///storage/share/git/ria-store#~codio"
