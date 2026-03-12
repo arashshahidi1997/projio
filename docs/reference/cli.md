@@ -55,6 +55,8 @@ projio auth -C . doctor
 projio mcp -C .
 ```
 
+For MkDocs projects with `site.chatbot.enabled: true`, `projio site serve` also starts a local `indexio` chat backend and injects the widget into the served site.
+
 ## Global options
 
 Most subcommands accept `-C` / `--root` to specify the project root directory (default: `.`).

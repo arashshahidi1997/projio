@@ -52,6 +52,9 @@ projio docs mkdocs-init
 projio auth doctor
 ```
 
+For MkDocs projects, `projio` can also mount the `indexio` chatbot.
+Set `site.chatbot.enabled: true` in `.projio/config.yml`; `projio site serve` will auto-start a local `indexio` backend and inject the widget into the served site.
+
 ## Helper config
 
 Project-local defaults live in `.projio/config.yml` under `helpers:`.

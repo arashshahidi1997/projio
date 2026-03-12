@@ -75,3 +75,11 @@ This starts a FastMCP stdio server exposing all enabled tools for the current pr
 projio site build -C .
 projio site serve -C .
 ```
+
+To enable the `indexio` chatbot in a MkDocs site preview, add this to `.projio/config.yml`:
+
+```yaml
+site:
+  chatbot:
+    enabled: true
+```

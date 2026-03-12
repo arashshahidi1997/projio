@@ -171,6 +171,26 @@ projio site build -C .
 projio site serve -C .
 ```
 
+If the project uses `indexio` chat and MkDocs, enable this in `.projio/config.yml`:
+
+```yaml
+site:
+  chatbot:
+    enabled: true
+```
+
+For `projio site serve`, this is enough for a local preview: `projio` will auto-start the `indexio` chat backend and inject the widget into the served site.
+
+For `projio site build`, also set:
+
+```yaml
+site:
+  chatbot:
+    backend_url: "https://your-chat-host.example"
+```
+
+so the built static site knows where the deployed chatbot server lives.
+
 ## 6. Recommended mental model
 
 Use this split consistently:
