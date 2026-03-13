@@ -2,19 +2,19 @@
 	path = packages/biblio
 	url = /storage/share/git/ria-store/alias/biblio
 	datalad-id = 790bdc7b-349b-4787-91ae-4753b0a31348
-	datalad-url = "ria+file:///storage/share/git/ria-store#~biblio"
+	datalad-url = https://github.com/arashshahidi1997/biblio.git
 [submodule "packages/notio"]
 	path = packages/notio
 	url = /storage/share/git/ria-store/alias/notio
 	datalad-id = 6bb9c824-e98a-496c-a4fe-2f7285bf2bd0
-	datalad-url = "ria+file:///storage/share/git/ria-store#~notio"
+	datalad-url = https://github.com/arashshahidi1997/notio.git
 [submodule "packages/indexio"]
 	path = packages/indexio
 	url = /storage/share/git/ria-store/alias/indexio
 	datalad-id = a2e8758a-46b6-401f-9757-85f523d7c813
-	datalad-url = "ria+file:///storage/share/git/ria-store#~indexio"
+	datalad-url = https://github.com/arashshahidi1997/indexio.git
 [submodule "packages/codio"]
 	path = packages/codio
 	url = /storage/share/git/ria-store/alias/codio
 	datalad-id = b8c89e9e-022a-431c-9522-193cd5a622eb
-	datalad-url = "ria+file:///storage/share/git/ria-store#~codio"
+	datalad-url = https://github.com/arashshahidi1997/codio.git
