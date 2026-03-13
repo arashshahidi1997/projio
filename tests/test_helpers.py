@@ -19,6 +19,7 @@ from projio.helpers.siblings import (
     plan_sibling_gitlab,
     plan_sibling_ria,
 )
+from projio.url import print_urls
 
 
 def _write_yaml(path: Path, payload: dict) -> None:
@@ -253,3 +254,28 @@ def test_mkdocs_init_scaffolds_files(tmp_path: Path) -> None:
     assert (tmp_path / "mkdocs.yml").exists()
     assert (tmp_path / "docs" / "index.md").exists()
     assert render_command(["datalad", "create-sibling-ria", "-s", "origin"]) == "datalad create-sibling-ria -s origin"
+
+
+def test_print_urls_normalizes_remote_urls_and_pages(tmp_path: Path, monkeypatch, capsys) -> None:
+    monkeypatch.setattr("projio.url.git_remote_names", lambda cwd: ["origin", "gitlab"])
+
+    def fake_run(cmd, cwd=None, capture_output=False, text=False, check=False, env=None):
+        class Result:
+            returncode = 0
+            stdout = ""
+
+        if cmd == ["git", "remote", "get-url", "origin"]:
+            Result.stdout = "git@github.com:octo/demo.git\n"
+        elif cmd == ["git", "remote", "get-url", "gitlab"]:
+            Result.stdout = "https://gitlab.com/lab/demo.git\n"
+        else:
+            Result.returncode = 1
+        return Result()
+
+    monkeypatch.setattr("projio.url.subprocess.run", fake_run)
+    print_urls(tmp_path)
+    out = capsys.readouterr().out
+    assert "origin: https://github.com/octo/demo" in out
+    assert "origin pages: https://octo.github.io/demo/" in out
+    assert "gitlab: https://gitlab.com/lab/demo" in out
+    assert "gitlab pages: https://lab.gitlab.io/demo/" in out

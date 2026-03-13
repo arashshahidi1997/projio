@@ -11,6 +11,12 @@ theme:
     - navigation.indexes
     - content.code.copy
 
+extra:
+  social:
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/projio/
+      name: PyPI
+
 markdown_extensions:
   - admonition
   - attr_list
@@ -31,6 +37,7 @@ nav:
       - Build The Documentation Site: how-to/site.md
   - Explanation:
       - explanation/index.md
+      - Ecosystem: explanation/ecosystem.md
       - Ecosystem Architecture: explanation/architecture.md
       - Search Before Creation: explanation/search-before-creation.md
   - Reference:

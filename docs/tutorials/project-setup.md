@@ -48,9 +48,12 @@ projio init . --kind study
 This creates:
 
 - `.projio/config.yml`
+- `.projio/projio.mk`
 - `Makefile`
-- `mkdocs.yml`
+- `.gitignore` with a managed `projio` section
 - `docs/index.md`
+
+If the repository does not already look like a Sphinx or Vite/React frontend project, `projio` also writes `mkdocs.yml` and sets `site.framework: mkdocs`.
 
 `tool` adds a light Python package scaffold:
 
@@ -61,6 +64,22 @@ This creates:
 `study` stays close to the generic scaffold and only adds a minimal study-oriented starter doc.
 
 The scaffolded `helpers:` section should stay project-local. Use it for naming conventions and templates, not secrets.
+
+If you use VS Code and expect large static outputs, initialize with:
+
+```bash
+projio init . --vscode
+```
+
+This writes `.vscode/settings.json` excludes for `site/`.
+
+If the repo will publish through GitHub Pages, also scaffold the workflow:
+
+```bash
+projio init . --github-pages
+```
+
+This writes `.github/workflows/docs.yml` with framework-specific build and artifact settings.
 
 If you want cross-project defaults for your account, scaffold a user config once:
 
@@ -170,6 +189,8 @@ Then build or serve the site:
 projio site build -C .
 projio site serve -C .
 ```
+
+`projio site` explicitly handles three site cases: MkDocs, Sphinx, and Vite-based React frontends.
 
 If the project uses `indexio` chat and MkDocs, enable this in `.projio/config.yml`:
 

@@ -37,8 +37,19 @@ codio:
   notes_dir: docs/reference/codelib/libraries/
 
 site:
+  framework: mkdocs
+  output_dir: site
   base_port: 8000
   host: "127.0.0.1"
+  mkdocs:
+    config_file: mkdocs.yml
+    site_dir: site
+  sphinx:
+    source_dir: docs
+    build_dir: docs/_build/html
+  vite:
+    app_dir: .
+    build_dir: site
   chatbot:
     enabled: false
     backend_url: null
@@ -81,7 +92,14 @@ Credential names (e.g., `github`, `gitlab-lrz`) can safely live in `.projio/conf
 
 `site.chatbot` controls whether `projio site build` / `projio site serve` inject the `indexio` chatbot widget into supported site frameworks.
 
+- `site.framework` lets `projio` treat `mkdocs`, `sphinx`, and `vite` as explicit first-class site modes
+- `site.output_dir` is the shared output location concept; by default this is `site/` for MkDocs and Vite
+- `site.mkdocs`, `site.sphinx`, and `site.vite` hold framework-specific paths
 - `enabled: true` turns the integration on
 - for `projio site serve`, MkDocs sites can auto-start an `indexio` backend locally if `backend_url` is unset
 - for `projio site build`, set `backend_url` to the deployed chatbot server URL if you want the static site to include the widget
-- MkDocs is supported in this first pass; Sphinx and Vite are not yet wired
+- MkDocs chatbot injection is supported today; Sphinx and Vite do not currently get chatbot injection
+
+## Managed ignores
+
+`projio init` also maintains a dedicated `projio` block in `.gitignore` for generated site artifacts and runtime files, including `site/`, `.projio/site/`, `.projio.mkdocs.yml`, and framework-specific build directories where relevant.

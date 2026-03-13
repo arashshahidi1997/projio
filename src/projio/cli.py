@@ -21,9 +21,22 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Project scaffold kind (default: generic).",
     )
     p_init.add_argument("--force", action="store_true", help="Overwrite existing files.")
+    p_init.add_argument(
+        "--vscode",
+        action="store_true",
+        help="Create .vscode/settings.json with projio site excludes.",
+    )
+    p_init.add_argument(
+        "--github-pages",
+        action="store_true",
+        help="Create a GitHub Pages workflow at .github/workflows/docs.yml.",
+    )
 
     p_status = sub.add_parser("status", help="Show project, index, and git status.")
     p_status.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+
+    p_url = sub.add_parser("url", help="Print remote repository and Pages URLs.")
+    p_url.add_argument("-C", "--root", default=".", help="Project root (default: .).")
 
     p_config = sub.add_parser("config", help="Manage projio config files.")
     p_config.add_argument("-C", "--root", default=".", help="Project root (default: .).")
@@ -32,7 +45,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p_config_init_user.add_argument("--force", action="store_true", help="Overwrite existing user config.")
     config_sub.add_parser("show", help="Print merged user + project config.")
 
-    p_site = sub.add_parser("site", help="Doc-site operations (MkDocs, Sphinx, Vite).")
+    p_site = sub.add_parser("site", help="Doc-site operations (MkDocs, Sphinx, React frontend via Vite).")
     site_sub = p_site.add_subparsers(dest="site_command", required=True)
 
     _fw_choices = ("mkdocs", "sphinx", "vite")
@@ -114,12 +127,23 @@ def main(argv: Iterable[str] | None = None) -> None:
 
     if args.command == "init":
         from .init import scaffold
-        scaffold(args.root, kind=args.kind, force=args.force)
+        scaffold(
+            args.root,
+            kind=args.kind,
+            force=args.force,
+            vscode=args.vscode,
+            github_pages=args.github_pages,
+        )
         return
 
     if args.command == "status":
         from .status import print_report
         print_report(args.root)
+        return
+
+    if args.command == "url":
+        from .url import print_urls
+        print_urls(args.root)
         return
 
     if args.command == "config":

@@ -1,13 +1,13 @@
 """Doc-site server management: detection, port iteration, process lifecycle."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import signal
 import socket
 import subprocess
 import sys
-import importlib.util
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -23,7 +23,7 @@ def detect_framework(root: Path) -> str:
     """Detect which doc-site framework a project uses.
 
     Returns ``"mkdocs"``, ``"sphinx"``, ``"vite"``, or ``"unknown"``.
-    First match wins (priority order: mkdocs → sphinx → vite).
+    First match wins (priority order: mkdocs → sphinx → vite/React frontend).
     """
     # MkDocs
     if (root / "mkdocs.yml").exists() or (root / "mkdocs.yaml").exists():
@@ -41,7 +41,7 @@ def detect_framework(root: Path) -> str:
         except OSError:
             pass
 
-    # Vite / React
+    # Vite / React frontend
     for pkg_dir in (root, root / "docs"):
         pkg_json = pkg_dir / "package.json"
         if pkg_json.exists():
@@ -138,8 +138,22 @@ def _load_site_config(root: Path) -> dict[str, Any]:
         from .config import load_effective_config, get_nested
         cfg = load_effective_config(root)
         return {
+            "framework": get_nested(cfg, "site", "framework", default=None),
+            "output_dir": get_nested(cfg, "site", "output_dir", default="site"),
             "base_port": get_nested(cfg, "site", "base_port", default=8000),
             "host": get_nested(cfg, "site", "host", default="127.0.0.1"),
+            "mkdocs": {
+                "config_file": get_nested(cfg, "site", "mkdocs", "config_file", default="mkdocs.yml"),
+                "site_dir": get_nested(cfg, "site", "mkdocs", "site_dir", default="site"),
+            },
+            "sphinx": {
+                "source_dir": get_nested(cfg, "site", "sphinx", "source_dir", default="docs"),
+                "build_dir": get_nested(cfg, "site", "sphinx", "build_dir", default="docs/_build/html"),
+            },
+            "vite": {
+                "app_dir": get_nested(cfg, "site", "vite", "app_dir", default="."),
+                "build_dir": get_nested(cfg, "site", "vite", "build_dir", default=get_nested(cfg, "site", "output_dir", default="site")),
+            },
             "chatbot": {
                 "enabled": get_nested(cfg, "site", "chatbot", "enabled", default=False),
                 "backend_url": get_nested(cfg, "site", "chatbot", "backend_url", default=None),
@@ -154,8 +168,22 @@ def _load_site_config(root: Path) -> dict[str, Any]:
         }
     except FileNotFoundError:
         return {
+            "framework": None,
+            "output_dir": "site",
             "base_port": 8000,
             "host": "127.0.0.1",
+            "mkdocs": {
+                "config_file": "mkdocs.yml",
+                "site_dir": "site",
+            },
+            "sphinx": {
+                "source_dir": "docs",
+                "build_dir": "docs/_build/html",
+            },
+            "vite": {
+                "app_dir": ".",
+                "build_dir": "site",
+            },
             "chatbot": {
                 "enabled": False,
                 "backend_url": None,
@@ -174,6 +202,34 @@ def _mkdocs_config_path(root: Path) -> Path:
     if (root / "mkdocs.yml").exists():
         return root / "mkdocs.yml"
     return root / "mkdocs.yaml"
+
+
+def _resolve_framework(root: Path, *, framework: str | None, site_cfg: dict[str, Any]) -> str:
+    if framework is not None:
+        return framework
+    configured = site_cfg.get("framework")
+    if isinstance(configured, str) and configured in {"mkdocs", "sphinx", "vite"}:
+        return configured
+    return detect_framework(root)
+
+
+def _vite_app_dir(root: Path, site_cfg: dict[str, Any]) -> Path:
+    configured = Path(str(site_cfg.get("vite", {}).get("app_dir", ".")))
+    candidate = (root / configured).resolve()
+    if (candidate / "package.json").exists():
+        return candidate
+    if (root / "package.json").exists():
+        return root
+    docs_dir = root / "docs"
+    if (docs_dir / "package.json").exists():
+        return docs_dir
+    return candidate
+
+
+def _vite_build_dir(root: Path, site_cfg: dict[str, Any], app_dir: Path) -> str:
+    configured = str(site_cfg.get("vite", {}).get("build_dir") or site_cfg.get("output_dir") or "site")
+    target = (root / configured).resolve()
+    return os.path.relpath(target, app_dir)
 
 
 def _projio_site_dir(root: Path) -> Path:
@@ -303,31 +359,36 @@ def _prepare_site_chatbot(
 # Framework-specific commands
 # ---------------------------------------------------------------------------
 
-def _serve_cmd(framework: str, host: str, port: int, root: Path, *, config_path: Path | None = None) -> list[str]:
+def _serve_cmd(framework: str, host: str, port: int, root: Path, site_cfg: dict[str, Any], *, config_path: Path | None = None) -> tuple[list[str], Path]:
     """Build the subprocess command list for each framework."""
     if framework == "mkdocs":
         cmd = [sys.executable, "-m", "mkdocs", "serve", "--dev-addr", f"{host}:{port}"]
         if config_path is not None:
             cmd.extend(["-f", str(config_path)])
-        return cmd
+        return cmd, root
     if framework == "sphinx":
+        sphinx_cfg = site_cfg["sphinx"]
+        source_dir = str(sphinx_cfg["source_dir"])
+        build_dir = str(sphinx_cfg["build_dir"])
         return [
             sys.executable, "-m", "sphinx_autobuild",
-            "docs", "docs/_build/html",
+            source_dir, build_dir,
             "--host", host, "--port", str(port),
-        ]
+        ], root
     if framework == "vite":
-        return ["npx", "vite", "--host", host, "--port", str(port)]
+        app_dir = _vite_app_dir(root, site_cfg)
+        return ["npx", "vite", "--host", host, "--port", str(port)], app_dir
     raise ValueError(f"Cannot serve unknown framework: {framework}")
 
 
 def _build_cmd(
     framework: str,
     root: Path,
+    site_cfg: dict[str, Any],
     *,
     strict: bool = False,
     config_path: Path | None = None,
-) -> list[str]:
+) -> tuple[list[str], Path]:
     """Build the subprocess command list for building docs."""
     if framework == "mkdocs":
         cmd = [sys.executable, "-m", "mkdocs", "build"]
@@ -335,11 +396,21 @@ def _build_cmd(
             cmd.extend(["-f", str(config_path)])
         if strict:
             cmd.append("--strict")
-        return cmd
+        return cmd, root
     if framework == "sphinx":
-        return [sys.executable, "-m", "sphinx", "-b", "html", "docs", "docs/_build/html"]
+        sphinx_cfg = site_cfg["sphinx"]
+        return [
+            sys.executable,
+            "-m",
+            "sphinx",
+            "-b",
+            "html",
+            str(sphinx_cfg["source_dir"]),
+            str(sphinx_cfg["build_dir"]),
+        ], root
     if framework == "vite":
-        return ["npx", "vite", "build"]
+        app_dir = _vite_app_dir(root, site_cfg)
+        return ["npx", "vite", "build", "--outDir", _vite_build_dir(root, site_cfg, app_dir)], app_dir
     raise ValueError(f"Cannot build unknown framework: {framework}")
 
 
@@ -365,23 +436,22 @@ def serve(
 
     if host is None:
         host = site_cfg["host"]
-    if framework is None:
-        framework = detect_framework(root)
+    framework = _resolve_framework(root, framework=framework, site_cfg=site_cfg)
     if framework == "unknown":
         raise RuntimeError(
             "Could not detect doc-site framework. "
-            "Expected mkdocs.yml, docs/conf.py, or package.json with vite."
+            "Expected mkdocs.yml, docs/conf.py, or package.json for a Vite/React frontend."
         )
     if port is None:
         port = find_free_port(base=site_cfg["base_port"], host=host)
     integration = _prepare_site_chatbot(root, framework=framework, site_cfg=site_cfg, for_serve=True)
-    cmd = _serve_cmd(framework, host, port, root, config_path=integration["config_path"])
+    cmd, cmd_cwd = _serve_cmd(framework, host, port, root, site_cfg, config_path=integration["config_path"])
 
     if not background:
         if integration["backend_url"]:
             print(f"[projio-site] Chatbot backend: {integration['backend_url']}")
         try:
-            result = subprocess.run(cmd, cwd=root)
+            result = subprocess.run(cmd, cwd=cmd_cwd)
             if result.returncode != 0:
                 sys.exit(result.returncode)
             return {"pid": 0, "port": port, "framework": framework, "url": f"http://{host}:{port}"}
@@ -393,7 +463,7 @@ def serve(
                 except OSError:
                     pass
 
-    proc = subprocess.Popen(cmd, cwd=root)
+    proc = subprocess.Popen(cmd, cwd=cmd_cwd)
     record: dict[str, Any] = {
         "pid": proc.pid,
         "service": "site",
@@ -483,14 +553,13 @@ def stop_all(root: str | Path) -> dict[str, Any]:
 def build(root: str | Path, *, strict: bool = False, framework: str | None = None) -> None:
     """Build docs. Auto-detects framework if not specified."""
     root = Path(root).expanduser().resolve()
-    if framework is None:
-        framework = detect_framework(root)
+    site_cfg = _load_site_config(root)
+    framework = _resolve_framework(root, framework=framework, site_cfg=site_cfg)
     if framework == "unknown":
         raise RuntimeError("Could not detect doc-site framework.")
-    site_cfg = _load_site_config(root)
     integration = _prepare_site_chatbot(root, framework=framework, site_cfg=site_cfg, for_serve=False)
-    cmd = _build_cmd(framework, root, strict=strict, config_path=integration["config_path"])
-    result = subprocess.run(cmd, cwd=root)
+    cmd, cmd_cwd = _build_cmd(framework, root, site_cfg, strict=strict, config_path=integration["config_path"])
+    result = subprocess.run(cmd, cwd=cmd_cwd)
     if result.returncode != 0:
         sys.exit(result.returncode)
 
@@ -498,8 +567,8 @@ def build(root: str | Path, *, strict: bool = False, framework: str | None = Non
 def publish(root: str | Path, *, framework: str | None = None) -> None:
     """Publish docs. Currently only mkdocs gh-deploy is supported."""
     root = Path(root).expanduser().resolve()
-    if framework is None:
-        framework = detect_framework(root)
+    site_cfg = _load_site_config(root)
+    framework = _resolve_framework(root, framework=framework, site_cfg=site_cfg)
     if framework != "mkdocs":
         raise RuntimeError(
             f"Publish is currently only supported for mkdocs (detected: {framework}). "

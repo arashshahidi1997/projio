@@ -134,7 +134,10 @@ class TestServeBackground:
 
         with mock.patch("projio.site.subprocess.Popen", return_value=mock_proc) as popen_mock, \
              mock.patch("projio.site.find_free_port", return_value=8001), \
-             mock.patch("projio.site._load_site_config", return_value={"base_port": 8000, "host": "127.0.0.1"}):
+             mock.patch(
+                 "projio.site._load_site_config",
+                 return_value={"base_port": 8000, "host": "127.0.0.1", "framework": None, "chatbot": {}},
+             ):
             result = serve(tmp_path, background=True)
 
         assert result["pid"] == 12345
@@ -144,7 +147,10 @@ class TestServeBackground:
         popen_mock.assert_called_once()
 
     def test_serve_unknown_framework_raises(self, tmp_path: Path) -> None:
-        with mock.patch("projio.site._load_site_config", return_value={"base_port": 8000, "host": "127.0.0.1"}):
+        with mock.patch(
+            "projio.site._load_site_config",
+            return_value={"base_port": 8000, "host": "127.0.0.1", "framework": None, "chatbot": {}},
+        ):
             with pytest.raises(RuntimeError, match="Could not detect"):
                 serve(tmp_path, background=True)
 
@@ -166,6 +172,7 @@ class TestServeBackground:
         ), mock.patch(
             "projio.site._load_site_config",
             return_value={
+                "framework": None,
                 "base_port": 8000,
                 "host": "127.0.0.1",
                 "chatbot": {
@@ -188,6 +195,27 @@ class TestServeBackground:
         assert result["chatbot_url"] == "http://127.0.0.1:9101"
         assert popen_mock.call_count == 2
 
+    def test_serve_uses_configured_framework(self, tmp_path: Path) -> None:
+        (tmp_path / ".projio").mkdir()
+        mock_proc = mock.MagicMock()
+        mock_proc.pid = 12345
+        with mock.patch("projio.site.subprocess.Popen", return_value=mock_proc) as popen_mock, mock.patch(
+            "projio.site.find_free_port",
+            return_value=4173,
+        ), mock.patch(
+            "projio.site._load_site_config",
+            return_value={
+                "framework": "vite",
+                "base_port": 4173,
+                "host": "127.0.0.1",
+                "vite": {"app_dir": ".", "build_dir": "site"},
+                "chatbot": {},
+            },
+        ):
+            result = serve(tmp_path, background=True)
+        assert result["framework"] == "vite"
+        popen_mock.assert_called_once()
+
 
 def test_mkdocs_config_with_chatbot_adds_hook(tmp_path: Path) -> None:
     (tmp_path / "mkdocs.yml").write_text("site_name: test\nnav:\n  - Home: index.md\n", encoding="utf-8")
@@ -202,6 +230,29 @@ def test_mkdocs_config_with_chatbot_adds_hook(tmp_path: Path) -> None:
     assert ".projio/site/indexio_chat_hook.py" in payload["hooks"]
     hook_path = tmp_path / ".projio" / "site" / "indexio_chat_hook.py"
     assert hook_path.exists()
+
+
+def test_build_vite_uses_projio_site_output_dir(tmp_path: Path) -> None:
+    (tmp_path / "package.json").write_text(json.dumps({"devDependencies": {"vite": "^5.0"}}), encoding="utf-8")
+    run_result = mock.MagicMock()
+    run_result.returncode = 0
+    with mock.patch("projio.site.subprocess.run", return_value=run_result) as run_mock, mock.patch(
+        "projio.site._load_site_config",
+        return_value={
+            "framework": "vite",
+            "output_dir": "site",
+            "base_port": 8000,
+            "host": "127.0.0.1",
+            "vite": {"app_dir": ".", "build_dir": "site"},
+            "chatbot": {},
+        },
+    ):
+        from projio.site import build
+
+        build(tmp_path)
+    cmd = run_mock.call_args.kwargs["args"] if "args" in run_mock.call_args.kwargs else run_mock.call_args.args[0]
+    assert cmd[:3] == ["npx", "vite", "build"]
+    assert "--outDir" in cmd
 
 
 # ---------------------------------------------------------------------------

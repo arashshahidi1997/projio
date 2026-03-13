@@ -6,8 +6,9 @@
 |-------|---------|
 | `projio init` | Scaffold `.projio/` workspace files |
 | `projio status` | Show project, index, and git status |
+| `projio url` | Print clickable remote and Pages URLs |
 | `projio config` | Manage projio config files |
-| `projio site` | MkDocs build, serve, and publish |
+| `projio site` | MkDocs, Sphinx, and Vite/React frontend site workflows |
 | `projio sibling` | Manage DataLad siblings |
 | `projio docs` | Project docs helpers |
 | `projio auth` | Authentication diagnostics |
@@ -20,6 +21,8 @@
 projio init .
 projio init . --kind tool
 projio init . --kind study
+projio init . --vscode
+projio init . --github-pages
 projio init . --force
 
 # config
@@ -30,10 +33,15 @@ projio config -C . show
 # status
 projio status -C .
 
+# urls
+projio url -C .
+
 # site
 projio site build -C .
 projio site build -C . --strict
 projio site serve -C .
+projio site build -C . --framework sphinx
+projio site serve -C . --framework vite
 projio site publish -C .
 
 # docs
@@ -54,6 +62,10 @@ projio auth -C . doctor
 # mcp
 projio mcp -C .
 ```
+
+`projio init --vscode` writes `.vscode/settings.json` with excludes for `site/` so search and watchers stay usable after a build.
+
+`projio init --github-pages` writes `.github/workflows/docs.yml` so GitHub Pages deployment works with the detected MkDocs, Sphinx, or Vite site layout.
 
 For MkDocs projects with `site.chatbot.enabled: true`, `projio site serve` also starts a local `indexio` chat backend and injects the widget into the served site.
 

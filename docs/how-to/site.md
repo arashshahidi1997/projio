@@ -1,5 +1,11 @@
 # Build the Documentation Site
 
+`projio site` handles three explicit site cases:
+
+- `mkdocs`
+- `sphinx`
+- `vite` for a React frontend
+
 ## Build
 
 ```bash
@@ -10,6 +16,14 @@ Build with strict mode (fail on warnings):
 
 ```bash
 projio site build -C . --strict
+```
+
+Override framework detection when needed:
+
+```bash
+projio site build -C . --framework mkdocs
+projio site build -C . --framework sphinx
+projio site build -C . --framework vite
 ```
 
 ## Serve locally
@@ -27,6 +41,14 @@ site:
 ```
 
 For static site builds, also set `site.chatbot.backend_url` to the deployed chatbot server URL if you want the built site to include the widget.
+
+For Vite projects, `projio` builds into `site/` by default so the generated static output lines up with the managed `.gitignore` and VS Code excludes.
+
+If you also want GitHub Actions deployment, scaffold the Pages workflow once:
+
+```bash
+projio init . --github-pages
+```
 
 ## Publish to GitHub Pages
 

@@ -5,11 +5,13 @@ from projio.cli import _build_parser
 
 def test_cli_parses_init_positional_root() -> None:
     parser = _build_parser()
-    args = parser.parse_args(["init", ".", "--force"])
+    args = parser.parse_args(["init", ".", "--force", "--vscode", "--github-pages"])
     assert args.command == "init"
     assert args.root == "."
     assert args.kind == "generic"
     assert args.force is True
+    assert args.vscode is True
+    assert args.github_pages is True
 
 
 def test_cli_parses_init_kind_variants() -> None:
