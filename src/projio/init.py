@@ -474,10 +474,9 @@ def _github_pages_setup_steps(site_framework: str, *, vite_app_dir: str) -> str:
       - name: Install docs dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install projio mkdocs mkdocs-material
-          if [ -f pyproject.toml ]; then python -m pip install -e .; fi
+          python -m pip install mkdocs mkdocs-material
       - name: Build docs
-        run: projio site build -C . --framework mkdocs --strict
+        run: mkdocs build --strict
 """
     if site_framework == "sphinx":
         return """\
@@ -516,7 +515,7 @@ def _github_pages_workflow(root: Path, *, site_framework: str) -> str:
     vite_app_dir = _detect_vite_app_dir(root)
     artifact_path = "docs/_build/html" if site_framework == "sphinx" else "site"
     return GITHUB_PAGES_WORKFLOW_TEMPLATE.format(
-        default_branch='"master"',
+        default_branch="master",
         setup_steps=_github_pages_setup_steps(site_framework, vite_app_dir=vite_app_dir),
         artifact_path=artifact_path,
     )

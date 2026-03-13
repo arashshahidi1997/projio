@@ -89,7 +89,12 @@ def test_init_github_pages_flag_scaffolds_workflow(tmp_path: Path) -> None:
     scaffold(tmp_path, github_pages=True)
     workflow_text = (tmp_path / ".github" / "workflows" / "docs.yml").read_text(encoding="utf-8")
     assert "actions/deploy-pages@v4" in workflow_text
-    assert "projio site build -C . --framework mkdocs --strict" in workflow_text
+    assert "mkdocs build --strict" in workflow_text
+    assert "python -m pip install mkdocs mkdocs-material" in workflow_text
+    assert "python -m pip install projio mkdocs mkdocs-material" not in workflow_text
+    assert 'python -m pip install -e ".[docs]"' not in workflow_text
+    assert "refs/heads/master" in workflow_text
+    assert 'refs/heads/"master"' not in workflow_text
     assert "path: site" in workflow_text
 
 
