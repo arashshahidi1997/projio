@@ -1,5 +1,5 @@
 # projio workspace config
-project_name: projio
+project_name: .projio
 project_kind: generic
 description: ""
 
@@ -22,15 +22,26 @@ codio:
   notes_dir: docs/reference/codelib/libraries/
 
 site:
+  framework: mkdocs
+  output_dir: site
   base_port: 8000
   host: "127.0.0.1"
+  mkdocs:
+    config_file: mkdocs.yml
+    site_dir: site
+  sphinx:
+    source_dir: docs
+    build_dir: docs/_build/html
+  vite:
+    app_dir: .
+    build_dir: site
   chatbot:
-    enabled: true
+    enabled: false
     backend_url: null
     host: "127.0.0.1"
     port: 9100
     title: "Docs Assistant"
-    storage_key: "projio_chat_v1"
+    storage_key: ".projio_chat_v1"
 
 helpers:
   sibling:

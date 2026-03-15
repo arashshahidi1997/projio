@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "built_at": "2026-03-13T01:26:42.879987+00:00",
+  "config_path": "/storage2/arash/projects/projio/.indexio/config.yaml",
+  "root": "/storage2/arash/projects/projio",
+  "store": "local",
+  "partial": false,
+  "sources": {
+    "docs": {
+      "id": "docs",
+      "corpus": "docs",
+      "selector": "docs/**/*.md",
+      "files": 26,
+      "chars": 30689,
+      "chunks": 53,
+      "matched_paths": [
+        "docs/index.md",
+        "docs/log/index.md",
+        "docs/log/daily/index.md",
+        "docs/log/weekly/index.md",
+        "docs/log/commit/index.md",
+        "docs/log/idea/index.md",
+        "docs/log/idea/idea-arash-20260312-163007-395316.md",
+        "docs/log/issue/index.md",
+        "docs/log/meeting/index.md",
+        "docs/log/personal/index.md",
+        "docs/tutorials/index.md",
+        "docs/tutorials/quickstart.md",
+        "docs/tutorials/project-setup.md",
+        "docs/how-to/index.md",
+        "docs/how-to/init.md",
+        "docs/how-to/mcp.md",
+        "docs/how-to/siblings.md",
+        "docs/how-to/site.md",
+        "docs/explanation/index.md",
+        "docs/explanation/architecture.md",
+        "docs/explanation/search-before-creation.md",
+        "docs/explanation/ecosystem.md",
+        "docs/reference/index.md",
+        "docs/reference/cli.md",
+        "docs/reference/configuration.md",
+        "docs/reference/mcp-tools.md"
+      ],
+      "file_state": {
+        "docs/index.md": {
+          "mtime_ns": 1773361322703950516,
+          "size": 1438
+        },
+        "docs/log/index.md": {
+          "mtime_ns": 1773329407498546803,
+          "size": 223
+        },
+        "docs/log/daily/index.md": {
+          "mtime_ns": 1773329380707397247,
+          "size": 22
+        },
+        "docs/log/weekly/index.md": {
+          "mtime_ns": 1773329380707397247,
+          "size": 23
+        },
+        "docs/log/commit/index.md": {
+          "mtime_ns": 1773329380707397247,
+          "size": 23
+        },
+        "docs/log/idea/index.md": {
+          "mtime_ns": 1773329407470547692,
+          "size": 108
+        },
+        "docs/log/idea/idea-arash-20260312-163007-395316.md": {
+          "mtime_ns": 1773329520566956164,
+          "size": 139
+        },
+        "docs/log/issue/index.md": {
+          "mtime_ns": 1773329380711397120,
+          "size": 9
+        },
+        "docs/log/meeting/index.md": {
+          "mtime_ns": 1773329380711397120,
+          "size": 24
+        },
+        "docs/log/personal/index.md": {
+          "mtime_ns": 1773329380711397120,
+          "size": 25
+        },
+        "docs/tutorials/index.md": {
+          "mtime_ns": 1773332160391046493,
+          "size": 270
+        },
+        "docs/tutorials/quickstart.md": {
+          "mtime_ns": 1773362130854312729,
+          "size": 1917
+        },
+        "docs/tutorials/project-setup.md": {
+          "mtime_ns": 1773361874090458747,
+          "size": 6318
+        },
+        "docs/how-to/index.md": {
+          "mtime_ns": 1773332258575925290,
+          "size": 418
+        },
+        "docs/how-to/init.md": {
+          "mtime_ns": 1773361845307371869,
+          "size": 1414
+        },
+        "docs/how-to/mcp.md": {
+          "mtime_ns": 1773332234244698748,
+          "size": 1207
+        },
+        "docs/how-to/siblings.md": {
+          "mtime_ns": 1773332242860424863,
+          "size": 1354
+        },
+        "docs/how-to/site.md": {
+          "mtime_ns": 1773361859810911756,
+          "size": 1384
+        },
+        "docs/explanation/index.md": {
+          "mtime_ns": 1773332314886135299,
+          "size": 279
+        },
+        "docs/explanation/architecture.md": {
+          "mtime_ns": 1773332330045653409,
+          "size": 2529
+        },
+        "docs/explanation/search-before-creation.md": {
+          "mtime_ns": 1773332337841405599,
+          "size": 1262
+        },
+        "docs/explanation/ecosystem.md": {
+          "mtime_ns": 1773364625663098184,
+          "size": 1747
+        },
+        "docs/reference/index.md": {
+          "mtime_ns": 1773332313078192772,
+          "size": 270
+        },
+        "docs/reference/cli.md": {
+          "mtime_ns": 1773362125682476920,
+          "size": 2933
+        },
+        "docs/reference/configuration.md": {
+          "mtime_ns": 1773361357714839894,
+          "size": 3224
+        },
+        "docs/reference/mcp-tools.md": {
+          "mtime_ns": 1773332302394532383,
+          "size": 2177
+        }
+      }
+    }
+  }
+}
