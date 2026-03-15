@@ -5,6 +5,9 @@
 | Group | Purpose |
 |-------|---------|
 | `projio init` | Scaffold `.projio/` workspace files |
+| `projio add` | Activate a package component in the workspace |
+| `projio remove` | Deactivate a package component |
+| `projio list` | List workspace components and their status |
 | `projio status` | Show project, index, and git status |
 | `projio url` | Print clickable remote and Pages URLs |
 | `projio config` | Manage projio config files |
@@ -21,9 +24,19 @@
 projio init .
 projio init . --kind tool
 projio init . --kind study
+projio init . --profile research
+projio init . --profile full
 projio init . --vscode
 projio init . --github-pages
 projio init . --force
+
+# components
+projio add biblio
+projio add notio
+projio add codio
+projio add indexio
+projio remove biblio
+projio list
 
 # config
 projio config init-user
@@ -106,3 +119,84 @@ Most subcommands accept `-C` / `--root` to specify the project root directory (d
 | `--storage-url` | RIA storage URL |
 | `--shared` | RIA shared mode |
 | `--yes` | Execute instead of preview |
+
+## Component management
+
+### `projio init`
+
+Creates the base workspace. Does **not** activate any package components by default.
+
+**Filesystem effects:**
+
+```
+.projio/
+├── projio.yml
+├── packages.yml       # empty registry
+├── config.yml
+└── projio.mk
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--kind` | Workspace kind: `generic` (default), `tool`, `study` |
+| `--profile` | Activate a preset bundle of components (see below) |
+| `--vscode` | Write `.vscode/settings.json` with excludes |
+| `--github-pages` | Write GitHub Pages deploy workflow |
+| `--force` | Overwrite existing config files |
+
+**Profiles:**
+
+| Profile | Components |
+|---------|------------|
+| `research` | notio, biblio, indexio |
+| `full` | notio, biblio, codio, indexio |
+
+`projio init --profile research` is equivalent to `projio init` followed by `projio add notio`, `projio add biblio`, `projio add indexio`.
+
+### `projio add <package>`
+
+Activates a package component in the current workspace.
+
+**Preconditions:**
+
+- `.projio/` workspace must exist (run `projio init` first)
+- The package must be importable (installed in the current environment)
+
+**Filesystem effects:**
+
+1. Creates `.projio/<package>/` directory
+2. Updates `packages.yml` to set `enabled: true` and `path: .projio/<package>`
+3. If the package provides an init hook, runs it to populate the component directory
+
+**Migration behavior:**
+
+If a standalone directory exists (e.g., `.codio/` when adding codio), the command offers to migrate its contents to `.projio/codio/`.
+
+### `projio remove <package>`
+
+Deactivates a package component.
+
+**Filesystem effects:**
+
+1. Updates `packages.yml` to set `enabled: false` and remove `path`
+2. Does **not** delete the component directory — data is preserved
+
+To fully remove component data, delete the directory manually after `projio remove`.
+
+### `projio list`
+
+Shows the status of all known components.
+
+**Output example:**
+
+```
+Package    Enabled   Installed   Path
+biblio     yes       yes         .projio/biblio
+notio      yes       yes         .projio/notio
+codio      no        yes         -
+indexio    yes       no          .projio/indexio
+```
+
+The `Installed` column reflects whether the package is importable in the current Python environment. A component can be enabled but not installed (projio will skip its MCP tools).

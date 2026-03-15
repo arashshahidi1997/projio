@@ -8,6 +8,7 @@ build/
 .mypy_cache/
 .projio/index/
 *.egg
+.cache/
 
 # >>> projio >>>
 .projio.mkdocs.yml
