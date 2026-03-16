@@ -23,7 +23,7 @@ def _git_status(root: Path) -> str:
 
 def _index_health(cfg: dict, root: Path) -> dict[str, Any]:
     idx_cfg = cfg.get("indexio") or {}
-    persist_dir = idx_cfg.get("persist_dir", ".projio/index")
+    persist_dir = idx_cfg.get("persist_dir", ".projio/indexio/index")
     persist_path = root / persist_dir
     return {
         "persist_dir": str(persist_dir),

@@ -189,14 +189,14 @@ def test_config_commands_dispatch(monkeypatch) -> None:
 
 
 def test_init_command_dispatches_kind(monkeypatch) -> None:
-    calls: list[tuple[str, str, bool, bool, bool]] = []
+    calls: list[tuple] = []
 
     monkeypatch.setattr(
         "projio.init.scaffold",
-        lambda root, kind="generic", force=False, vscode=False, github_pages=False: calls.append((root, kind, force, vscode, github_pages)),
+        lambda root, kind="generic", profile=None, force=False, vscode=False, github_pages=False, gitlab_pages=False: calls.append((root, kind, profile, force, vscode, github_pages, gitlab_pages)),
     )
     cli.main(["init", ".", "--kind", "tool", "--force", "--vscode", "--github-pages"])
-    assert calls == [(".", "tool", True, True, True)]
+    assert calls == [(".", "tool", None, True, True, True, False)]
 
 
 def test_existing_site_command_still_dispatches(monkeypatch) -> None:

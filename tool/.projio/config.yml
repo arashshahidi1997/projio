@@ -4,8 +4,8 @@ project_kind: generic
 description: ""
 
 indexio:
-  config: .indexio/config.yaml        # path to indexio config
-  persist_dir: .projio/index           # chroma db location
+  config: .projio/indexio/config.yaml
+  persist_dir: .projio/indexio/index
 
 biblio:
   enabled: true
@@ -14,11 +14,12 @@ biblio:
 notio:
   enabled: true
   notes_dir: notes/
+  template_dir: .projio/notio/templates
 
 codio:
   enabled: true
-  catalog_path: .codio/catalog.yml
-  profiles_path: .codio/profiles.yml
+  catalog_path: .projio/codio/catalog.yml
+  profiles_path: .projio/codio/profiles.yml
   notes_dir: docs/reference/codelib/libraries/
 
 site:

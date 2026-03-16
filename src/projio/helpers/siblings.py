@@ -93,7 +93,6 @@ def plan_sibling_gitlab(
     site_cfg = gitlab_site_config(root_path, explicit=site)
     project_slug = _project_slug(root_path, effective_cfg, cfg, project)
     sibling_name = sibling or str(cfg.get("sibling") or "gitlab")
-    credential_name = _credential_name(cfg, credential)
     site_name = site_cfg["site"].value
     layout_name = layout or site_cfg["layout"].value
     access_name = access or site_cfg["access"].value
@@ -106,8 +105,6 @@ def plan_sibling_gitlab(
     if access_name:
         cmd.extend(["--access", access_name])
     cmd.extend(["-s", sibling_name])
-    if credential_name:
-        cmd.extend(["--credential", credential_name])
     return root_path, cmd, {}
 
 

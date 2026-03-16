@@ -48,10 +48,13 @@ nav:
       - explanation/index.md
       - Ecosystem: explanation/ecosystem.md
       - Ecosystem Architecture: explanation/architecture.md
+      - Workspace Architecture: explanation/workspace-architecture.md
+      - Package Integration: explanation/package-integration.md
       - Search Before Creation: explanation/search-before-creation.md
   - Reference:
       - reference/index.md
       - CLI: reference/cli.md
+      - Workspace Layout: reference/workspace-layout.md
       - Configuration: reference/configuration.md
       - MCP Tools: reference/mcp-tools.md
   - Log:

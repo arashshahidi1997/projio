@@ -20,6 +20,12 @@ def _build_parser() -> argparse.ArgumentParser:
         default="generic",
         help="Project scaffold kind (default: generic).",
     )
+    p_init.add_argument(
+        "-c", "--profile",
+        choices=("research", "full"),
+        default=None,
+        help="Activate a preset bundle of components (research: notio+biblio+indexio, full: all).",
+    )
     p_init.add_argument("--force", action="store_true", help="Overwrite existing files.")
     p_init.add_argument(
         "--vscode",
@@ -31,6 +37,22 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Create a GitHub Pages workflow at .github/workflows/docs.yml.",
     )
+    p_init.add_argument(
+        "--gitlab-pages",
+        action="store_true",
+        help="Create a GitLab Pages CI config at .gitlab-ci.yml.",
+    )
+
+    p_add = sub.add_parser("add", help="Activate a package component in the workspace.")
+    p_add.add_argument("package", help="Package to activate (biblio, notio, codio, indexio).")
+    p_add.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+
+    p_remove = sub.add_parser("remove", help="Deactivate a package component.")
+    p_remove.add_argument("package", help="Package to deactivate.")
+    p_remove.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+
+    p_list = sub.add_parser("list", help="List workspace components and their status.")
+    p_list.add_argument("-C", "--root", default=".", help="Project root (default: .).")
 
     p_status = sub.add_parser("status", help="Show project, index, and git status.")
     p_status.add_argument("-C", "--root", default=".", help="Project root (default: .).")
@@ -130,10 +152,27 @@ def main(argv: Iterable[str] | None = None) -> None:
         scaffold(
             args.root,
             kind=args.kind,
+            profile=args.profile,
             force=args.force,
             vscode=args.vscode,
             github_pages=args.github_pages,
+            gitlab_pages=args.gitlab_pages,
         )
+        return
+
+    if args.command == "add":
+        from .init import add_package
+        add_package(args.root, args.package)
+        return
+
+    if args.command == "remove":
+        from .init import remove_package
+        remove_package(args.root, args.package)
+        return
+
+    if args.command == "list":
+        from .init import print_packages
+        print_packages(args.root)
         return
 
     if args.command == "status":

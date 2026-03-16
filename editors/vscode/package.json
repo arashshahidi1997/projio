@@ -1,0 +1,48 @@
+{
+  "name": "projio",
+  "displayName": "Projio",
+  "description": "Project-centric research workspace assistant for VS Code",
+  "version": "0.0.1",
+  "publisher": "projio-dev",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:.projio/config.yml"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "projio.hello",
+        "title": "Projio: Hello"
+      },
+      {
+        "command": "projio.detectWorkspace",
+        "title": "Projio: Detect Workspace"
+      },
+      {
+        "command": "projio.showStatus",
+        "title": "Projio: Show Status"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0"
+  }
+}

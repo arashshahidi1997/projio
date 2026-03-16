@@ -40,7 +40,7 @@ def _normalize_repo_url(raw: str) -> str:
     return value
 
 
-def _derive_pages_url(repo_url: str) -> str | None:
+def _derive_pages_url(repo_url: str, *, gitlab_urls: list[str] | None = None) -> str | None:
     parsed = urlparse(repo_url)
     host = parsed.hostname or ""
     path_parts = [part for part in parsed.path.strip("/").split("/") if part]
@@ -52,7 +52,27 @@ def _derive_pages_url(repo_url: str) -> str | None:
         return f"https://{owner}.github.io/{repo}/"
     if host == "gitlab.com":
         return f"https://{owner}.gitlab.io/{repo}/"
+    # Self-hosted GitLab: match against known gitlab site URLs
+    if gitlab_urls:
+        for gl_url in gitlab_urls:
+            gl_host = urlparse(gl_url).hostname or ""
+            if gl_host and gl_host == host:
+                return f"https://{owner}.{host}/{repo}/"
     return None
+
+
+def _gitlab_site_urls(root: Path) -> list[str]:
+    """Collect GitLab instance URLs from datalad git config."""
+    result = subprocess.run(
+        ["git", "config", "--get-regexp", r"^datalad\.gitlab-.*-url$"],
+        cwd=root, capture_output=True, text=True, check=False,
+    )
+    urls = []
+    for line in result.stdout.strip().splitlines():
+        parts = line.split(None, 1)
+        if len(parts) == 2:
+            urls.append(parts[1].strip())
+    return urls
 
 
 def print_urls(root: str | Path) -> None:
@@ -61,6 +81,7 @@ def print_urls(root: str | Path) -> None:
     if not remotes:
         print("No git remotes configured.")
         return
+    gitlab_urls = _gitlab_site_urls(root_path)
     for remote in remotes:
         raw = _remote_get_url(root_path, remote)
         if raw is None:
@@ -68,6 +89,6 @@ def print_urls(root: str | Path) -> None:
             continue
         repo_url = _normalize_repo_url(raw)
         print(f"{remote}: {repo_url}")
-        pages_url = _derive_pages_url(repo_url)
+        pages_url = _derive_pages_url(repo_url, gitlab_urls=gitlab_urls)
         if pages_url is not None:
             print(f"{remote} pages: {pages_url}")

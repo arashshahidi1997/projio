@@ -96,8 +96,6 @@ def test_plan_gitlab_command_reads_site_defaults_and_configured_credential(tmp_p
         "ssh",
         "-s",
         "gitlab",
-        "--credential",
-        "gitlab-lrz",
     ]
     assert env == {}
 

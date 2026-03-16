@@ -15,13 +15,13 @@ out_root: "bib/derivatives/docling"
 
 docling:
   # Can be a string or list[str]. Examples:
-  #   cmd: ["conda", "run", "-n", "docling", "docling"]
-  #   cmd: "docling"
-  cmd: "docling"
+  #   cmd: ["conda", "run", "-n", "rag", "docling"]
+  # cmd: "docling"
+  cmd: ["conda", "run", "-n", "rag", "docling"]
   to: ["md", "json"]
   image_export_mode: "referenced"
 
-# Optional: OpenAlex enrichment (requires `pip install "biblio-tools[openalex]"`)
+# Optional: OpenAlex enrichment (requires `pip install "labpy[openalex]"`)
 openalex:
   base_url: "https://api.openalex.org"
   # email: "you@lab.org"   # recommended: used as `mailto=` per OpenAlex etiquette
@@ -72,11 +72,3 @@ openalex:
   cache_root: "bib/derivatives/openalex/cache"
   out_jsonl: "bib/derivatives/openalex/resolved.jsonl"
   out_csv: "bib/derivatives/openalex/resolved.csv"
-
-# Optional: GROBID scholarly structure extraction
-# grobid:
-#   url: "http://127.0.0.1:8070"
-#   # installation_path: "/path/to/grobid"   # optional local checkout; start cmd derived automatically
-#   timeout_seconds: 30
-#   consolidate_header: true
-#   consolidate_citations: false
