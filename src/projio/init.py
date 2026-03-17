@@ -10,7 +10,7 @@ from .config import load_project_config
 KIND_CHOICES = ("generic", "tool", "study")
 SITE_FRAMEWORK_CHOICES = ("mkdocs", "sphinx", "vite")
 
-KNOWN_PACKAGES = ("biblio", "notio", "codio", "indexio")
+KNOWN_PACKAGES = ("biblio", "notio", "codio", "indexio", "claude")
 
 PROFILES: dict[str, tuple[str, ...]] = {
     "research": ("notio", "biblio", "indexio"),
@@ -700,8 +700,93 @@ def _scaffold_component(root: Path, package: str, component_dir: Path) -> None:
             pass
         # biblio uses visible bib/, component dir is just a marker
         component_dir.mkdir(parents=True, exist_ok=True)
+    elif package == "claude":
+        _scaffold_claude(root, component_dir)
     else:
         component_dir.mkdir(parents=True, exist_ok=True)
+
+
+def _scaffold_claude(root: Path, component_dir: Path) -> None:
+    """Scaffold Claude Code settings for a project.
+
+    Creates:
+      - .claude/settings.json — tool permissions scoped to the project
+      - CLAUDE.md — project context for Claude Code sessions
+      - .projio/claude/ — marker directory for projio tracking
+    """
+    import json
+
+    component_dir.mkdir(parents=True, exist_ok=True)
+
+    # .claude/settings.json — pre-approved tools for autonomous execution
+    claude_dir = root / ".claude"
+    claude_dir.mkdir(parents=True, exist_ok=True)
+    settings_path = claude_dir / "settings.json"
+    if not settings_path.exists():
+        settings = {
+            "allowedTools": [
+                "Read",
+                "Glob",
+                "Grep",
+                "Edit",
+                "Write",
+                "Bash(git:*)",
+                "Bash(python:*)",
+                "Bash(pip:*)",
+                "Bash(pytest:*)",
+                "Bash(make:*)",
+            ],
+        }
+        settings_path.write_text(json.dumps(settings, indent=2) + "\n")
+        print(f"  [OK] wrote {settings_path.relative_to(root)}")
+    else:
+        print(f"  [skip] {settings_path.relative_to(root)} already exists")
+
+    # CLAUDE.md — project context
+    claude_md = root / "CLAUDE.md"
+    if not claude_md.exists():
+        # Try to infer project info from .projio/config.yml
+        project_name = root.name
+        project_desc = ""
+        projio_config = root / ".projio" / "config.yml"
+        if projio_config.exists():
+            try:
+                import yaml
+                cfg = yaml.safe_load(projio_config.read_text())
+                project_name = cfg.get("name", project_name)
+                project_desc = cfg.get("description", "")
+            except Exception:
+                pass
+
+        content = f"""# {project_name}
+
+{project_desc}
+
+## Project structure
+
+<!-- Describe key directories and files here -->
+
+## Development
+
+```bash
+# Install
+pip install -e .
+
+# Test
+pytest
+
+# Lint
+make lint
+```
+
+## Conventions
+
+<!-- Add project-specific conventions, patterns, or rules here -->
+"""
+        claude_md.write_text(content)
+        print(f"  [OK] wrote CLAUDE.md")
+    else:
+        print(f"  [skip] CLAUDE.md already exists")
 
 
 def add_package(root: str | Path, package: str) -> None:

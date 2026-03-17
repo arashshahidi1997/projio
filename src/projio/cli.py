@@ -44,7 +44,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     p_add = sub.add_parser("add", help="Activate a package component in the workspace.")
-    p_add.add_argument("package", help="Package to activate (biblio, notio, codio, indexio).")
+    p_add.add_argument("package", help="Package to activate (biblio, notio, codio, indexio, claude).")
     p_add.add_argument("-C", "--root", default=".", help="Project root (default: .).")
 
     p_remove = sub.add_parser("remove", help="Deactivate a package component.")
