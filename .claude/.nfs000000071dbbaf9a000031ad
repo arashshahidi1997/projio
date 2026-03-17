@@ -2,8 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(grep -E \"\\\\.py$\")",
-      "Bash(python:*)",
-      "Bash(conda run:*)"
+      "Bash(python:*)"
     ]
   },
   "allowedTools": [
