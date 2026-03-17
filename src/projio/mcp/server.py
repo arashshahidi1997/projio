@@ -85,6 +85,30 @@ def note_latest_tool(note_type: str = ""):
     return notio.note_latest(note_type=note_type)
 
 
+@server.tool("note_read")
+def note_read_tool(path: str):
+    """Read a specific note by its relative path."""
+    return notio.note_read(path=path)
+
+
+@server.tool("note_create")
+def note_create_tool(note_type: str, owner: str = "", title: str = "", date: str = ""):
+    """Create a new note of the given type."""
+    return notio.note_create(note_type=note_type, owner=owner, title=title, date=date)
+
+
+@server.tool("note_update")
+def note_update_tool(path: str, fields: str):
+    """Update frontmatter fields of an existing note. Pass fields as JSON string."""
+    return notio.note_update(path=path, fields=fields)
+
+
+@server.tool("note_types")
+def note_types_tool():
+    """List all configured note types."""
+    return notio.note_types()
+
+
 @server.tool("note_search")
 def note_search_tool(query: str, k: int = 5):
     """Semantic search over notes via indexio."""

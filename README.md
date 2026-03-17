@@ -76,15 +76,26 @@ Helper commands are preview-first. Pass `--yes` to execute the generated `datala
 | `library_get` | Library ledger status/tags (requires biblio) |
 | `note_list` | List recent notes (requires notio) |
 | `note_latest` | Most recent note content (requires notio) |
-| `note_search` | Semantic search over notes |
+| `note_read` | Read a specific note by path (requires notio) |
+| `note_create` | Create a new note from template (requires notio) |
+| `note_update` | Update note frontmatter fields (requires notio) |
+| `note_types` | List configured note types (requires notio) |
+| `note_search` | Semantic search over notes (requires notio) |
 | `codio_list` | Filtered library listing (requires codio) |
 | `codio_get` | Full library record (requires codio) |
 | `codio_registry` | Full registry snapshot (requires codio) |
 | `codio_vocab` | Controlled vocabulary for registry fields (requires codio) |
 | `codio_validate` | Registry consistency check (requires codio) |
 | `codio_discover` | Capability search across libraries (requires codio) |
+| `codio_add_urls` | Add libraries from GitHub/GitLab URLs (requires codio) |
+| `biblio_ingest` | Ingest papers by DOI via OpenAlex (requires biblio) |
+| `biblio_library_set` | Bulk-update library ledger entries (requires biblio) |
 | `project_context` | Project config + README snapshot |
 | `runtime_conventions` | Parsed Makefile vars and commands |
+| `site_detect` | Detect doc framework (mkdocs, sphinx, vite) |
+| `site_serve` | Start doc server in background |
+| `site_stop` | Stop a running doc server |
+| `site_list` | List running doc servers |
 
 ## Claude Desktop / MCP config
 

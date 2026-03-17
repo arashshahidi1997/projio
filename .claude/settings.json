@@ -1,4 +1,10 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.py$\")",
+      "Bash(python:*)"
+    ]
+  },
   "allowedTools": [
     "Read",
     "Glob",
@@ -10,10 +16,5 @@
     "Bash(pip:*)",
     "Bash(pytest:*)",
     "Bash(make:*)"
-  ],
-  "permissions": {
-    "allow": [
-      "Bash(grep -E \"\\\\.py$\")"
-    ]
-  }
+  ]
 }

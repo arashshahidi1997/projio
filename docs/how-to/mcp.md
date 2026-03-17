@@ -100,7 +100,11 @@ If a package is not installed, its tools are skipped gracefully — the server s
 
 ## Verify
 
-After generating `.mcp.json`, restart Claude Code in the project. You should see projio tools listed in the available tools. Try:
+After generating `.mcp.json`, restart Claude Code in the project. The MCP servers panel should show projio as connected:
+
+![Claude Code MCP servers panel showing projio connected](../assets/img/claude-code-mcp-servers.png)
+
+Try:
 
 > "Call `project_context` to see the project metadata."
 

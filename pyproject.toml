@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "projio"
-version = "0.1.0"
+version = "0.1.1"
 description = "Project knowledge orchestrator and MCP server for research repositories"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -37,8 +37,8 @@ Issues = "https://github.com/arashshahidi1997/projio/issues"
 indexio = ["indexio"]
 biblio  = ["biblio-tools"]
 notio   = ["notio"]
-codio   = ["codio"]
-all     = ["indexio", "biblio-tools", "notio", "codio"]
+codio   = ["codio-tools"]
+all     = ["indexio", "biblio-tools", "notio", "codio-tools"]
 docs    = ["mkdocs>=1.6", "mkdocs-material>=9.5"]
 dev     = ["pytest", "twine", "build", "mkdocs>=1.6", "mkdocs-material>=9.5"]
 

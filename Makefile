@@ -6,7 +6,8 @@ MSG ?= Update projio
 RUNTIME_PATH := $(patsubst %/,%,$(dir $(DATALAD))):$(patsubst %/,%,$(dir $(PYTHON))):$(patsubst %/,%,$(dir $(PUBLISH)))
 export PATH := $(RUNTIME_PATH):$(PATH)
 
-.PHONY: help urls dev test docs docs-serve build check clean save push publish publish-test
+.PHONY: help urls dev test docs docs-serve build check clean publish publish-test \
+       save status pull-origin push-origin pull-gitlab push-gitlab
 
 help:
 	@printf '%s\n' \
@@ -19,7 +20,14 @@ help:
 		'make check         # run twine check on dist artifacts' \
 		'make clean         # remove local build artifacts' \
 		'make publish       # publish to PyPI via personal helper' \
-		'make publish-test  # publish to TestPyPI via personal helper'
+		'make publish-test  # publish to TestPyPI via personal helper' \
+		'' \
+		'make save          # datalad save -r -m MSG (MSG var)' \
+		'make status        # datalad status -r' \
+		'make pull-origin   # datalad update -r --merge -s origin' \
+		'make push-origin   # datalad push -r --to origin' \
+		'make pull-gitlab   # datalad update -r --merge -s gitlab' \
+		'make push-gitlab   # datalad push -r --to gitlab'
 
 urls:
 	@printf '%s\n' \
@@ -54,5 +62,24 @@ publish:
 
 publish-test:
 	$(PUBLISH) --test .
+
+# ── DataLad subdataset management ──────────────────────────────────────
+save:
+	$(DATALAD) save -r -m "$(MSG)"
+
+status:
+	$(DATALAD) status -r
+
+pull-origin:
+	$(DATALAD) update -r --merge -s origin
+
+push-origin:
+	$(DATALAD) push -r --to origin
+
+pull-gitlab:
+	$(DATALAD) update -r --merge -s gitlab
+
+push-gitlab:
+	$(DATALAD) push -r --to gitlab
 
 -include .projio/projio.mk

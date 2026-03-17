@@ -34,11 +34,24 @@ The projio MCP server exposes tools across six categories. Optional tools requir
 
 ## Notes tools (via notio)
 
+### Read
+
 | Tool | Description |
 |------|-------------|
 | `note_list(note_type="", limit=20)` | List recent notes |
 | `note_latest(note_type="")` | Most recent note content |
+| `note_read(path)` | Read a specific note by path |
+| `note_types()` | List configured note types and their modes |
 | `note_search(query, k=5)` | Semantic search over notes |
+
+### Write
+
+| Tool | Description |
+|------|-------------|
+| `note_create(note_type, owner="", title="", date="")` | Create a new note from template |
+| `note_update(path, fields)` | Update note frontmatter fields (JSON string) |
+
+`note_create` renders the configured template for the given note type, creates the file, and returns the path. `note_update` parses `fields` as JSON and merges key-value pairs into the note's YAML frontmatter.
 
 ## Code intelligence tools (via codio)
 
