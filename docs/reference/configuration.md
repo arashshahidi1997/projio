@@ -36,6 +36,9 @@ codio:
   profiles_path: .codio/profiles.yml
   notes_dir: docs/reference/codelib/libraries/
 
+runtime:
+  python_bin: null              # absolute path to Python binary (for MCP config generation)
+
 site:
   framework: mkdocs
   output_dir: site
@@ -77,6 +80,14 @@ helpers:
     mkdocs:
       enabled: false
 ```
+
+## Runtime config
+
+The `runtime` section configures how projio tools are invoked externally.
+
+| Key | Purpose |
+|-----|---------|
+| `runtime.python_bin` | Absolute path to the Python binary used by `projio mcp-config` to generate `.mcp.json`. Set this in your user config (`~/.config/projio/config.yml`) when the projio ecosystem lives in a specific conda env. Falls back to `sys.executable`. |
 
 ## Ecosystem sections
 

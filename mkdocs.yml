@@ -38,6 +38,7 @@ nav:
       - tutorials/index.md
       - Quickstart: tutorials/quickstart.md
       - Project Setup Workflow: tutorials/project-setup.md
+      - Agent-Driven Ingestion: tutorials/agent-ingestion.md
   - How-To Guides:
       - how-to/index.md
       - Initialize A Workspace: how-to/init.md

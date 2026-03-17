@@ -119,6 +119,29 @@ def codio_validate() -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def codio_add_urls(urls: list[str], clone: bool = False) -> JsonDict:
+    """Add libraries to the code reuse registry from GitHub/GitLab URLs.
+
+    Fetches metadata (language, license, description) from GitHub API automatically.
+
+    Args:
+        urls: List of repository URLs (GitHub, GitLab, or any git URL).
+        clone: If True, clone repositories as local mirrors.
+    """
+    if not _codio_available():
+        return _unavailable("codio_add_urls")
+    root = get_project_root()
+    try:
+        from codio import load_config, Registry  # type: ignore[import]
+        from codio.mcp import mcp_add_urls  # type: ignore[import]
+        config = load_config(root)
+        registry = Registry(config=config)
+        result = mcp_add_urls(registry, urls, clone=clone)
+        return json_dict({"results": result})
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def codio_discover(query: str, language: str | None = None) -> JsonDict:
     """Search for libraries matching a capability query.
 

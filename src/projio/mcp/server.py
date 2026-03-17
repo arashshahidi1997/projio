@@ -54,6 +54,23 @@ def library_get_tool(citekey: str):
     return biblio.library_get(citekey)
 
 
+@server.tool("biblio_ingest")
+def biblio_ingest_tool(dois: list[str], tags: list[str] = [], status: str = "unread", collection: str = ""):
+    """Ingest papers by DOI. Resolves metadata via OpenAlex, generates citekeys, writes BibTeX.
+    Optionally sets tags/status and adds to a collection."""
+    return biblio.biblio_ingest(
+        dois=dois, tags=tags or None, status=status, collection=collection or None,
+    )
+
+
+@server.tool("biblio_library_set")
+def biblio_library_set_tool(citekeys: list[str], status: str = "", tags: list[str] = [], priority: str = ""):
+    """Bulk-update library ledger entries (status/tags/priority) for multiple citekeys."""
+    return biblio.biblio_library_set(
+        citekeys=citekeys, status=status or None, tags=tags or None, priority=priority or None,
+    )
+
+
 # --- Notio tools ---
 
 @server.tool("note_list")
@@ -108,6 +125,13 @@ def codio_vocab_tool():
 def codio_validate_tool():
     """Validate code reuse registry consistency."""
     return codio.codio_validate()
+
+
+@server.tool("codio_add_urls")
+def codio_add_urls_tool(urls: list[str], clone: bool = False):
+    """Add libraries to the code reuse registry from GitHub/GitLab URLs.
+    Fetches metadata (language, license, description) from GitHub API automatically."""
+    return codio.codio_add_urls(urls=urls, clone=clone)
 
 
 @server.tool("codio_discover")

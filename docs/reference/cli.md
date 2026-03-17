@@ -16,6 +16,7 @@
 | `projio docs` | Project docs helpers |
 | `projio auth` | Authentication diagnostics |
 | `projio mcp` | Start the FastMCP server (stdio) |
+| `projio mcp-config` | Generate `.mcp.json` for Claude Code |
 
 ## Key commands
 
@@ -74,6 +75,11 @@ projio auth -C . doctor
 
 # mcp
 projio mcp -C .
+
+# mcp-config (generate .mcp.json for Claude Code)
+projio mcp-config -C .                    # preview
+projio mcp-config -C . --yes              # write
+projio mcp-config -C . --output path.json # custom output
 ```
 
 `projio init --vscode` writes `.vscode/settings.json` with excludes for `site/` so search and watchers stay usable after a build.

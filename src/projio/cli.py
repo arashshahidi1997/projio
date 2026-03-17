@@ -141,6 +141,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p_mcp = sub.add_parser("mcp", help="Start the FastMCP server (stdio).")
     p_mcp.add_argument("-C", "--root", default=".", help="Project root (default: .).")
 
+    p_mcp_config = sub.add_parser("mcp-config", help="Generate .mcp.json for Claude Code.")
+    p_mcp_config.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    p_mcp_config.add_argument("--output", default=None, help="Output path (default: .mcp.json in project root).")
+    p_mcp_config.add_argument("--yes", action="store_true", help="Write the file (default: preview only).")
+
     return parser
 
 
@@ -278,6 +283,18 @@ def main(argv: Iterable[str] | None = None) -> None:
         os.environ.setdefault("PROJIO_ROOT", str(args.root))
         from .mcp.server import main as mcp_main
         mcp_main()
+        return
+
+    if args.command == "mcp-config":
+        from pathlib import Path
+        from .config import load_effective_config, get_nested
+        from .mcp.config_gen import write_mcp_config
+
+        root = Path(args.root).expanduser().resolve()
+        cfg = load_effective_config(root)
+        python_bin = get_nested(cfg, "runtime", "python_bin", default=None)
+        output = Path(args.output) if args.output else None
+        write_mcp_config(root, python_bin=python_bin, output=output, yes=args.yes)
         return
 
     raise SystemExit(2)

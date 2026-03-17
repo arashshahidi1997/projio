@@ -10,10 +10,5 @@
     "Bash(pip:*)",
     "Bash(pytest:*)",
     "Bash(make:*)"
-  ],
-  "permissions": {
-    "allow": [
-      "Bash(grep -E \"\\\\.py$\")"
-    ]
-  }
+  ]
 }
