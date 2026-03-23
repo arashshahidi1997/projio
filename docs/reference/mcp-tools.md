@@ -4,11 +4,21 @@ The projio MCP server exposes tools across six categories. Optional tools requir
 
 ## RAG tools (via indexio)
 
+### Read
+
 | Tool | Description |
 |------|-------------|
 | `rag_query(query, corpus="", k=8)` | Semantic search against the project index |
 | `rag_query_multi(queries[], corpus="", k=5)` | Multi-query search, deduplicated |
 | `corpus_list()` | List indexed corpora with chunk counts |
+
+### Write
+
+| Tool | Description |
+|------|-------------|
+| `indexio_build(sources=[])` | Rebuild the search index (full or partial by source ID) |
+
+`indexio_build` performs a full index rebuild by default. Pass a list of source IDs for a partial rebuild that only re-indexes the specified sources.
 
 ## Bibliography tools (via biblio)
 
@@ -27,10 +37,20 @@ The projio MCP server exposes tools across six categories. Optional tools requir
 |------|-------------|
 | `biblio_ingest(dois[], tags=[], status="unread", collection="")` | Ingest papers by DOI via OpenAlex, generate citekeys, write BibTeX |
 | `biblio_library_set(citekeys[], status="", tags=[], priority="")` | Bulk-update library ledger entries |
+| `biblio_merge(dry_run=false)` | Merge source .bib files into bib/main.bib |
+| `biblio_docling(citekey, force=false)` | Extract full text from a paper's PDF via Docling |
+| `biblio_grobid(citekey, force=false)` | Extract header and references from a paper's PDF via GROBID |
+| `biblio_grobid_check()` | Check whether the GROBID server is reachable |
 
 `biblio_ingest` resolves DOIs through the OpenAlex API, generates BibTeX citekeys, appends entries to the import bib file, and optionally sets library metadata and adds papers to a collection. Returns the list of generated citekeys.
 
 `biblio_library_set` updates status (`unread`, `reading`, `processed`, `archived`), tags, and priority (`low`, `normal`, `high`) for multiple citekeys in a single call.
+
+`biblio_merge` folds all `.bib` files from `bib/srcbib/` into the main `bib/main.bib`. Use `dry_run=true` to preview without writing. Run this after `biblio_ingest` to make new entries available to downstream tools.
+
+`biblio_docling` runs the Docling pipeline on a single paper's PDF, producing markdown and JSON extracts. Cached — skips if outputs exist unless `force=true`.
+
+`biblio_grobid` submits a paper's PDF to the GROBID server, extracting structured header metadata and parsed references. Use `biblio_grobid_check` first to verify the server is alive.
 
 ## Notes tools (via notio)
 
@@ -80,6 +100,9 @@ The projio MCP server exposes tools across six categories. Optional tools requir
 |------|-------------|
 | `project_context()` | Project config + README excerpt + key paths |
 | `runtime_conventions()` | Parsed Makefile variables and commands |
+| `agent_instructions()` | Tool routing table, workflow conventions, enabled packages — call before dispatching prompts |
+
+`agent_instructions` returns the dynamic equivalent of the CLAUDE.md tool routing section. Cross-project orchestrators (e.g. worklog) should call this to get project-aware agent instructions before generating or executing prompts. The response includes enabled packages, a tool routing table (intent → MCP tool → anti-pattern), and workflow conventions.
 
 ## Site tools
 

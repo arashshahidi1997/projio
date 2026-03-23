@@ -132,7 +132,19 @@ runtime:
   python_bin: /path/to/envs/rag/bin/python
 ```
 
-## Step 5: Verify tools are available
+## Step 5: Configure agent permissions
+
+Set up Claude Code to auto-approve projio MCP tools:
+
+```bash
+projio add claude
+```
+
+This creates `.claude/settings.json` with `mcp__projio__*` in the allowed tools list, so the agent can call any projio tool without prompting. The MCP server is already scoped to your project via `PROJIO_ROOT`, so all writes stay within the repo.
+
+For details on the security model and granular permission options, see [Agent Safety & Permissions](../explanation/agent-safety.md).
+
+## Step 6: Verify tools are available
 
 Start Claude Code in your project directory. The MCP servers panel should show projio as connected.
 
@@ -170,7 +182,7 @@ You: List recent notes.
 ````
 Agent calls `note_list()` — returns the most recent notes across all types.
 
-## Step 6: Check project status
+## Step 7: Check project status
 
 From the command line:
 

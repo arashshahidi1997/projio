@@ -1,4 +1,4 @@
-"""MCP tools: project_context, runtime_conventions."""
+"""MCP tools: project_context, runtime_conventions, agent_instructions."""
 from __future__ import annotations
 
 import re
@@ -96,3 +96,35 @@ def runtime_conventions() -> JsonDict:
         "commands": commands,
     }
     return json_dict(payload)
+
+
+def agent_instructions() -> JsonDict:
+    """Return agent execution context: tool routing table and workflow conventions.
+
+    This is the dynamic equivalent of the CLAUDE.md tool routing section.
+    Worklog and other orchestrators should call this before dispatching
+    prompts to get project-aware agent instructions.
+    """
+    root = get_project_root()
+    # Check if projio is actually configured for this project
+    projio_dir = root / ".projio"
+    if not projio_dir.is_dir():
+        return json_dict({"error": "projio not configured (no .projio directory)"})
+
+    try:
+        from projio.init import _generate_claude_md, _load_packages
+
+        packages = _load_packages(root).get("packages", {})
+        enabled = [
+            name for name, entry in packages.items()
+            if entry.get("enabled", False)
+        ]
+        instructions = _generate_claude_md(root)
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+    return json_dict({
+        "project_root": str(root),
+        "enabled_packages": enabled,
+        "instructions": instructions,
+    })

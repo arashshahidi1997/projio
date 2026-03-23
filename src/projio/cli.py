@@ -138,6 +138,19 @@ def _build_parser() -> argparse.ArgumentParser:
     auth_sub = p_auth.add_subparsers(dest="auth_command", required=True)
     auth_sub.add_parser("doctor", help="Show helper credential resolution status.")
 
+    p_claude = sub.add_parser("claude", help="Claude Code project settings.")
+    p_claude.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    claude_sub = p_claude.add_subparsers(dest="claude_command", required=True)
+
+    p_claude_perms = claude_sub.add_parser(
+        "update-permissions",
+        help="Scope Edit/Write permissions to the project root in .claude/settings.json.",
+    )
+    p_claude_perms.add_argument(
+        "--dry-run", action="store_true",
+        help="Show what would change without writing.",
+    )
+
     p_mcp = sub.add_parser("mcp", help="Start the FastMCP server (stdio).")
     p_mcp.add_argument("-C", "--root", default=".", help="Project root (default: .).")
 
@@ -276,6 +289,12 @@ def main(argv: Iterable[str] | None = None) -> None:
         from .helpers.auth import auth_doctor
         if args.auth_command == "doctor":
             auth_doctor(args.root)
+        return
+
+    if args.command == "claude":
+        from .init import update_claude_permissions
+        if args.claude_command == "update-permissions":
+            update_claude_permissions(args.root, dry_run=args.dry_run)
         return
 
     if args.command == "mcp":

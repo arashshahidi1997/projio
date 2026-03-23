@@ -1,4 +1,4 @@
-"""MCP tools: citekey_resolve, paper_context, paper_absent_refs, library_get."""
+"""MCP tools: biblio read/write tools including merge, docling, grobid."""
 from __future__ import annotations
 
 from .common import JsonDict, get_project_root, json_dict
@@ -144,3 +144,92 @@ def biblio_library_set(
         return json_dict(result)
     except Exception as exc:
         return json_dict({"error": str(exc), "citekeys": citekeys})
+
+
+def _load_biblio_cfg():
+    """Load BiblioConfig from the project root."""
+    from biblio.config import default_config_path, load_biblio_config
+    root = get_project_root()
+    config_path = default_config_path(root=root)
+    return load_biblio_config(config_path, root=root)
+
+
+def biblio_merge(dry_run: bool = False) -> JsonDict:
+    """Merge source .bib files into the main bibliography (bib/main.bib).
+
+    Args:
+        dry_run: If true, report what would be merged without writing.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_merge")
+    try:
+        cfg = _load_biblio_cfg()
+        from biblio.bibtex import merge_srcbib
+        n_sources, n_entries = merge_srcbib(cfg.bibtex_merge, dry_run=dry_run)
+        return json_dict({
+            "n_sources": n_sources,
+            "n_entries": n_entries,
+            "out_bib": str(cfg.bibtex_merge.out_bib),
+            "dry_run": dry_run,
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_docling(citekey: str, force: bool = False) -> JsonDict:
+    """Run Docling on a paper's PDF to extract full text as markdown.
+
+    Args:
+        citekey: BibTeX citekey to process.
+        force: Re-run even if outputs already exist.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_docling")
+    try:
+        cfg = _load_biblio_cfg()
+        from biblio.docling import run_docling_for_key
+        out = run_docling_for_key(cfg, citekey, force=force)
+        return json_dict({
+            "citekey": citekey.lstrip("@"),
+            "md_path": str(out.md_path),
+            "json_path": str(out.json_path),
+            "outdir": str(out.outdir),
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc), "citekey": citekey})
+
+
+def biblio_grobid(citekey: str, force: bool = False) -> JsonDict:
+    """Run GROBID on a paper's PDF to extract structured header and references.
+
+    Args:
+        citekey: BibTeX citekey to process.
+        force: Re-run even if outputs already exist.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_grobid")
+    try:
+        cfg = _load_biblio_cfg()
+        from biblio.grobid import run_grobid_for_key
+        out = run_grobid_for_key(cfg, citekey, force=force)
+        return json_dict({
+            "citekey": citekey.lstrip("@"),
+            "header_path": str(out.header_path),
+            "references_path": str(out.references_path),
+            "tei_path": str(out.tei_path),
+            "outdir": str(out.outdir),
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc), "citekey": citekey})
+
+
+def biblio_grobid_check() -> JsonDict:
+    """Check whether the GROBID server is reachable."""
+    if not _biblio_available():
+        return _unavailable("biblio_grobid_check")
+    try:
+        cfg = _load_biblio_cfg()
+        from biblio.grobid import check_grobid_server_as_dict
+        return json_dict(check_grobid_server_as_dict(cfg.grobid))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})

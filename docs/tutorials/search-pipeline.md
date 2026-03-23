@@ -18,6 +18,7 @@ graph LR
 - indexio installed (`pip install "projio[indexio]"`)
 - Documents to index (markdown, PDFs, BibTeX, code)
 - MCP server configured (`projio mcp-config -C . --yes`)
+- Agent permissions configured (`projio add claude` — see [Agent Safety & Permissions](../explanation/agent-safety.md))
 
 ## Step 1: Initialize indexio
 

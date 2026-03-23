@@ -39,6 +39,7 @@ Projio orchestrates four specialized subsystems, each managing a knowledge domai
 | **biblio** | literature | Bibliography management, citekey resolution, paper context extraction |
 | **notio** | notes | Structured project notes (experiment logs, design decisions, idea capture) |
 | **codio** | code intelligence | Library registry, code reuse discovery, implementation strategy |
+| **pipeio** | pipelines | Pipeline registry, notebook lifecycle, flow management, I/O contracts |
 
 These live as git submodules under `packages/` and are optional dependencies — the system degrades gracefully when any are absent.
 
@@ -59,6 +60,7 @@ The MCP server (`src/projio/mcp/server.py`) is the primary agent interface. It r
 - `mcp/biblio.py` — `citekey_resolve`, `paper_context`, `paper_absent_refs`, `library_get`
 - `mcp/notio.py` — `note_list`, `note_latest`, `note_search`
 - `mcp/codio.py` — `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`
+- `mcp/pipeio.py` — `pipeio_flow_list`, `pipeio_flow_status`, `pipeio_nb_status`, `pipeio_registry_validate`
 - `mcp/context.py` — `project_context`, `runtime_conventions`
 
 Server is run via `python -m projio.mcp.server` with `PROJIO_ROOT` env var pointing to the target project.

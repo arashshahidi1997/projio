@@ -21,6 +21,7 @@ This maps directly to worklog's object model: **Note** (captured thought) → **
 
 - A projio workspace with notio initialized (`notio init --write-config`)
 - MCP server configured (`projio mcp-config -C . --yes`)
+- Agent permissions configured (`projio add claude` — see [Agent Safety & Permissions](../explanation/agent-safety.md))
 - At least one note type configured in `notio.toml`
 
 ## Step 1: Check available note types

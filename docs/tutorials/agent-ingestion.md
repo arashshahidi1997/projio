@@ -7,6 +7,7 @@ This tutorial shows how to use Claude Code (or any MCP-capable agent) to ingest 
 - A projio workspace (`projio init .`)
 - biblio and codio components activated (`projio add biblio && projio add codio`)
 - The MCP server configured (`.mcp.json` in place — see [Configure the MCP Server](../how-to/mcp.md))
+- Agent permissions configured (`projio add claude` — see [Agent Safety & Permissions](../explanation/agent-safety.md))
 
 ## The scenario
 
@@ -226,10 +227,46 @@ graph LR
 
     The structured output means the agent can chain tools naturally: ingest papers, then resolve their citekeys, then search for related notes, then create a summary — all in one conversation.
 
+## Step 5: Process and index
+
+After ingestion, the agent can run the full pipeline without leaving the conversation:
+
+**Merge imported entries:**
+
+The agent calls `biblio_merge()` to fold `bib/srcbib/*.bib` into `bib/main.bib`:
+
+```json
+{"n_sources": 2, "n_entries": 5, "out_bib": "/path/to/project/bib/main.bib"}
+```
+
+**Extract full text with Docling:**
+
+For each paper that has a PDF, the agent calls `biblio_docling(citekey)`:
+
+```json
+{"citekey": "muller_2018_CorticalTravelling", "md_path": "...", "json_path": "..."}
+```
+
+**Extract references with GROBID:**
+
+The agent can first check the server with `biblio_grobid_check()`, then call `biblio_grobid(citekey)` for each paper:
+
+```json
+{"citekey": "muller_2018_CorticalTravelling", "header_path": "...", "references_path": "..."}
+```
+
+**Rebuild the search index:**
+
+Finally, the agent calls `indexio_build()` to re-index everything for semantic search:
+
+```json
+{"store": "default", "persist_directory": "...", "source_stats": {...}}
+```
+
+!!! tip "CLI equivalents"
+
+    These MCP tools correspond to the CLI commands `biblio merge`, `biblio docling`, `biblio grobid`, and `indexio build`. The MCP tools let the agent run the full pipeline autonomously in a single conversation.
+
 ## Next steps
 
-- Run `biblio merge` to fold imported entries into `bib/main.bib`
-- Run `biblio docling` on the ingested papers to extract full text
-- Run `biblio grobid` to extract structured references
-- Index everything with `indexio sync` for semantic search via `rag_query`
 - Write curated library notes in `docs/reference/codelib/libraries/` for the codio entries

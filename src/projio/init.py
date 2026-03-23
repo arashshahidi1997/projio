@@ -720,7 +720,7 @@ def _scaffold_claude(root: Path, component_dir: Path) -> None:
 
     Creates:
       - .claude/settings.json — tool permissions scoped to the project
-      - CLAUDE.md — project context for Claude Code sessions
+      - CLAUDE.md — project context with MCP tool routing
       - .projio/claude/ — marker directory for projio tracking
     """
     import json
@@ -732,18 +732,22 @@ def _scaffold_claude(root: Path, component_dir: Path) -> None:
     claude_dir.mkdir(parents=True, exist_ok=True)
     settings_path = claude_dir / "settings.json"
     if not settings_path.exists():
+        root_glob = f"{root}/**"
         settings = {
             "allowedTools": [
                 "Read",
                 "Glob",
                 "Grep",
-                "Edit",
-                "Write",
+                f"Edit({root_glob})",
+                f"Write({root_glob})",
+                "Bash(ls:*)",
+                "Bash(find:*)",
                 "Bash(git:*)",
                 "Bash(python:*)",
                 "Bash(pip:*)",
                 "Bash(pytest:*)",
                 "Bash(make:*)",
+                "mcp__projio__*",
             ],
         }
         settings_path.write_text(json.dumps(settings, indent=2) + "\n")
@@ -751,51 +755,196 @@ def _scaffold_claude(root: Path, component_dir: Path) -> None:
     else:
         print(f"  [skip] {settings_path.relative_to(root)} already exists")
 
-    # CLAUDE.md — project context
+    # Update permissions to be path-scoped
+    update_claude_permissions(root, dry_run=False)
+
+    # CLAUDE.md — project context with tool routing
     claude_md = root / "CLAUDE.md"
     if not claude_md.exists():
-        # Try to infer project info from .projio/config.yml
-        project_name = root.name
-        project_desc = ""
-        projio_config = root / ".projio" / "config.yml"
-        if projio_config.exists():
-            try:
-                import yaml
-                cfg = yaml.safe_load(projio_config.read_text())
-                project_name = cfg.get("name", project_name)
-                project_desc = cfg.get("description", "")
-            except Exception:
-                pass
-
-        content = f"""# {project_name}
-
-{project_desc}
-
-## Project structure
-
-<!-- Describe key directories and files here -->
-
-## Development
-
-```bash
-# Install
-pip install -e .
-
-# Test
-pytest
-
-# Lint
-make lint
-```
-
-## Conventions
-
-<!-- Add project-specific conventions, patterns, or rules here -->
-"""
+        content = _generate_claude_md(root)
         claude_md.write_text(content)
         print(f"  [OK] wrote CLAUDE.md")
     else:
         print(f"  [skip] CLAUDE.md already exists")
+
+
+def update_claude_permissions(root: str | Path, *, dry_run: bool = False) -> None:
+    """Scope Edit/Write in .claude/settings.json to the project root.
+
+    Rewrites bare ``Edit`` / ``Write`` entries in ``allowedTools`` and
+    ``permissions.allow`` to carry the project-root path, e.g.
+    ``Edit(/storage2/arash/projects/foo/**)``.
+    """
+    root = Path(root).expanduser().resolve()
+    settings_path = root / ".claude" / "settings.json"
+
+    if not settings_path.exists():
+        print(f"  [skip] {settings_path} does not exist — run 'projio add claude' first")
+        return
+
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    root_glob = f"{root}/**"
+    changed = False
+
+    # --- allowedTools ---
+    tools: list[str] = settings.get("allowedTools", [])
+    new_tools: list[str] = []
+    for entry in tools:
+        if entry in ("Edit", "Write"):
+            scoped = f"{entry}({root_glob})"
+            if scoped not in new_tools:
+                new_tools.append(scoped)
+                changed = True
+        else:
+            new_tools.append(entry)
+    if changed:
+        settings["allowedTools"] = new_tools
+
+    # --- permissions.allow ---
+    perms_allow: list[str] = settings.get("permissions", {}).get("allow", [])
+    new_allow: list[str] = []
+    perms_changed = False
+    for entry in perms_allow:
+        if entry in ("Edit", "Write"):
+            scoped = f"{entry}({root_glob})"
+            if scoped not in new_allow:
+                new_allow.append(scoped)
+                perms_changed = True
+        else:
+            new_allow.append(entry)
+    if perms_changed:
+        settings.setdefault("permissions", {})["allow"] = new_allow
+        changed = True
+
+    if not changed:
+        print(f"  [ok] permissions already scoped in {settings_path.relative_to(root)}")
+        return
+
+    if dry_run:
+        print(f"  [dry-run] would update {settings_path.relative_to(root)}:")
+        print(json.dumps(settings, indent=2))
+        return
+
+    settings_path.write_text(json.dumps(settings, indent=2) + "\n")
+    print(f"  [OK] scoped Edit/Write to {root_glob} in {settings_path.relative_to(root)}")
+
+
+def _generate_claude_md(root: Path) -> str:
+    """Generate a CLAUDE.md with MCP tool routing based on enabled packages."""
+    # Infer project info
+    project_name = root.name
+    project_desc = ""
+    projio_config = root / ".projio" / "config.yml"
+    if projio_config.exists():
+        try:
+            cfg = _load_yaml(projio_config.read_text(encoding="utf-8"))
+            project_name = cfg.get("project_name", project_name)
+            project_desc = cfg.get("description", "")
+        except Exception:
+            pass
+
+    # Detect enabled packages
+    packages = _load_packages(root).get("packages", {})
+    has_biblio = packages.get("biblio", {}).get("enabled", False)
+    has_notio = packages.get("notio", {}).get("enabled", False)
+    has_codio = packages.get("codio", {}).get("enabled", False)
+    has_indexio = packages.get("indexio", {}).get("enabled", False)
+
+    sections: list[str] = []
+
+    # Header
+    desc_line = f"\n{project_desc}\n" if project_desc else ""
+    sections.append(f"# {project_name}\n{desc_line}")
+
+    # Projio preamble
+    sections.append("""\
+## Projio workspace
+
+This project uses **projio** — a project-centric research assistance ecosystem.
+All project knowledge (papers, notes, code libraries, search indexes) is managed
+through MCP tools. **Always use MCP tools instead of direct file manipulation**
+for projio-managed resources.
+
+At the start of a session, call `project_context()` to understand the workspace
+and `runtime_conventions()` to see available Makefile targets.
+""")
+
+    # Tool routing table
+    rows: list[str] = []
+
+    # Core tools (always available)
+    rows.append("| Understand the project | `project_context()` | Read config files directly |")
+    rows.append("| See available commands | `runtime_conventions()` | Parse the Makefile manually |")
+
+    if has_indexio:
+        rows.append("| Search project knowledge | `rag_query(query)` | Grep through docs manually |")
+        rows.append("| Multi-facet search | `rag_query_multi(queries)` | Run multiple greps |")
+        rows.append("| Check indexed sources | `corpus_list()` | Inspect Chroma store directly |")
+        rows.append("| Rebuild search index | `indexio_build()` | Run `indexio build` in terminal |")
+
+    if has_biblio:
+        rows.append("| Ingest papers by DOI | `biblio_ingest(dois)` | Write BibTeX by hand |")
+        rows.append("| Look up a paper | `citekey_resolve(citekeys)` | Read .bib files directly |")
+        rows.append("| Get full paper context | `paper_context(citekey)` | Read docling/GROBID outputs directly |")
+        rows.append("| Find unresolved refs | `paper_absent_refs(citekey)` | Parse references.json manually |")
+        rows.append("| Check paper status | `library_get(citekey)` | Read library.yml directly |")
+        rows.append("| Update paper status | `biblio_library_set(citekeys)` | Edit library.yml directly |")
+        rows.append("| Merge bibliography | `biblio_merge()` | Run `biblio merge` in terminal |")
+        rows.append("| Extract full text | `biblio_docling(citekey)` | Run `biblio docling` in terminal |")
+        rows.append("| Extract references | `biblio_grobid(citekey)` | Run `biblio grobid` in terminal |")
+        rows.append("| Check GROBID server | `biblio_grobid_check()` | Curl the GROBID API manually |")
+
+    if has_notio:
+        rows.append("| Create a note/task/idea | `note_create(note_type)` | Create markdown files directly |")
+        rows.append("| List recent notes | `note_list()` | List files in notes/ directory |")
+        rows.append("| Read a note | `note_read(path)` | Read the file directly |")
+        rows.append("| Search notes | `note_search(query)` | Grep through notes/ |")
+        rows.append("| Update note metadata | `note_update(path, fields)` | Edit frontmatter directly |")
+        rows.append("| See note types | `note_types()` | Read notio.toml directly |")
+
+    if has_codio:
+        rows.append("| Add a library | `codio_add_urls(urls)` | Edit YAML registry files |")
+        rows.append("| Find libraries by capability | `codio_discover(query)` | Grep catalog.yml |")
+        rows.append("| Inspect a library | `codio_get(name)` | Read catalog + profiles manually |")
+        rows.append("| List all libraries | `codio_list()` | Parse registry files directly |")
+        rows.append("| Check registry vocabulary | `codio_vocab()` | Read schema docs |")
+        rows.append("| Validate registry | `codio_validate()` | Run consistency checks manually |")
+
+    if rows:
+        table_header = "| Intent | MCP tool | Do NOT |\n|--------|----------|--------|\n"
+        sections.append("## Agent tool routing\n\n" + table_header + "\n".join(rows) + "\n")
+
+    # Workflow guidance
+    if has_biblio or has_codio or has_indexio:
+        workflow_parts: list[str] = []
+        if has_indexio or has_notio or has_codio:
+            workflow_parts.append("1. **Search first** — check existing knowledge before creating new content")
+        if has_biblio:
+            workflow_parts.append(
+                "2. **Ingest pipeline** — after `biblio_ingest`, run `biblio_merge` → "
+                "`biblio_docling` → `biblio_grobid` → `indexio_build`"
+                if has_indexio else
+                "2. **Ingest pipeline** — after `biblio_ingest`, run `biblio_merge` → "
+                "`biblio_docling` → `biblio_grobid`"
+            )
+        if has_notio:
+            workflow_parts.append("3. **Record decisions** — create notes to capture analysis and decisions")
+
+        if workflow_parts:
+            sections.append("## Workflow conventions\n\n" + "\n".join(workflow_parts) + "\n")
+
+    # Development section
+    sections.append("""\
+## Development
+
+```bash
+make         # see available targets
+make save    # datalad save
+make push    # datalad push
+```
+""")
+
+    return "\n".join(sections)
 
 
 def add_package(root: str | Path, package: str) -> None:

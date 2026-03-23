@@ -95,6 +95,14 @@ projio mcp -C .
 
 This starts a FastMCP stdio server exposing all enabled tools for the current project.
 
+## Set up agent permissions
+
+```bash
+projio add claude
+```
+
+This scaffolds `.claude/settings.json` with pre-approved permissions for all projio MCP tools (`mcp__projio__*`). The server is scoped to your project via `PROJIO_ROOT`, so writes stay within the repo. See [Agent Safety & Permissions](../explanation/agent-safety.md) for granular options.
+
 ## Build the docs site
 
 ```bash

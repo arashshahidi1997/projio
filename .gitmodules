@@ -20,5 +20,6 @@
 	datalad-url = /storage/share/git/ria-store/alias/codio
 [submodule "packages/pipeio"]
 	path = packages/pipeio
-	url = ./packages/pipeio
+	url = https://github.com/arashshahidi1997/pipeio.git
 	datalad-id = 78502d99-5102-4adf-9acf-8adee78140f3
+	datalad-url = /storage/share/git/ria-store/alias/pipeio

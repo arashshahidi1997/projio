@@ -21,6 +21,11 @@ codio:
   profiles_path: .codio/profiles.yml
   notes_dir: docs/reference/codelib/libraries/
 
+pipeio:
+  enabled: false
+  registry_path: .pipeio/registry.yml
+  pipelines_dir: code/pipelines
+
 site:
   base_port: 8000
   host: "127.0.0.1"

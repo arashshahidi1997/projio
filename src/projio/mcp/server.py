@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from . import biblio, codio, context, notio, rag, site as site_mcp
+from . import biblio, codio, context, notio, pipeio, rag, site as site_mcp
 
 server = FastMCP("projio")
 
@@ -26,6 +26,12 @@ def rag_query_multi_tool(queries: list[str], corpus: str = "", k: int = 5):
 def corpus_list_tool():
     """List indexed corpora with chunk counts."""
     return rag.corpus_list()
+
+
+@server.tool("indexio_build")
+def indexio_build_tool(sources: list[str] = []):
+    """Rebuild the search index. Full rebuild by default, or partial if sources specified."""
+    return rag.indexio_build(sources=sources or None)
 
 
 # --- Biblio tools ---
@@ -69,6 +75,30 @@ def biblio_library_set_tool(citekeys: list[str], status: str = "", tags: list[st
     return biblio.biblio_library_set(
         citekeys=citekeys, status=status or None, tags=tags or None, priority=priority or None,
     )
+
+
+@server.tool("biblio_merge")
+def biblio_merge_tool(dry_run: bool = False):
+    """Merge source .bib files into the main bibliography (bib/main.bib)."""
+    return biblio.biblio_merge(dry_run=dry_run)
+
+
+@server.tool("biblio_docling")
+def biblio_docling_tool(citekey: str, force: bool = False):
+    """Run Docling on a paper's PDF to extract full text as markdown."""
+    return biblio.biblio_docling(citekey=citekey, force=force)
+
+
+@server.tool("biblio_grobid")
+def biblio_grobid_tool(citekey: str, force: bool = False):
+    """Run GROBID on a paper's PDF to extract structured header and references."""
+    return biblio.biblio_grobid(citekey=citekey, force=force)
+
+
+@server.tool("biblio_grobid_check")
+def biblio_grobid_check_tool():
+    """Check whether the GROBID server is reachable."""
+    return biblio.biblio_grobid_check()
 
 
 # --- Notio tools ---
@@ -152,16 +182,42 @@ def codio_validate_tool():
 
 
 @server.tool("codio_add_urls")
-def codio_add_urls_tool(urls: list[str], clone: bool = False):
+def codio_add_urls_tool(urls: list[str], clone: bool = False, shallow: bool = False):
     """Add libraries to the code reuse registry from GitHub/GitLab URLs.
     Fetches metadata (language, license, description) from GitHub API automatically."""
-    return codio.codio_add_urls(urls=urls, clone=clone)
+    return codio.codio_add_urls(urls=urls, clone=clone, shallow=shallow)
 
 
 @server.tool("codio_discover")
 def codio_discover_tool(query: str, language: str = ""):
     """Search for libraries matching a capability query."""
     return codio.codio_discover(query=query, language=language or None)
+
+
+# --- Pipeio tools ---
+
+@server.tool("pipeio_flow_list")
+def pipeio_flow_list_tool(pipe: str = ""):
+    """List pipeline flows, optionally filtered by pipe name."""
+    return pipeio.pipeio_flow_list(pipe=pipe or None)
+
+
+@server.tool("pipeio_flow_status")
+def pipeio_flow_status_tool(pipe: str, flow: str):
+    """Show status of a specific pipeline flow (config, outputs, notebooks)."""
+    return pipeio.pipeio_flow_status(pipe=pipe, flow=flow)
+
+
+@server.tool("pipeio_nb_status")
+def pipeio_nb_status_tool():
+    """Show notebook sync and publication status across all flows."""
+    return pipeio.pipeio_nb_status()
+
+
+@server.tool("pipeio_registry_validate")
+def pipeio_registry_validate_tool():
+    """Validate pipeline registry consistency (code vs docs, config schema)."""
+    return pipeio.pipeio_registry_validate()
 
 
 # --- Context tools ---
@@ -176,6 +232,13 @@ def project_context_tool():
 def runtime_conventions_tool():
     """Parse Makefile variables and targets from the project root."""
     return context.runtime_conventions()
+
+
+@server.tool("agent_instructions")
+def agent_instructions_tool():
+    """Agent execution context: tool routing, workflow conventions, enabled packages.
+    Call this before executing prompts in this project to get tool-aware instructions."""
+    return context.agent_instructions()
 
 
 # --- Site tools ---

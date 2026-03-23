@@ -57,11 +57,24 @@ nav:
       - Workspace Architecture: explanation/workspace-architecture.md
       - Package Integration: explanation/package-integration.md
       - Search Before Creation: explanation/search-before-creation.md
+      - Agent Safety & Permissions: explanation/agent-safety.md
   - Reference:
       - reference/index.md
       - CLI: reference/cli.md
       - Workspace Layout: reference/workspace-layout.md
       - Configuration: reference/configuration.md
       - MCP Tools: reference/mcp-tools.md
+  - Specs:
+      - pipeio:
+          - specs/pipeio/index.md
+          - Overview: specs/pipeio/overview.md
+          - Registry: specs/pipeio/registry.md
+          - Flow Config: specs/pipeio/flow-config.md
+          - Path Resolution: specs/pipeio/path-resolution.md
+          - Notebook Lifecycle: specs/pipeio/notebook.md
+          - Scaffolding: specs/pipeio/scaffolding.md
+          - Contracts: specs/pipeio/contracts.md
+          - CLI: specs/pipeio/cli.md
+          - MCP Tools: specs/pipeio/mcp-tools.md
   - Log:
       - log/index.md

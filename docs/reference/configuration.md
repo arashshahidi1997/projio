@@ -36,6 +36,11 @@ codio:
   profiles_path: .codio/profiles.yml
   notes_dir: docs/reference/codelib/libraries/
 
+pipeio:
+  enabled: false                 # enable when project has pipelines
+  registry_path: .pipeio/registry.yml
+  pipelines_dir: code/pipelines  # where to scan for flows
+
 runtime:
   python_bin: null              # absolute path to Python binary (for MCP config generation)
 

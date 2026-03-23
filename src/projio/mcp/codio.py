@@ -119,7 +119,7 @@ def codio_validate() -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
-def codio_add_urls(urls: list[str], clone: bool = False) -> JsonDict:
+def codio_add_urls(urls: list[str], clone: bool = False, shallow: bool = False) -> JsonDict:
     """Add libraries to the code reuse registry from GitHub/GitLab URLs.
 
     Fetches metadata (language, license, description) from GitHub API automatically.
@@ -127,6 +127,7 @@ def codio_add_urls(urls: list[str], clone: bool = False) -> JsonDict:
     Args:
         urls: List of repository URLs (GitHub, GitLab, or any git URL).
         clone: If True, clone repositories as local mirrors.
+        shallow: If True (and clone=True), perform a depth-1 shallow clone.
     """
     if not _codio_available():
         return _unavailable("codio_add_urls")
@@ -136,7 +137,7 @@ def codio_add_urls(urls: list[str], clone: bool = False) -> JsonDict:
         from codio.mcp import mcp_add_urls  # type: ignore[import]
         config = load_config(root)
         registry = Registry(config=config)
-        result = mcp_add_urls(registry, urls, clone=clone)
+        result = mcp_add_urls(registry, urls, clone=clone, shallow=shallow)
         return json_dict({"results": result})
     except Exception as exc:
         return json_dict({"error": str(exc)})

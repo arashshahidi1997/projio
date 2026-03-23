@@ -24,7 +24,8 @@ graph TD
 
 - Full ecosystem installed (`pip install "projio[all]"`)
 - All subsystems initialized (see [Ecosystem Overview](ecosystem-overview.md))
-- MCP server connected
+- MCP server connected (`projio mcp-config -C . --yes`)
+- Agent permissions configured (`projio add claude` — see [Agent Safety & Permissions](../explanation/agent-safety.md))
 - An indexed corpus (`indexio build`)
 
 ## Scenario: Evaluate a new analysis method
@@ -188,12 +189,14 @@ Following the worklog pipeline design:
 3. **Promoted tasks get write access** — ingestion, note creation, library registration
 4. **Each run produces a structured report** — stored in worklog
 
+For details on the two-layer security model (client permissions vs server scope), see [Agent Safety & Permissions](../explanation/agent-safety.md).
+
 ### Tool categories by access level
 
 | Access | Tools |
 |--------|-------|
-| **Read-only** | `rag_query`, `rag_query_multi`, `corpus_list`, `note_list`, `note_latest`, `note_read`, `note_search`, `note_types`, `citekey_resolve`, `paper_context`, `paper_absent_refs`, `library_get`, `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`, `project_context`, `runtime_conventions`, `site_detect`, `site_list` |
-| **Write** | `note_create`, `note_update`, `biblio_ingest`, `biblio_library_set`, `codio_add_urls`, `site_serve`, `site_stop` |
+| **Read-only** | `rag_query`, `rag_query_multi`, `corpus_list`, `note_list`, `note_latest`, `note_read`, `note_search`, `note_types`, `citekey_resolve`, `paper_context`, `paper_absent_refs`, `library_get`, `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`, `project_context`, `runtime_conventions`, `site_detect`, `site_list`, `biblio_grobid_check` |
+| **Write** | `note_create`, `note_update`, `biblio_ingest`, `biblio_library_set`, `biblio_merge`, `biblio_docling`, `biblio_grobid`, `codio_add_urls`, `indexio_build`, `site_serve`, `site_stop` |
 
 Worklog can gate write tools based on task promotion status.
 

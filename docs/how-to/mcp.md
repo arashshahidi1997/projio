@@ -87,12 +87,18 @@ Add to your project's `.mcp.json` (or use `projio mcp-config` to generate it):
 }
 ```
 
+## Context tools (always available)
+
+- `project_context` — project config, README excerpt, key paths
+- `runtime_conventions` — parsed Makefile variables and targets
+- `agent_instructions` — tool routing table, workflow conventions, enabled packages. Cross-project orchestrators (e.g. worklog) call this before dispatching prompts to a project.
+
 ## Ecosystem tools
 
 The MCP server automatically registers tools for installed ecosystem packages:
 
-- **indexio** — `rag_query`, `rag_query_multi`, `corpus_list`
-- **biblio** — `citekey_resolve`, `paper_context`, `paper_absent_refs`, `library_get`, `biblio_ingest`, `biblio_library_set`
+- **indexio** — `rag_query`, `rag_query_multi`, `corpus_list`, `indexio_build`
+- **biblio** — `citekey_resolve`, `paper_context`, `paper_absent_refs`, `library_get`, `biblio_ingest`, `biblio_library_set`, `biblio_merge`, `biblio_docling`, `biblio_grobid`, `biblio_grobid_check`
 - **notio** — `note_list`, `note_latest`, `note_search`
 - **codio** — `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`, `codio_add_urls`
 

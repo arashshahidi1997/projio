@@ -1,4 +1,4 @@
-"""MCP tools: rag_query, rag_query_multi, corpus_list."""
+"""MCP tools: rag_query, rag_query_multi, corpus_list, indexio_build."""
 from __future__ import annotations
 
 from typing import Any
@@ -92,3 +92,21 @@ def corpus_list() -> JsonDict:
         "persist_directory": str(store_cfg.persist_directory),
         "corpora": [{"corpus": c, "chunks": n} for c, n in sorted(counts.items())],
     })
+
+
+def indexio_build(sources: list[str] | None = None) -> JsonDict:
+    """Rebuild the search index. Full rebuild by default, or partial if sources are specified.
+
+    Args:
+        sources: Optional list of source IDs to rebuild (partial). Empty or null = full rebuild.
+    """
+    from indexio.build import build_index
+
+    config_path, root = _get_config()
+    result = build_index(
+        config_path=config_path,
+        root=root,
+        sources_filter=sources or None,
+        verbose=False,
+    )
+    return json_dict(result)

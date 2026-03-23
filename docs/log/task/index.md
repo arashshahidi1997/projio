@@ -2,6 +2,7 @@
 
 ## status: pending
 
+- [task-arash-20260318-022253-067748 status:pending title:Debug worklog-projio agent_instructions integration](task-arash-20260318-022253-067748.md)
 - [task-arash-20260318-000146-662952 status:pending title:Update mkdocs nav and tutorial indexes for all new tutorials](task-arash-20260318-000146-662952.md)
 - [task-arash-20260318-000144-504496 status:pending title:Tutorial: Site and docs workflow (site detect/serve/stop, chatbot, GitHub Pages)](task-arash-20260318-000144-504496.md)
 - [task-arash-20260318-000136-985155 status:pending title:Tutorial: Agent orchestration (multi-tool MCP session, full worklog-ready loop)](task-arash-20260318-000136-985155.md)
