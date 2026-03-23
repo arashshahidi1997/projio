@@ -18,3 +18,7 @@
 	url = https://github.com/arashshahidi1997/codio.git
 	datalad-id = b8c89e9e-022a-431c-9522-193cd5a622eb
 	datalad-url = /storage/share/git/ria-store/alias/codio
+[submodule "packages/pipeio"]
+	path = packages/pipeio
+	url = ./packages/pipeio
+	datalad-id = 78502d99-5102-4adf-9acf-8adee78140f3
