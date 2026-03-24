@@ -34,3 +34,33 @@ The MCP tool surface supports this workflow directly:
 5. `citekey_resolve` / `paper_context` — consult literature
 
 Parallel agents can study multiple libraries simultaneously. Results feed back into curated library notes for future reference.
+
+## From tools to workflows
+
+Having the right tools is necessary but not sufficient. The key bottleneck for autonomous agent productivity is **workflow awareness** — knowing when to use which tools in what sequence.
+
+Projio addresses this at three levels:
+
+### 1. Workflow prompts
+
+Composable, phase-specific instruction documents at `docs/prompts/workflows/` that agents can read to self-direct:
+
+| Prompt | Phase | Purpose |
+|--------|-------|---------|
+| `session-bootstrap.md` | Any | Context gathering at session start |
+| `explore-idea.md` | Exploration | Capture idea, discover code, search literature, decide |
+| `implement-feature.md` | Exploration | Implement, test, notebook demo |
+| `integrate-pipeline.md` | Production | Snakemake integration, registry, docs |
+| `validate-and-deploy.md` | Production | Pre-flight, validation, deployment |
+
+These chain naturally: each prompt's output becomes the next prompt's input.
+
+### 2. Cross-package skills (planned)
+
+Python functions at `src/projio/skills/` that compose tools from multiple packages into a single call. For example, `explore_idea("phase gradient detection")` internally calls `codio_discover` + `rag_query` + `note_create` and returns a structured report.
+
+### 3. Phase-aware routing (planned)
+
+The `agent_instructions()` MCP tool will detect the current workflow phase from recent notes and active tasks, then suggest the appropriate workflow prompt — so the agent knows where it is in the routine without the user having to explain.
+
+See the [Grand Routine tutorial](../tutorials/grand-routine.md) for the full end-to-end workflow.

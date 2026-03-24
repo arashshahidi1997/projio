@@ -214,6 +214,18 @@ def pipeio_nb_status_tool():
     return pipeio.pipeio_nb_status()
 
 
+@server.tool("pipeio_mod_list")
+def pipeio_mod_list_tool(pipe: str, flow: str = ""):
+    """List mods (logical modules) for a pipeline flow."""
+    return pipeio.pipeio_mod_list(pipe=pipe, flow=flow)
+
+
+@server.tool("pipeio_mod_resolve")
+def pipeio_mod_resolve_tool(modkeys: list[str]):
+    """Resolve modkeys (pipe-X_flow-Y_mod-Z) into metadata and doc locations."""
+    return pipeio.pipeio_mod_resolve(modkeys=modkeys)
+
+
 @server.tool("pipeio_registry_validate")
 def pipeio_registry_validate_tool():
     """Validate pipeline registry consistency (code vs docs, config schema)."""
@@ -239,6 +251,19 @@ def agent_instructions_tool():
     """Agent execution context: tool routing, workflow conventions, enabled packages.
     Call this before executing prompts in this project to get tool-aware instructions."""
     return context.agent_instructions()
+
+
+@server.tool("module_context")
+def module_context_tool(doc_path: str):
+    """Extract structured sections (goal, assumptions, parameters, IO, limitations) from a markdown document."""
+    return context.module_context(doc_path=doc_path)
+
+
+@server.tool("skill_read")
+def skill_read_tool(name: str):
+    """Read a skill's full content by name. Returns metadata and markdown body.
+    Use agent_instructions() first to see available skills, then skill_read() to get one."""
+    return context.skill_read(name=name)
 
 
 # --- Site tools ---

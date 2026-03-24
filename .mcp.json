@@ -9,6 +9,10 @@
       "env": {
         "PROJIO_ROOT": "/storage2/arash/projects/projio"
       }
+    },
+    "worklog": {
+      "command": "worklog-mcp",
+      "args": []
     }
   }
 }

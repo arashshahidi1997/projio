@@ -61,6 +61,39 @@ def pipeio_nb_status() -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def pipeio_mod_list(pipe: str, flow: str = "") -> JsonDict:
+    """List mods for a specific pipeline flow.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name (optional for single-flow pipes).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_mod_list")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_mod_list  # type: ignore[import]
+        return json_dict(mcp_mod_list(root, pipe=pipe, flow=flow or None))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_mod_resolve(modkeys: list[str]) -> JsonDict:
+    """Resolve modkeys (pipe-X_flow-Y_mod-Z) into metadata and doc locations.
+
+    Args:
+        modkeys: List of modkey strings to resolve.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_mod_resolve")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_mod_resolve  # type: ignore[import]
+        return json_dict(mcp_mod_resolve(root, modkeys=modkeys))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_registry_validate() -> JsonDict:
     """Validate pipeline registry consistency (code vs docs, config schema)."""
     if not _pipeio_available():

@@ -10,11 +10,11 @@ from .config import load_project_config
 KIND_CHOICES = ("generic", "tool", "study")
 SITE_FRAMEWORK_CHOICES = ("mkdocs", "sphinx", "vite")
 
-KNOWN_PACKAGES = ("biblio", "notio", "codio", "indexio", "claude")
+KNOWN_PACKAGES = ("biblio", "notio", "codio", "indexio", "pipeio", "claude")
 
 PROFILES: dict[str, tuple[str, ...]] = {
     "research": ("notio", "biblio", "indexio"),
-    "full": ("notio", "biblio", "codio", "indexio"),
+    "full": ("notio", "biblio", "codio", "indexio", "pipeio"),
 }
 
 BASE_PROJIO_CONFIG = """\
@@ -41,6 +41,11 @@ codio:
   catalog_path: .projio/codio/catalog.yml
   profiles_path: .projio/codio/profiles.yml
   notes_dir: docs/reference/codelib/libraries/
+
+pipeio:
+  enabled: true
+  registry_path: .projio/pipeio/registry.yml
+  pipelines_dir: code/pipelines
 
 site:
   framework: {site_framework}
@@ -216,6 +221,18 @@ mcp:
 mcp-config:
 \t$(PROJIO) mcp-config -C . --yes
 """
+
+def _projio_mk(root: Path) -> str:
+    """Generate projio.mk, substituting runtime.python_bin if configured."""
+    try:
+        cfg = load_project_config(root)
+        python_bin = cfg.get("runtime", {}).get("python_bin")
+    except Exception:
+        python_bin = None
+    if python_bin:
+        return PROJIO_MK.replace("PYTHON  ?= python", f"PYTHON  ?= {python_bin}", 1)
+    return PROJIO_MK
+
 
 _PROJIO_INCLUDE = "-include .projio/projio.mk"
 _GITIGNORE_BEGIN = "# >>> projio >>>"
@@ -564,7 +581,7 @@ def _scaffold_base(root: Path, *, kind: str, force: bool, vscode: bool, github_p
     site_framework = _detect_site_framework(root)
     _write_if_needed(proj_dir / "config.yml", _projio_config_for_kind(root, root.name, kind, site_framework=site_framework), root, force=force)
     # projio.mk is projio-managed — always overwrite to pick up new targets
-    _write_if_needed(proj_dir / "projio.mk", PROJIO_MK, root, force=True)
+    _write_if_needed(proj_dir / "projio.mk", _projio_mk(root), root, force=True)
     if site_framework == "mkdocs":
         _write_if_needed(root / "mkdocs.yml", DEFAULT_MKDOCS.format(name=root.name), root, force=force)
     _write_if_needed(root / "Makefile", _makefile_for_kind(kind), root, force=force)
@@ -709,6 +726,16 @@ def _scaffold_component(root: Path, package: str, component_dir: Path) -> None:
             pass
         # biblio uses visible bib/, component dir is just a marker
         component_dir.mkdir(parents=True, exist_ok=True)
+    elif package == "pipeio":
+        component_dir.mkdir(parents=True, exist_ok=True)
+        reg_path = component_dir / "registry.yml"
+        if not reg_path.exists():
+            reg_path.write_text(
+                "# pipeio pipeline registry\nflows: {}\n",
+                encoding="utf-8",
+            )
+        templates_dir = component_dir / "templates" / "flow"
+        templates_dir.mkdir(parents=True, exist_ok=True)
     elif package == "claude":
         _scaffold_claude(root, component_dir)
     else:
@@ -932,6 +959,27 @@ and `runtime_conventions()` to see available Makefile targets.
 
         if workflow_parts:
             sections.append("## Workflow conventions\n\n" + "\n".join(workflow_parts) + "\n")
+
+    # Skills section
+    skills_dir = root / ".projio" / "skills"
+    if skills_dir.is_dir():
+        skill_dirs = sorted(
+            d for d in skills_dir.iterdir()
+            if d.is_dir() and (d / "SKILL.md").exists()
+        )
+        if skill_dirs:
+            skill_lines: list[str] = []
+            for d in skill_dirs:
+                skill_lines.append(f"- `/{d.name}` — `.projio/skills/{d.name}/SKILL.md`")
+            sections.append(
+                "## Project skills\n\n"
+                "This project has agent skills in `.projio/skills/`. "
+                "Read the SKILL.md file for a skill before executing it. "
+                "Skills are available as Claude Code slash commands (`/<name>`) "
+                "or can be read directly.\n\n"
+                + "\n".join(skill_lines)
+                + "\n"
+            )
 
     # Development section
     sections.append("""\

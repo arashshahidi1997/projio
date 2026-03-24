@@ -42,7 +42,9 @@ nav:
       - Note-Driven Workflow: tutorials/note-workflow.md
       - Semantic Search Pipeline: tutorials/search-pipeline.md
       - Agent-Driven Ingestion: tutorials/agent-ingestion.md
+      - Shared Code Library: tutorials/shared-codelib.md
       - Agent Orchestration: tutorials/agent-orchestration.md
+      - Grand Routine: tutorials/grand-routine.md
       - Site & Docs Workflow: tutorials/site-workflow.md
   - How-To Guides:
       - how-to/index.md

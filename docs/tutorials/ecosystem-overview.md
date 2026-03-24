@@ -27,6 +27,7 @@ This pulls in:
 | biblio | `biblio-tools` | Bibliography management |
 | notio | `notio` | Structured notes |
 | codio | `codio-tools` | Code intelligence |
+| pipeio | `pipeio` | Pipeline registry + notebook lifecycle |
 
 To install individual components:
 
@@ -34,6 +35,7 @@ To install individual components:
 pip install projio           # core only
 pip install "projio[biblio]" # core + bibliography
 pip install "projio[indexio,notio]" # core + search + notes
+pip install pipeio           # pipeline management (separate package)
 ```
 
 ## Step 2: Initialize the workspace
@@ -65,40 +67,48 @@ For a lightweight study/analysis project:
 projio init . --kind study
 ```
 
-## Step 3: Initialize subsystems
+## Step 3: Activate subsystems
 
-Each ecosystem component scaffolds its own workspace:
+Use `projio init` with the `-c` flag to activate components in one step:
 
 ```bash
-# Bibliography workspace
-biblio init .
-
-# Notes workspace
-notio init --write-config
-
-# Code intelligence
-codio init
-
-# Semantic search (configure sources)
-indexio init-config
+projio init -c full    # activates notio, biblio, codio, indexio, pipeio
 ```
 
-After initialization, your project will have:
+Or activate individually:
+
+```bash
+projio add notio
+projio add biblio
+projio add codio
+projio add indexio
+projio add pipeio
+projio add claude      # set up Claude Code permissions + CLAUDE.md
+```
+
+After initialization, all components live under `.projio/`:
 
 ```
 your-project/
-├── .projio/config.yml      # projio config
-├── bib/                    # biblio workspace
+├── .projio/
+│   ├── config.yml         # projio config
+│   ├── packages.yml       # enabled packages
+│   ├── projio.mk          # Makefile include
+│   ├── notio/             # note templates
+│   ├── biblio/            # bibliography marker
+│   ├── codio/             # catalog.yml + profiles.yml
+│   │   ├── catalog.yml
+│   │   └── profiles.yml
+│   ├── indexio/           # search config + index
+│   │   └── config.yaml
+│   ├── pipeio/            # pipeline registry
+│   │   └── registry.yml
+│   └── skills/            # project-level skills (optional)
+├── bib/                   # biblio workspace (visible)
 │   ├── main.bib
-│   ├── srcbib/
 │   └── config/
-├── .codio/                 # codio registry
-│   ├── catalog.yml
-│   └── profiles.yml
-├── notio.toml              # notio config
-├── docs/
-│   └── log/                # notio notes
-└── infra/indexio/           # indexio config
+├── notes/                 # notio notes
+└── docs/
 ```
 
 ## Step 4: Connect the MCP server
@@ -241,9 +251,35 @@ Maintain a registry of libraries with structured metadata:
 - Capability search across registered libraries
 - Bulk-add from GitHub/GitLab URLs
 
+### pipeio — Pipeline management
+
+Manage computational pipelines in a pipe / flow / mod hierarchy:
+
+```bash
+pipeio registry scan    # discover flows from filesystem
+pipeio registry validate  # check registry consistency
+pipeio flow list        # list all flows
+```
+
+Query via MCP: `pipeio_flow_list()` returns the registry, `pipeio_mod_list(pipe, flow)` returns mods within a flow, `pipeio_mod_resolve(modkeys)` resolves modkey strings.
+
+### Skills — Agent workflow guidance
+
+Projio ships ecosystem-level skills that guide agents through common workflows:
+
+| Skill | Purpose |
+|-------|---------|
+| `idea-capture` | Capture analysis idea as structured note |
+| `codelib-discovery` | Search code corpora for existing implementations |
+| `literature-discovery` | Search paper corpus for methods and parameters |
+| `rag-query` | Query code / docs / papers via RAG |
+
+Skills are discovered automatically by `agent_instructions()`. Projects can add their own skills in `.projio/skills/` — these override ecosystem skills by name.
+
 ## Next steps
 
 - [Agent-Driven Ingestion](agent-ingestion.md) — use Claude Code to ingest papers and code libraries
 - [Project Setup Workflow](project-setup.md) — full bootstrap with DataLad siblings
 - [Note-Driven Workflow](note-workflow.md) — create, search, and manage notes through MCP
 - [Semantic Search Pipeline](search-pipeline.md) — build and query a project corpus
+- [Grand Routine](grand-routine.md) — end-to-end research workflow: idea to deployed pipeline

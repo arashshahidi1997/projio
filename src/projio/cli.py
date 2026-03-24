@@ -67,6 +67,19 @@ def _build_parser() -> argparse.ArgumentParser:
     p_config_init_user.add_argument("--force", action="store_true", help="Overwrite existing user config.")
     config_sub.add_parser("show", help="Print merged user + project config.")
 
+    p_config_set_python = config_sub.add_parser(
+        "set-python",
+        help="Set runtime.python_bin in project config. Uses current interpreter by default.",
+    )
+    p_config_set_python.add_argument(
+        "python_path", nargs="?", default=None,
+        help="Explicit Python path. Omit to use current interpreter.",
+    )
+    p_config_set_python.add_argument(
+        "--env", dest="conda_env", default=None,
+        help="Resolve a conda environment name to its Python path.",
+    )
+
     p_site = sub.add_parser("site", help="Doc-site operations (MkDocs, Sphinx, React frontend via Vite).")
     site_sub = p_site.add_subparsers(dest="site_command", required=True)
 
@@ -151,6 +164,15 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Show what would change without writing.",
     )
 
+    p_skill = sub.add_parser("skill", help="Manage project skills.")
+    p_skill.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    skill_sub = p_skill.add_subparsers(dest="skill_command", required=True)
+
+    p_skill_new = skill_sub.add_parser("new", help="Scaffold a new skill in .projio/skills/.")
+    p_skill_new.add_argument("name", help="Skill name (slug, e.g. my-analysis).")
+
+    p_skill_list = skill_sub.add_parser("list", help="List available skills.")
+
     p_mcp = sub.add_parser("mcp", help="Start the FastMCP server (stdio).")
     p_mcp.add_argument("-C", "--root", default=".", help="Project root (default: .).")
 
@@ -209,6 +231,12 @@ def main(argv: Iterable[str] | None = None) -> None:
             config_mod.scaffold_user_config(force=args.force)
         elif args.config_command == "show":
             config_mod.print_effective_config(args.root)
+        elif args.config_command == "set-python":
+            config_mod.set_python(
+                args.root,
+                python_path=args.python_path,
+                conda_env=args.conda_env,
+            )
         return
 
     if args.command == "site":
@@ -295,6 +323,14 @@ def main(argv: Iterable[str] | None = None) -> None:
         from .init import update_claude_permissions
         if args.claude_command == "update-permissions":
             update_claude_permissions(args.root, dry_run=args.dry_run)
+        return
+
+    if args.command == "skill":
+        from .skills import skill_new, skill_list
+        if args.skill_command == "new":
+            skill_new(args.root, args.name)
+        elif args.skill_command == "list":
+            skill_list(args.root)
         return
 
     if args.command == "mcp":
