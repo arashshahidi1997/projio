@@ -1,4 +1,4 @@
-"""MCP tools: pipeio_flow_list, pipeio_flow_status, pipeio_nb_status, pipeio_registry_validate."""
+"""MCP tools: pipeio_flow_list, pipeio_flow_status, pipeio_nb_status, pipeio_mod_list, pipeio_mod_resolve, pipeio_registry_scan, pipeio_registry_validate, pipeio_docs_collect, pipeio_docs_nav, pipeio_contracts_validate."""
 from __future__ import annotations
 
 from .common import JsonDict, get_project_root, json_dict
@@ -90,6 +90,62 @@ def pipeio_mod_resolve(modkeys: list[str]) -> JsonDict:
     try:
         from pipeio.mcp import mcp_mod_resolve  # type: ignore[import]
         return json_dict(mcp_mod_resolve(root, modkeys=modkeys))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_registry_scan() -> JsonDict:
+    """Scan the filesystem for pipelines and rebuild the registry.
+
+    Discovers pipes, flows, and mods from the pipelines directory
+    (code/pipelines/ or pipelines/) and writes a fresh registry.yml.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_registry_scan")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_registry_scan  # type: ignore[import]
+        return json_dict(mcp_registry_scan(root))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_docs_collect() -> JsonDict:
+    """Collect flow-local docs and notebook outputs into docs/pipelines/.
+
+    Copies hand-written docs from each flow's docs/ directory and publishes
+    notebooks into the MkDocs site structure.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_docs_collect")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_docs_collect  # type: ignore[import]
+        return json_dict(mcp_docs_collect(root))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_docs_nav() -> JsonDict:
+    """Generate MkDocs nav YAML fragment for collected pipeline docs."""
+    if not _pipeio_available():
+        return _unavailable("pipeio_docs_nav")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_docs_nav  # type: ignore[import]
+        return json_dict(mcp_docs_nav(root))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_contracts_validate() -> JsonDict:
+    """Validate I/O contracts for all flows (config completeness, dirs, groups)."""
+    if not _pipeio_available():
+        return _unavailable("pipeio_contracts_validate")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_contracts_validate  # type: ignore[import]
+        return json_dict(mcp_contracts_validate(root))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 

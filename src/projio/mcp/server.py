@@ -226,6 +226,30 @@ def pipeio_mod_resolve_tool(modkeys: list[str]):
     return pipeio.pipeio_mod_resolve(modkeys=modkeys)
 
 
+@server.tool("pipeio_registry_scan")
+def pipeio_registry_scan_tool():
+    """Scan filesystem for pipelines and rebuild the registry (auto-discovery)."""
+    return pipeio.pipeio_registry_scan()
+
+
+@server.tool("pipeio_docs_collect")
+def pipeio_docs_collect_tool():
+    """Collect flow-local docs and notebooks into docs/pipelines/ for MkDocs."""
+    return pipeio.pipeio_docs_collect()
+
+
+@server.tool("pipeio_docs_nav")
+def pipeio_docs_nav_tool():
+    """Generate MkDocs nav YAML fragment for collected pipeline docs."""
+    return pipeio.pipeio_docs_nav()
+
+
+@server.tool("pipeio_contracts_validate")
+def pipeio_contracts_validate_tool():
+    """Validate I/O contracts for all flows (config, dirs, registry groups)."""
+    return pipeio.pipeio_contracts_validate()
+
+
 @server.tool("pipeio_registry_validate")
 def pipeio_registry_validate_tool():
     """Validate pipeline registry consistency (code vs docs, config schema)."""
