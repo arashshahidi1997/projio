@@ -5,20 +5,41 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .common import JsonDict, get_project_root, json_dict
+from .common import JsonDict, get_project_root, json_dict, resolve_makefile_vars
 
 _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?\n)---\s*\n", re.DOTALL)
 
 _ASSIGN_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(\?=|:=|=)\s*(.*?)\s*$")
 _VAR_REF_RE = re.compile(r"\$\(([A-Za-z_][A-Za-z0-9_]*)\)")
+_INCLUDE_RE = re.compile(r"^-?include\s+(.+)$")
 
 
-def _parse_makefile_vars(text: str) -> dict[str, str]:
+def _parse_makefile_vars(text: str, base_dir: Path | None = None) -> dict[str, str]:
+    """Parse Makefile variable assignments, following ``include`` directives.
+
+    When *base_dir* is given, ``include`` and ``-include`` lines are resolved
+    relative to it and their variables merged (included files are parsed first,
+    so the including file can override them — matching Make semantics for simple
+    ``?=`` / ``=`` assignments).
+    """
     vars_: dict[str, str] = {}
     for raw in text.splitlines():
         line = raw.split("#", 1)[0].rstrip()
         if not line.strip():
             continue
+        # Handle include / -include directives
+        if base_dir is not None:
+            inc_match = _INCLUDE_RE.match(line.strip())
+            if inc_match:
+                for inc_path_str in inc_match.group(1).split():
+                    inc_path = base_dir / inc_path_str
+                    if inc_path.is_file():
+                        try:
+                            inc_text = inc_path.read_text(encoding="utf-8")
+                            vars_.update(_parse_makefile_vars(inc_text, base_dir=inc_path.parent))
+                        except OSError:
+                            pass
+                continue
         match = _ASSIGN_RE.match(line)
         if not match:
             continue
@@ -300,13 +321,8 @@ def runtime_conventions() -> JsonDict:
     """Parse Makefile variables and targets from the project root, return as dict."""
     root = get_project_root()
     makefile = root / "Makefile"
-    projio_mk = root / ".projio" / "projio.mk"
     exists = makefile.exists()
-    vars_: dict[str, str] = {}
-    if projio_mk.exists():
-        vars_.update(_parse_makefile_vars(projio_mk.read_text(encoding="utf-8")))
-    if exists:
-        vars_.update(_parse_makefile_vars(makefile.read_text(encoding="utf-8")))
+    vars_ = resolve_makefile_vars()
     command_keys = {
         "python": "PYTHON",
         "datalad": "DATALAD",

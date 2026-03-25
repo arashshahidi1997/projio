@@ -41,3 +41,28 @@ def ensure_json_serializable(value: Any) -> JsonValue:
 
 def json_dict(payload: Dict[str, Any]) -> JsonDict:
     return cast(JsonDict, ensure_json_serializable(payload))
+
+
+def resolve_makefile_vars() -> Dict[str, str]:
+    """Parse and merge Makefile variables from projio.mk and Makefile.
+
+    Follows ``include`` / ``-include`` directives so that variables defined in
+    included files (e.g. ``workflow/runtime.env``) are available for expansion.
+    """
+    from .context import _parse_makefile_vars
+
+    root = get_project_root()
+    vars_: Dict[str, str] = {}
+    projio_mk = root / ".projio" / "projio.mk"
+    makefile = root / "Makefile"
+    if projio_mk.exists():
+        vars_.update(_parse_makefile_vars(
+            projio_mk.read_text(encoding="utf-8"),
+            base_dir=projio_mk.parent,
+        ))
+    if makefile.exists():
+        vars_.update(_parse_makefile_vars(
+            makefile.read_text(encoding="utf-8"),
+            base_dir=root,
+        ))
+    return vars_

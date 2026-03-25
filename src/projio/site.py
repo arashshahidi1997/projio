@@ -432,10 +432,14 @@ def _prepare_site_chatbot(
 # Framework-specific commands
 # ---------------------------------------------------------------------------
 
-def _serve_cmd(framework: str, host: str, port: int, root: Path, site_cfg: dict[str, Any], *, config_path: Path | None = None) -> tuple[list[str], Path]:
+def _serve_cmd(
+    framework: str, host: str, port: int, root: Path, site_cfg: dict[str, Any],
+    *, config_path: Path | None = None, python_bin: str | None = None,
+) -> tuple[list[str], Path]:
     """Build the subprocess command list for each framework."""
+    py = python_bin or sys.executable
     if framework == "mkdocs":
-        cmd = [sys.executable, "-m", "mkdocs", "serve", "--dev-addr", f"{host}:{port}"]
+        cmd = [py, "-m", "mkdocs", "serve", "--dev-addr", f"{host}:{port}"]
         if config_path is not None:
             cmd.extend(["-f", str(config_path)])
         return cmd, root
@@ -444,7 +448,7 @@ def _serve_cmd(framework: str, host: str, port: int, root: Path, site_cfg: dict[
         source_dir = str(sphinx_cfg["source_dir"])
         build_dir = str(sphinx_cfg["build_dir"])
         return [
-            sys.executable, "-m", "sphinx_autobuild",
+            py, "-m", "sphinx_autobuild",
             source_dir, build_dir,
             "--host", host, "--port", str(port),
         ], root
@@ -461,10 +465,16 @@ def _build_cmd(
     *,
     strict: bool = False,
     config_path: Path | None = None,
+    python_bin: str | None = None,
 ) -> tuple[list[str], Path]:
-    """Build the subprocess command list for building docs."""
+    """Build the subprocess command list for building docs.
+
+    *python_bin* overrides ``sys.executable`` for framework invocations that
+    need a specific Python (e.g. one where mkdocs / sphinx is installed).
+    """
+    py = python_bin or sys.executable
     if framework == "mkdocs":
-        cmd = [sys.executable, "-m", "mkdocs", "build"]
+        cmd = [py, "-m", "mkdocs", "build"]
         if config_path is not None:
             cmd.extend(["-f", str(config_path)])
         if strict:
@@ -473,7 +483,7 @@ def _build_cmd(
     if framework == "sphinx":
         sphinx_cfg = site_cfg["sphinx"]
         return [
-            sys.executable,
+            py,
             "-m",
             "sphinx",
             "-b",
@@ -652,21 +662,40 @@ def stop_all(root: str | Path) -> dict[str, Any]:
 # Build & publish (enhanced with framework detection)
 # ---------------------------------------------------------------------------
 
-def build(root: str | Path, *, strict: bool = False, framework: str | None = None) -> None:
-    """Build docs. Auto-detects framework if not specified."""
+def build(
+    root: str | Path,
+    *,
+    strict: bool = False,
+    framework: str | None = None,
+    python_bin: str | None = None,
+) -> None:
+    """Build docs. Auto-detects framework if not specified.
+
+    *python_bin* overrides ``sys.executable`` for invoking the doc framework.
+    """
     root = Path(root).expanduser().resolve()
     site_cfg = _load_site_config(root)
     framework = _resolve_framework(root, framework=framework, site_cfg=site_cfg)
     if framework == "unknown":
         raise RuntimeError("Could not detect doc-site framework.")
     integration = _prepare_site_chatbot(root, framework=framework, site_cfg=site_cfg, for_serve=False)
-    cmd, cmd_cwd = _build_cmd(framework, root, site_cfg, strict=strict, config_path=integration["config_path"])
+    cmd, cmd_cwd = _build_cmd(
+        framework, root, site_cfg,
+        strict=strict,
+        config_path=integration["config_path"],
+        python_bin=python_bin,
+    )
     result = subprocess.run(cmd, cwd=cmd_cwd)
     if result.returncode != 0:
         sys.exit(result.returncode)
 
 
-def publish(root: str | Path, *, framework: str | None = None) -> None:
+def publish(
+    root: str | Path,
+    *,
+    framework: str | None = None,
+    python_bin: str | None = None,
+) -> None:
     """Publish docs. Currently only mkdocs gh-deploy is supported."""
     root = Path(root).expanduser().resolve()
     site_cfg = _load_site_config(root)
@@ -676,7 +705,8 @@ def publish(root: str | Path, *, framework: str | None = None) -> None:
             f"Publish is currently only supported for mkdocs (detected: {framework}). "
             "Use your framework's deploy tooling directly."
         )
-    cmd = [sys.executable, "-m", "mkdocs", "gh-deploy", "--force"]
+    py = python_bin or sys.executable
+    cmd = [py, "-m", "mkdocs", "gh-deploy", "--force"]
     result = subprocess.run(cmd, cwd=root)
     if result.returncode != 0:
         sys.exit(result.returncode)

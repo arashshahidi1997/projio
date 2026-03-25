@@ -372,33 +372,59 @@ def site_list_tool():
 # --- DataLad tools ---
 
 @server.tool("datalad_status")
-def datalad_status_tool(recursive: bool = True):
-    """Show datalad status for the project dataset."""
-    return datalad.datalad_status(recursive=recursive)
+def datalad_status_tool(recursive: bool = True, dataset: str = ""):
+    """Show datalad status for the project dataset or a subdataset.
+
+    Args:
+        recursive: Include subdatasets (default True).
+        dataset: Relative path to a subdataset (e.g. 'packages/pipeio'). Empty = project root.
+    """
+    return datalad.datalad_status(recursive=recursive, dataset=dataset)
 
 
 @server.tool("datalad_save")
-def datalad_save_tool(message: str = "Update", recursive: bool = True):
-    """Save changes in the project dataset (datalad save)."""
-    return datalad.datalad_save(message=message, recursive=recursive)
+def datalad_save_tool(message: str = "Update", recursive: bool = True, dataset: str = "", path: str = ""):
+    """Save changes in the project dataset or a subdataset (datalad save).
+
+    Args:
+        message: Commit message.
+        recursive: Include subdatasets (default True).
+        dataset: Relative path to a subdataset (e.g. 'packages/pipeio'). Empty = project root.
+        path: Specific path(s) to save (space-separated). Empty = all changes.
+    """
+    return datalad.datalad_save(message=message, recursive=recursive, dataset=dataset, path=path)
 
 
 @server.tool("datalad_push")
-def datalad_push_tool(sibling: str = "github"):
-    """Push the project dataset to a sibling (datalad push --to <sibling>)."""
-    return datalad.datalad_push(sibling=sibling)
+def datalad_push_tool(sibling: str = "github", dataset: str = ""):
+    """Push the project dataset (or subdataset) to a sibling.
+
+    Args:
+        sibling: Sibling name (default 'github').
+        dataset: Relative path to a subdataset. Empty = project root.
+    """
+    return datalad.datalad_push(sibling=sibling, dataset=dataset)
 
 
 @server.tool("datalad_pull")
-def datalad_pull_tool(sibling: str = "origin"):
-    """Pull (update + merge) from a datalad sibling."""
-    return datalad.datalad_pull(sibling=sibling)
+def datalad_pull_tool(sibling: str = "origin", dataset: str = ""):
+    """Pull (update + merge) from a datalad sibling.
+
+    Args:
+        sibling: Sibling name (default 'origin').
+        dataset: Relative path to a subdataset. Empty = project root.
+    """
+    return datalad.datalad_pull(sibling=sibling, dataset=dataset)
 
 
 @server.tool("datalad_siblings")
-def datalad_siblings_tool():
-    """List configured datalad siblings for the project dataset."""
-    return datalad.datalad_siblings()
+def datalad_siblings_tool(dataset: str = ""):
+    """List configured datalad siblings for the project dataset or a subdataset.
+
+    Args:
+        dataset: Relative path to a subdataset. Empty = project root.
+    """
+    return datalad.datalad_siblings(dataset=dataset)
 
 
 @server.tool("git_status")

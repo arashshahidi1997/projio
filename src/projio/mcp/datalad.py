@@ -1,26 +1,58 @@
 """MCP tools: datalad save, status, push, pull for projio-managed projects."""
 from __future__ import annotations
 
+import shlex
 import subprocess
 from typing import Any
 
-from .common import JsonDict, get_project_root, json_dict
-from .context import _parse_makefile_vars, _expand
+from .common import JsonDict, get_project_root, json_dict, resolve_makefile_vars
+from .context import _expand
 
 
-def _resolve_datalad_bin() -> str:
-    """Resolve the datalad binary from Makefile/projio.mk variables."""
-    root = get_project_root()
-    vars_: dict[str, str] = {}
-    projio_mk = root / ".projio" / "projio.mk"
-    makefile = root / "Makefile"
-    if projio_mk.exists():
-        vars_.update(_parse_makefile_vars(projio_mk.read_text(encoding="utf-8")))
-    if makefile.exists():
-        vars_.update(_parse_makefile_vars(makefile.read_text(encoding="utf-8")))
+def _conda_wrap(binary: str) -> list[str] | None:
+    """If *binary* lives inside a conda env, return ``conda run -n <env> <name>``.
+
+    Returns ``None`` when the binary is not inside a recognisable conda env.
+    """
+    import re as _re
+    m = _re.search(r"/envs/([^/]+)/bin/([^/]+)$", binary)
+    if not m:
+        return None
+    env_name = m.group(1)
+    cmd_name = m.group(2)
+    # Find the conda binary relative to the envs dir
+    envs_dir = binary[: m.start() + len("/envs/") - len("/envs/")]
+    for candidate in ("condabin/conda", "bin/conda"):
+        conda_bin = f"{envs_dir}/{candidate}"
+        from pathlib import Path
+        if Path(conda_bin).is_file():
+            return [conda_bin, "run", "-n", env_name, cmd_name]
+    return None
+
+
+def _resolve_datalad_cmd() -> list[str]:
+    """Resolve the datalad command from Makefile/projio.mk variables.
+
+    Returns a list of command tokens (e.g. ``["datalad"]`` or
+    ``["/path/to/conda", "run", "-n", "labpy", "datalad"]``).
+
+    When the resolved binary lives inside a conda environment, it is
+    automatically wrapped with ``conda run -n <env>`` so that the full
+    environment (including git-annex on PATH) is available.
+    """
+    vars_ = resolve_makefile_vars()
     if "DATALAD" in vars_:
-        return _expand(vars_["DATALAD"], vars_)
-    return "datalad"
+        expanded = _expand(vars_["DATALAD"], vars_)
+        tokens = shlex.split(expanded)
+        # If it's already a multi-word command (e.g. conda run ...), use as-is
+        if len(tokens) > 1:
+            return tokens
+        # Single binary path — check if it needs conda wrapping
+        wrapped = _conda_wrap(tokens[0])
+        if wrapped:
+            return wrapped
+        return tokens
+    return ["datalad"]
 
 
 def _run(args: list[str], cwd: str | None = None) -> dict[str, Any]:
@@ -50,65 +82,94 @@ def _run(args: list[str], cwd: str | None = None) -> dict[str, Any]:
         return {"command": " ".join(args), "error": f"Binary not found: {args[0]}"}
 
 
-def datalad_status(recursive: bool = True) -> JsonDict:
-    """Show datalad status for the project dataset.
+def _resolve_dataset(root: Path, dataset: str | None) -> tuple[list[str], str]:
+    """Return ``(-d, path)`` args and the cwd for a datalad command.
+
+    When *dataset* is given (e.g. ``"packages/pipeio"``), the command targets
+    that subdataset.  Otherwise the project root is used.
+    """
+    from pathlib import Path as _P
+    if dataset:
+        ds_path = (root / dataset).resolve()
+        return ["-d", str(ds_path)], str(ds_path)
+    return [], str(root)
+
+
+def datalad_status(recursive: bool = True, dataset: str = "") -> JsonDict:
+    """Show datalad status for the project dataset or a subdataset.
 
     Args:
         recursive: Include subdatasets (default True).
+        dataset: Relative path to a subdataset (e.g. 'packages/pipeio'). Empty = project root.
     """
     root = get_project_root()
-    dl = _resolve_datalad_bin()
-    cmd = [dl, "status"]
+    dl = _resolve_datalad_cmd()
+    ds_args, cwd = _resolve_dataset(root, dataset or None)
+    cmd = [*dl, "status", *ds_args]
     if recursive:
         cmd.append("-r")
-    return json_dict(_run(cmd, cwd=str(root)))
+    return json_dict(_run(cmd, cwd=cwd))
 
 
-def datalad_save(message: str = "Update", recursive: bool = True) -> JsonDict:
-    """Save changes in the project dataset.
+def datalad_save(message: str = "Update", recursive: bool = True, dataset: str = "", path: str = "") -> JsonDict:
+    """Save changes in the project dataset or a subdataset.
 
     Args:
         message: Commit message for the save.
         recursive: Include subdatasets (default True).
+        dataset: Relative path to a subdataset (e.g. 'packages/pipeio'). Empty = project root.
+        path: Specific path(s) to save (space-separated). Empty = save all changes.
     """
     root = get_project_root()
-    dl = _resolve_datalad_bin()
-    cmd = [dl, "save", "-m", message]
+    dl = _resolve_datalad_cmd()
+    ds_args, cwd = _resolve_dataset(root, dataset or None)
+    cmd = [*dl, "save", *ds_args, "-m", message]
     if recursive:
         cmd.append("-r")
-    return json_dict(_run(cmd, cwd=str(root)))
+    if path:
+        cmd.extend(path.split())
+    return json_dict(_run(cmd, cwd=cwd))
 
 
-def datalad_push(sibling: str = "github") -> JsonDict:
-    """Push the project dataset to a sibling.
+def datalad_push(sibling: str = "github", dataset: str = "") -> JsonDict:
+    """Push the project dataset (or a subdataset) to a sibling.
 
     Args:
         sibling: Name of the datalad sibling to push to (default "github").
+        dataset: Relative path to a subdataset (e.g. 'packages/pipeio'). Empty = project root.
     """
     root = get_project_root()
-    dl = _resolve_datalad_bin()
-    cmd = [dl, "push", "-r", "--to", sibling]
-    return json_dict(_run(cmd, cwd=str(root)))
+    dl = _resolve_datalad_cmd()
+    ds_args, cwd = _resolve_dataset(root, dataset or None)
+    cmd = [*dl, "push", *ds_args, "-r", "--to", sibling]
+    return json_dict(_run(cmd, cwd=cwd))
 
 
-def datalad_pull(sibling: str = "origin") -> JsonDict:
+def datalad_pull(sibling: str = "origin", dataset: str = "") -> JsonDict:
     """Pull (update + merge) from a datalad sibling.
 
     Args:
         sibling: Name of the datalad sibling to pull from (default "origin").
+        dataset: Relative path to a subdataset (e.g. 'packages/pipeio'). Empty = project root.
     """
     root = get_project_root()
-    dl = _resolve_datalad_bin()
-    cmd = [dl, "update", "-r", "--merge", "-s", sibling]
-    return json_dict(_run(cmd, cwd=str(root)))
+    dl = _resolve_datalad_cmd()
+    ds_args, cwd = _resolve_dataset(root, dataset or None)
+    cmd = [*dl, "update", *ds_args, "-r", "--merge", "-s", sibling]
+    return json_dict(_run(cmd, cwd=cwd))
 
 
-def datalad_siblings() -> JsonDict:
-    """List configured datalad siblings for the project dataset."""
+def datalad_siblings(dataset: str = "") -> JsonDict:
+    """List configured datalad siblings for the project dataset or a subdataset.
+
+    Args:
+        dataset: Relative path to a subdataset (e.g. 'packages/pipeio'). Empty = project root.
+    """
     root = get_project_root()
-    dl = _resolve_datalad_bin()
-    cmd = [dl, "siblings"]
-    return json_dict(_run(cmd, cwd=str(root)))
+    dl = _resolve_datalad_cmd()
+    ds_args, cwd = _resolve_dataset(root, dataset or None)
+    cmd = [*dl, "siblings", *ds_args]
+    return json_dict(_run(cmd, cwd=cwd))
 
 
 def git_status() -> JsonDict:

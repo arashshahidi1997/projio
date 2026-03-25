@@ -25,7 +25,8 @@ def test_existing_init_scaffolds_workspace(tmp_path: Path) -> None:
     assert "$(DATALAD) save" in mk_text
     assert "$(DATALAD) push" in mk_text
     assert "$(PROJIO) url -C ." in mk_text
-    assert "PROJIO  ?= projio" in mk_text
+    assert "PROJIO  ?=" in mk_text and "-m projio" in mk_text
+    assert "MKDOCS  ?=" in mk_text and "-m mkdocs" in mk_text
     gitignore_text = (tmp_path / ".gitignore").read_text(encoding="utf-8")
     assert "# >>> projio >>>" in gitignore_text
     assert "site/" in gitignore_text

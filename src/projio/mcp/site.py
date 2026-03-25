@@ -1,7 +1,28 @@
 """MCP tools: site_detect, site_build, site_deploy, site_serve, site_stop, site_list."""
 from __future__ import annotations
 
-from .common import JsonDict, get_project_root, json_dict
+from .common import JsonDict, get_project_root, json_dict, resolve_makefile_vars
+from .context import _expand
+
+
+def _resolve_docs_python() -> str | None:
+    """Resolve the Python binary for doc-site builds from Makefile vars.
+
+    Checks ``MKDOCS`` first (e.g. ``/path/to/python -m mkdocs`` → extract the
+    python), then falls back to ``PYTHON``.  Returns ``None`` when no override
+    is found (caller should use ``sys.executable``).
+    """
+    vars_ = resolve_makefile_vars()
+    # Try MKDOCS first — if it's "python -m mkdocs", extract the python part
+    if "MKDOCS" in vars_:
+        expanded = _expand(vars_["MKDOCS"], vars_)
+        parts = expanded.split()
+        if len(parts) >= 3 and parts[1] == "-m":
+            return parts[0]
+    # Fall back to PYTHON
+    if "PYTHON" in vars_:
+        return _expand(vars_["PYTHON"], vars_)
+    return None
 
 
 def site_build(framework: str | None = None, strict: bool = False) -> JsonDict:
@@ -16,7 +37,8 @@ def site_build(framework: str | None = None, strict: bool = False) -> JsonDict:
         from projio.site import build, detect_framework
 
         fw = framework or detect_framework(root)
-        build(root, strict=strict, framework=framework)
+        python_bin = _resolve_docs_python()
+        build(root, strict=strict, framework=framework, python_bin=python_bin)
         return json_dict({
             "built": True,
             "framework": fw,

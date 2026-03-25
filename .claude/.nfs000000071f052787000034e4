@@ -3,9 +3,7 @@
     "allow": [
       "Bash(grep -E \"\\\\.py$\")",
       "Bash(python:*)",
-      "Bash(conda run:*)",
-      "mcp__projio__*",
-      "mcp__worklog__*"
+      "Bash(conda run:*)"
     ]
   },
   "allowedTools": [

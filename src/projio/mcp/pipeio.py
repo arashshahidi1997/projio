@@ -1,7 +1,19 @@
 """MCP tools: pipeio_flow_list, pipeio_flow_status, pipeio_nb_status, pipeio_mod_list, pipeio_mod_resolve, pipeio_registry_scan, pipeio_registry_validate, pipeio_docs_collect, pipeio_docs_nav, pipeio_contracts_validate."""
 from __future__ import annotations
 
-from .common import JsonDict, get_project_root, json_dict
+from .common import JsonDict, get_project_root, json_dict, resolve_makefile_vars
+from .context import _expand
+
+
+def _resolve_project_python() -> str | None:
+    """Resolve the project PYTHON from Makefile/projio.mk variables.
+
+    Returns ``None`` when no override is configured.
+    """
+    vars_ = resolve_makefile_vars()
+    if "PYTHON" in vars_:
+        return _expand(vars_["PYTHON"], vars_)
+    return None
 
 
 def _pipeio_available() -> bool:
@@ -201,8 +213,10 @@ def pipeio_nb_sync(
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_nb_sync  # type: ignore[import]
+        python_bin = _resolve_project_python()
         return json_dict(mcp_nb_sync(
             root, pipe=pipe, flow=flow, name=name, formats=formats,
+            python_bin=python_bin,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})

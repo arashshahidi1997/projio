@@ -158,6 +158,7 @@ PROJIO_MK = """\
 
 PYTHON  ?= python
 DATALAD ?= datalad
+MKDOCS  ?= $(PYTHON) -m mkdocs
 PROJIO  ?= $(PYTHON) -m projio
 MSG     ?= Update
 
@@ -841,6 +842,24 @@ def _scaffold_claude(root: Path, component_dir: Path) -> None:
     if not settings_path.exists():
         root_glob = f"{root}/**"
         settings = {
+            "permissions": {
+                "allow": [
+                    "Read",
+                    "Glob",
+                    "Grep",
+                    f"Edit({root_glob})",
+                    f"Write({root_glob})",
+                    "Bash(ls:*)",
+                    "Bash(find:*)",
+                    "Bash(git:*)",
+                    "Bash(python:*)",
+                    "Bash(pip:*)",
+                    "Bash(pytest:*)",
+                    "Bash(make:*)",
+                    "mcp__projio__*",
+                    "mcp__worklog__*",
+                ],
+            },
             "allowedTools": [
                 "Read",
                 "Glob",
@@ -882,6 +901,9 @@ def update_claude_permissions(root: str | Path, *, dry_run: bool = False) -> Non
     Rewrites bare ``Edit`` / ``Write`` entries in ``allowedTools`` and
     ``permissions.allow`` to carry the project-root path, e.g.
     ``Edit(/storage2/arash/projects/foo/**)``.
+
+    Also ensures ``mcp__projio__*`` and ``mcp__worklog__*`` wildcards are
+    present so MCP tools are pre-approved.
     """
     root = Path(root).expanduser().resolve()
     settings_path = root / ".claude" / "settings.json"
@@ -905,7 +927,14 @@ def update_claude_permissions(root: str | Path, *, dry_run: bool = False) -> Non
                 changed = True
         else:
             new_tools.append(entry)
-    if changed:
+
+    # Ensure MCP wildcard permissions are present
+    for mcp_pattern in ("mcp__projio__*", "mcp__worklog__*"):
+        if mcp_pattern not in new_tools:
+            new_tools.append(mcp_pattern)
+            changed = True
+
+    if new_tools != tools:
         settings["allowedTools"] = new_tools
 
     # --- permissions.allow ---
@@ -920,6 +949,13 @@ def update_claude_permissions(root: str | Path, *, dry_run: bool = False) -> Non
                 perms_changed = True
         else:
             new_allow.append(entry)
+
+    # Ensure MCP wildcard permissions are present in permissions.allow
+    for mcp_pattern in ("mcp__projio__*", "mcp__worklog__*"):
+        if mcp_pattern not in new_allow:
+            new_allow.append(mcp_pattern)
+            perms_changed = True
+
     if perms_changed:
         settings.setdefault("permissions", {})["allow"] = new_allow
         changed = True
@@ -934,7 +970,7 @@ def update_claude_permissions(root: str | Path, *, dry_run: bool = False) -> Non
         return
 
     settings_path.write_text(json.dumps(settings, indent=2) + "\n")
-    print(f"  [OK] scoped Edit/Write to {root_glob} in {settings_path.relative_to(root)}")
+    print(f"  [OK] updated permissions in {settings_path.relative_to(root)}")
 
 
 def _generate_claude_md(root: Path) -> str:
@@ -973,6 +1009,12 @@ This project uses **projio** — a project-centric research assistance ecosystem
 All project knowledge (papers, notes, code libraries, search indexes) is managed
 through MCP tools. **Always use MCP tools instead of direct file manipulation**
 for projio-managed resources.
+
+**Tool preference:** When an MCP tool exists for an operation, always prefer it
+over the Bash equivalent — even for simple commands like `git status` or
+`datalad status`. MCP tools return structured output and resolve environment
+variables (Python paths, conda envs) that differ from the MCP server's own env.
+Only fall back to Bash when no MCP tool covers the operation.
 
 At the start of a session, call `project_context()` to understand the workspace
 and `runtime_conventions()` to see available Makefile targets.
@@ -1028,7 +1070,8 @@ and `runtime_conventions()` to see available Makefile targets.
     rows.append("| Build doc site | `site_build()` | Run `make docs` or `mkdocs build` |")
     rows.append("| Deploy to pages | `site_deploy(target)` | Run `make deploy` or push manually |")
 
-    # DataLad tools (always available)
+    # Git & DataLad tools (always available)
+    rows.append("| Check git status | `git_status()` | Run `git status` in Bash |")
     rows.append("| Save dataset changes | `datalad_save(message)` | Run `make save` or `datalad save` |")
     rows.append("| Check dataset status | `datalad_status()` | Run `make status` or `datalad status` |")
     rows.append("| Push to sibling | `datalad_push(sibling)` | Run `make push` or `datalad push` |")
