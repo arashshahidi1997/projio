@@ -146,6 +146,19 @@ def _build_parser() -> argparse.ArgumentParser:
     p_docs_mkdocs = docs_sub.add_parser("mkdocs-init", help="Scaffold MkDocs files.")
     p_docs_mkdocs.add_argument("--force", action="store_true", help="Overwrite existing files.")
 
+    p_git = sub.add_parser("git", help="Git helpers for projio-managed projects.")
+    p_git.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    git_sub = p_git.add_subparsers(dest="git_command", required=True)
+    p_git_untrack = git_sub.add_parser(
+        "untrack",
+        help="Untrack files in the projio gitignore block that are still tracked by git.",
+    )
+    p_git_untrack.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    p_git_untrack.add_argument(
+        "--dry-run", action="store_true",
+        help="Show what would be untracked without modifying git.",
+    )
+
     p_auth = sub.add_parser("auth", help="Authentication diagnostics.")
     p_auth.add_argument("-C", "--root", default=".", help="Project root (default: .).")
     auth_sub = p_auth.add_subparsers(dest="auth_command", required=True)
@@ -311,6 +324,12 @@ def main(argv: Iterable[str] | None = None) -> None:
         from .helpers.docs import mkdocs_init
         if args.docs_command == "mkdocs-init":
             mkdocs_init(args.root, force=args.force)
+        return
+
+    if args.command == "git":
+        from .init import untrack_gitignored
+        if args.git_command == "untrack":
+            untrack_gitignored(args.root, dry_run=args.dry_run)
         return
 
     if args.command == "auth":

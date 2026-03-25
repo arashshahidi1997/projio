@@ -16,6 +16,7 @@
     "Bash(python:*)",
     "Bash(pip:*)",
     "Bash(pytest:*)",
-    "Bash(make:*)"
+    "Bash(make:*)",
+    "mcp__worklog__*"
   ]
 }

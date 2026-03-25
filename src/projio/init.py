@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 
-from .config import load_project_config
+from .config import load_effective_config, load_project_config
 
 KIND_CHOICES = ("generic", "tool", "study")
 SITE_FRAMEWORK_CHOICES = ("mkdocs", "sphinx", "vite")
@@ -158,7 +158,7 @@ PROJIO_MK = """\
 
 PYTHON  ?= python
 DATALAD ?= datalad
-PROJIO  ?= projio
+PROJIO  ?= $(PYTHON) -m projio
 MSG     ?= Update
 
 .PHONY: save push url
@@ -223,15 +223,33 @@ mcp-config:
 """
 
 def _projio_mk(root: Path) -> str:
-    """Generate projio.mk, substituting runtime.python_bin if configured."""
+    """Generate projio.mk, substituting runtime bins if configured."""
     try:
-        cfg = load_project_config(root)
-        python_bin = cfg.get("runtime", {}).get("python_bin")
+        cfg = load_effective_config(root)
+        runtime = cfg.get("runtime", {})
     except Exception:
-        python_bin = None
+        runtime = {}
+    python_bin = runtime.get("python_bin")
+    datalad_bin = runtime.get("datalad_bin")
+    projio_python = runtime.get("projio_python")
+    mk = PROJIO_MK
     if python_bin:
-        return PROJIO_MK.replace("PYTHON  ?= python", f"PYTHON  ?= {python_bin}", 1)
-    return PROJIO_MK
+        mk = mk.replace("PYTHON  ?= python", f"PYTHON  ?= {python_bin}", 1)
+    if projio_python:
+        mk = mk.replace(
+            "PROJIO  ?= $(PYTHON) -m projio",
+            f"PROJIO  ?= {projio_python} -m projio",
+            1,
+        )
+    elif python_bin:
+        mk = mk.replace(
+            "PROJIO  ?= $(PYTHON) -m projio",
+            f"PROJIO  ?= {python_bin} -m projio",
+            1,
+        )
+    if datalad_bin:
+        mk = mk.replace("DATALAD ?= datalad", f"DATALAD ?= {datalad_bin}", 1)
+    return mk
 
 
 _PROJIO_INCLUDE = "-include .projio/projio.mk"
@@ -463,6 +481,8 @@ def _detect_site_framework(root: Path) -> str:
 
 def _gitignore_entries_for_framework(site_framework: str) -> list[str]:
     entries = [
+        ".mcp.json",
+        ".claude/settings.json",
         ".projio/servers.json",
         ".projio/site/",
         ".projio.mkdocs.yml",
@@ -490,6 +510,66 @@ def _ensure_projio_gitignore(root: Path, *, site_framework: str) -> None:
         return
     path.write_text(new_text, encoding="utf-8")
     print(f"[OK] updated {path.relative_to(root)}")
+
+
+def untrack_gitignored(root: str | Path, *, dry_run: bool = False) -> list[str]:
+    """Untrack files listed in the projio gitignore block that are still tracked by git.
+
+    Returns the list of paths that were (or would be) untracked.
+    """
+    import subprocess
+
+    root = Path(root).expanduser().resolve()
+    gitignore = root / ".gitignore"
+    if not gitignore.exists():
+        print("No .gitignore found.")
+        return []
+
+    # Parse the projio block
+    text = gitignore.read_text(encoding="utf-8")
+    pattern = rf"(?ms)^{re.escape(_GITIGNORE_BEGIN)}\n(.*?)^{re.escape(_GITIGNORE_END)}"
+    match = re.search(pattern, text)
+    if not match:
+        print("No projio gitignore block found. Run: projio init")
+        return []
+
+    entries = [
+        line.strip() for line in match.group(1).splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
+
+    # Check which are still tracked
+    untracked = []
+    for entry in entries:
+        # For directory entries (trailing /), use git ls-files to find tracked files
+        if entry.endswith("/"):
+            result = subprocess.run(
+                ["git", "-C", str(root), "ls-files", entry.rstrip("/")],
+                capture_output=True, text=True,
+            )
+            tracked = [f for f in result.stdout.strip().splitlines() if f]
+        else:
+            result = subprocess.run(
+                ["git", "-C", str(root), "ls-files", entry],
+                capture_output=True, text=True,
+            )
+            tracked = [f for f in result.stdout.strip().splitlines() if f]
+
+        for f in tracked:
+            if dry_run:
+                print(f"  [dry-run] would untrack {f}")
+            else:
+                subprocess.run(
+                    ["git", "-C", str(root), "rm", "--cached", f],
+                    capture_output=True,
+                )
+                print(f"  [OK] untracked {f}")
+            untracked.append(f)
+
+    if not untracked:
+        print("Nothing to untrack — all gitignored files are already untracked.")
+
+    return untracked
 
 
 def _ensure_vscode_settings(root: Path) -> None:
@@ -775,6 +855,7 @@ def _scaffold_claude(root: Path, component_dir: Path) -> None:
                 "Bash(pytest:*)",
                 "Bash(make:*)",
                 "mcp__projio__*",
+                "mcp__worklog__*",
             ],
         }
         settings_path.write_text(json.dumps(settings, indent=2) + "\n")
@@ -875,6 +956,7 @@ def _generate_claude_md(root: Path) -> str:
     has_biblio = packages.get("biblio", {}).get("enabled", False)
     has_notio = packages.get("notio", {}).get("enabled", False)
     has_codio = packages.get("codio", {}).get("enabled", False)
+    has_pipeio = packages.get("pipeio", {}).get("enabled", False)
     has_indexio = packages.get("indexio", {}).get("enabled", False)
 
     sections: list[str] = []
@@ -937,6 +1019,22 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Check registry vocabulary | `codio_vocab()` | Read schema docs |")
         rows.append("| Validate registry | `codio_validate()` | Run consistency checks manually |")
 
+    if has_pipeio:
+        rows.append("| Scaffold a notebook | `pipeio_nb_create(pipe, flow, name)` | Create .py files manually |")
+        rows.append("| Sync notebook formats | `pipeio_nb_sync(pipe, flow, name)` | Run jupytext manually |")
+        rows.append("| Publish notebook to docs | `pipeio_nb_publish(pipe, flow, name)` | Copy files manually |")
+
+    # Site tools (always available)
+    rows.append("| Build doc site | `site_build()` | Run `make docs` or `mkdocs build` |")
+    rows.append("| Deploy to pages | `site_deploy(target)` | Run `make deploy` or push manually |")
+
+    # DataLad tools (always available)
+    rows.append("| Save dataset changes | `datalad_save(message)` | Run `make save` or `datalad save` |")
+    rows.append("| Check dataset status | `datalad_status()` | Run `make status` or `datalad status` |")
+    rows.append("| Push to sibling | `datalad_push(sibling)` | Run `make push` or `datalad push` |")
+    rows.append("| Pull from sibling | `datalad_pull(sibling)` | Run `make pull` or `datalad update` |")
+    rows.append("| List siblings | `datalad_siblings()` | Run `datalad siblings` manually |")
+
     if rows:
         table_header = "| Intent | MCP tool | Do NOT |\n|--------|----------|--------|\n"
         sections.append("## Agent tool routing\n\n" + table_header + "\n".join(rows) + "\n")
@@ -990,6 +1088,9 @@ make         # see available targets
 make save    # datalad save
 make push    # datalad push
 ```
+
+Agents should prefer the MCP tools `datalad_save()`, `datalad_push()`, `datalad_pull()`,
+and `datalad_status()` over running make/datalad commands directly.
 """)
 
     return "\n".join(sections)

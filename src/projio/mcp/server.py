@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from . import biblio, codio, context, notio, pipeio, rag, site as site_mcp
+from . import biblio, codio, context, datalad, notio, pipeio, rag, site as site_mcp
 
 server = FastMCP("projio")
 
@@ -250,6 +250,41 @@ def pipeio_contracts_validate_tool():
     return pipeio.pipeio_contracts_validate()
 
 
+@server.tool("pipeio_nb_create")
+def pipeio_nb_create_tool(
+    pipe: str,
+    flow: str,
+    name: str,
+    kind: str = "investigate",
+    description: str = "",
+):
+    """Scaffold a new notebook for a pipeline flow with bootstrap cells."""
+    return pipeio.pipeio_nb_create(
+        pipe=pipe, flow=flow, name=name,
+        kind=kind, description=description,
+    )
+
+
+@server.tool("pipeio_nb_sync")
+def pipeio_nb_sync_tool(
+    pipe: str,
+    flow: str,
+    name: str,
+    formats: list[str] = [],
+):
+    """Sync a notebook via jupytext (produce .ipynb and/or .md from .py)."""
+    return pipeio.pipeio_nb_sync(
+        pipe=pipe, flow=flow, name=name,
+        formats=formats or None,
+    )
+
+
+@server.tool("pipeio_nb_publish")
+def pipeio_nb_publish_tool(pipe: str, flow: str, name: str):
+    """Publish a notebook's myst markdown to the docs tree."""
+    return pipeio.pipeio_nb_publish(pipe=pipe, flow=flow, name=name)
+
+
 @server.tool("pipeio_registry_validate")
 def pipeio_registry_validate_tool():
     """Validate pipeline registry consistency (code vs docs, config schema)."""
@@ -292,6 +327,21 @@ def skill_read_tool(name: str):
 
 # --- Site tools ---
 
+@server.tool("site_build")
+def site_build_tool(framework: str = "", strict: bool = False):
+    """Build the doc site (mkdocs build / sphinx-build / vite build)."""
+    return site_mcp.site_build(
+        framework=framework or None,
+        strict=strict,
+    )
+
+
+@server.tool("site_deploy")
+def site_deploy_tool(target: str = "gitlab"):
+    """Deploy the doc site by pushing to the configured pages sibling."""
+    return site_mcp.site_deploy(target=target)
+
+
 @server.tool("site_detect")
 def site_detect_tool():
     """Detect the doc-site framework used by the project (mkdocs, sphinx, vite)."""
@@ -317,6 +367,44 @@ def site_stop_tool(port: int = 0, pid: int = 0):
 def site_list_tool():
     """List running doc servers for this project."""
     return site_mcp.site_list()
+
+
+# --- DataLad tools ---
+
+@server.tool("datalad_status")
+def datalad_status_tool(recursive: bool = True):
+    """Show datalad status for the project dataset."""
+    return datalad.datalad_status(recursive=recursive)
+
+
+@server.tool("datalad_save")
+def datalad_save_tool(message: str = "Update", recursive: bool = True):
+    """Save changes in the project dataset (datalad save)."""
+    return datalad.datalad_save(message=message, recursive=recursive)
+
+
+@server.tool("datalad_push")
+def datalad_push_tool(sibling: str = "github"):
+    """Push the project dataset to a sibling (datalad push --to <sibling>)."""
+    return datalad.datalad_push(sibling=sibling)
+
+
+@server.tool("datalad_pull")
+def datalad_pull_tool(sibling: str = "origin"):
+    """Pull (update + merge) from a datalad sibling."""
+    return datalad.datalad_pull(sibling=sibling)
+
+
+@server.tool("datalad_siblings")
+def datalad_siblings_tool():
+    """List configured datalad siblings for the project dataset."""
+    return datalad.datalad_siblings()
+
+
+@server.tool("git_status")
+def git_status_tool():
+    """Per-project git state: branch, staged/unstaged/untracked files, clean flag."""
+    return datalad.git_status()
 
 
 def main() -> None:

@@ -16,6 +16,32 @@ import yaml
 
 
 # ---------------------------------------------------------------------------
+# YAML round-trip helpers (preserve !!python/name: and similar tags)
+# ---------------------------------------------------------------------------
+
+class _TaggedScalar:
+    """Wraps a YAML scalar whose tag is not handled by SafeLoader."""
+    def __init__(self, tag: str, value: str) -> None:
+        self.tag = tag
+        self.value = value
+
+class _PreservingLoader(yaml.SafeLoader):
+    """SafeLoader that keeps unknown tags instead of raising."""
+
+class _PreservingDumper(yaml.SafeDumper):
+    """SafeDumper that emits preserved tags back."""
+
+def _tagged_constructor(loader: yaml.SafeLoader, suffix: str, node: yaml.Node) -> _TaggedScalar:
+    return _TaggedScalar("tag:yaml.org,2002:python/" + suffix, loader.construct_scalar(node))  # type: ignore[arg-type]
+
+def _tagged_representer(dumper: yaml.SafeDumper, data: _TaggedScalar) -> yaml.ScalarNode:
+    return dumper.represent_scalar(data.tag, data.value)
+
+_PreservingLoader.add_multi_constructor("tag:yaml.org,2002:python/", _tagged_constructor)
+_PreservingDumper.add_representer(_TaggedScalar, _tagged_representer)
+
+
+# ---------------------------------------------------------------------------
 # Framework detection
 # ---------------------------------------------------------------------------
 
@@ -71,6 +97,22 @@ def _is_port_free(port: int, host: str = "127.0.0.1") -> bool:
             return True
         except OSError:
             return False
+
+
+def _wait_for_port(port: int, host: str = "127.0.0.1", timeout: float = 30) -> bool:
+    """Block until *host:port* is accepting connections, or *timeout* expires."""
+    import time
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1)
+            try:
+                s.connect((host, port))
+                return True
+            except OSError:
+                time.sleep(0.3)
+    return False
 
 
 def find_free_port(
@@ -164,6 +206,9 @@ def _load_site_config(root: Path) -> dict[str, Any]:
                 "indexio_config": get_nested(cfg, "indexio", "config", default=".projio/indexio/config.yaml"),
                 "corpus": get_nested(cfg, "site", "chatbot", "corpus", default=None),
                 "store": get_nested(cfg, "site", "chatbot", "store", default=None),
+                "llm_backend": get_nested(cfg, "site", "chatbot", "llm_backend", default=None),
+                "llm_model": get_nested(cfg, "site", "chatbot", "llm_model", default=None),
+                "llm_base_url": get_nested(cfg, "site", "chatbot", "llm_base_url", default=None),
             },
         }
     except FileNotFoundError:
@@ -194,6 +239,9 @@ def _load_site_config(root: Path) -> dict[str, Any]:
                 "indexio_config": ".projio/indexio/config.yaml",
                 "corpus": None,
                 "store": None,
+                "llm_backend": None,
+                "llm_model": None,
+                "llm_base_url": None,
             },
         }
 
@@ -247,12 +295,22 @@ def _mkdocs_override_config_path(root: Path) -> Path:
 def _write_mkdocs_chat_hook(root: Path, *, backend_url: str, title: str, storage_key: str) -> Path:
     hook_path = _mkdocs_chat_hook_path(root)
     hook_path.parent.mkdir(parents=True, exist_ok=True)
-    api_url = f"{backend_url.rstrip('/')}/chat/"
-    js_url = f"{backend_url.rstrip('/')}/chatbot/chatbot.js"
-    css_url = f"{backend_url.rstrip('/')}/chatbot/chatbot.css"
+    base = backend_url.rstrip("/")
+    api_url = f"{base}/chat/"
+    stream_url = f"{base}/chat/stream"
+    status_url = f"{base}/status"
+    js_url = f"{base}/chatbot/chatbot.js"
+    css_url = f"{base}/chatbot/chatbot.css"
+    chat_cfg = {
+        "apiUrl": api_url,
+        "streamUrl": stream_url,
+        "statusUrl": status_url,
+        "title": title,
+        "storageKey": storage_key,
+    }
     snippet = (
         "<script>"
-        f"window.INDEXIO_CHAT = {json.dumps({'apiUrl': api_url, 'title': title, 'storageKey': storage_key})};"
+        f"window.INDEXIO_CHAT = {json.dumps(chat_cfg)};"
         "</script>"
         f'<script src="{js_url}"></script>'
         f'<link href="{css_url}" rel="stylesheet">'
@@ -278,7 +336,7 @@ def _mkdocs_config_with_chatbot(
     root: Path, *, backend_url: str, title: str, storage_key: str
 ) -> Path:
     config_path = _mkdocs_config_path(root)
-    payload = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    payload = yaml.load(config_path.read_text(encoding="utf-8"), Loader=_PreservingLoader) or {}
     if not isinstance(payload, dict):
         raise TypeError(f"Expected mapping in {config_path}")
     hook_path = _write_mkdocs_chat_hook(
@@ -293,11 +351,18 @@ def _mkdocs_config_with_chatbot(
         hooks.append(rel_hook)
     payload["hooks"] = hooks
     override_path = _mkdocs_override_config_path(root)
-    override_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    override_path.write_text(yaml.dump(payload, Dumper=_PreservingDumper, sort_keys=False), encoding="utf-8")
     return override_path
 
 
-def _indexio_serve_cmd(root: Path, chatbot_cfg: dict[str, Any], *, host: str, port: int) -> list[str]:
+def _indexio_serve_cmd(
+    root: Path,
+    chatbot_cfg: dict[str, Any],
+    *,
+    host: str,
+    port: int,
+    site_url: str | None = None,
+) -> list[str]:
     if importlib.util.find_spec("indexio") is None:
         raise RuntimeError("site chatbot requires the indexio package to be installed")
     cmd = [
@@ -320,6 +385,14 @@ def _indexio_serve_cmd(root: Path, chatbot_cfg: dict[str, Any], *, host: str, po
         cmd.extend(["--corpus", str(chatbot_cfg["corpus"])])
     if chatbot_cfg.get("store"):
         cmd.extend(["--store", str(chatbot_cfg["store"])])
+    if chatbot_cfg.get("llm_backend"):
+        cmd.extend(["--llm-backend", str(chatbot_cfg["llm_backend"])])
+    if chatbot_cfg.get("llm_model"):
+        cmd.extend(["--llm-model", str(chatbot_cfg["llm_model"])])
+    if chatbot_cfg.get("llm_base_url"):
+        cmd.extend(["--llm-base-url", str(chatbot_cfg["llm_base_url"])])
+    if site_url:
+        cmd.extend(["--site-url", site_url])
     return cmd
 
 
@@ -329,22 +402,22 @@ def _prepare_site_chatbot(
     framework: str,
     site_cfg: dict[str, Any],
     for_serve: bool,
+    site_url: str | None = None,
 ) -> dict[str, Any]:
     chatbot_cfg = dict(site_cfg.get("chatbot") or {})
     if framework != "mkdocs" or not chatbot_cfg.get("enabled"):
-        return {"config_path": None, "chat_proc": None, "backend_url": None}
+        return {"config_path": None, "chat_cmd": None, "chat_proc": None, "backend_url": None}
 
     backend_url = chatbot_cfg.get("backend_url")
-    chat_proc = None
+    chat_cmd = None
     if backend_url is None and for_serve:
         chat_host = str(chatbot_cfg.get("host") or site_cfg["host"])
         chat_port = find_free_port(base=int(chatbot_cfg.get("port", 9100)), host=chat_host)
-        chat_cmd = _indexio_serve_cmd(root, chatbot_cfg, host=chat_host, port=chat_port)
-        chat_proc = subprocess.Popen(chat_cmd, cwd=root)
+        chat_cmd = _indexio_serve_cmd(root, chatbot_cfg, host=chat_host, port=chat_port, site_url=site_url)
         backend_url = f"http://{chat_host}:{chat_port}"
     elif backend_url is None:
         print("[projio-site] Chatbot enabled, but no site.chatbot.backend_url configured; skipping widget injection.")
-        return {"config_path": None, "chat_proc": None, "backend_url": None}
+        return {"config_path": None, "chat_cmd": None, "chat_proc": None, "backend_url": None}
 
     config_path = _mkdocs_config_with_chatbot(
         root,
@@ -352,7 +425,7 @@ def _prepare_site_chatbot(
         title=str(chatbot_cfg["title"]),
         storage_key=str(chatbot_cfg["storage_key"]),
     )
-    return {"config_path": config_path, "chat_proc": chat_proc, "backend_url": backend_url}
+    return {"config_path": config_path, "chat_cmd": chat_cmd, "chat_proc": None, "backend_url": backend_url}
 
 
 # ---------------------------------------------------------------------------
@@ -444,19 +517,48 @@ def serve(
         )
     if port is None:
         port = find_free_port(base=site_cfg["base_port"], host=host)
-    integration = _prepare_site_chatbot(root, framework=framework, site_cfg=site_cfg, for_serve=True)
+    # Build the local site URL, including any base path from mkdocs site_url.
+    site_url = f"http://{host}:{port}"
+    if framework == "mkdocs":
+        try:
+            from urllib.parse import urlparse
+
+            mkdocs_raw = yaml.load(
+                _mkdocs_config_path(root).read_text(encoding="utf-8"),
+                Loader=_PreservingLoader,
+            ) or {}
+            mkdocs_site_url = mkdocs_raw.get("site_url", "")
+            if mkdocs_site_url:
+                base_path = urlparse(str(mkdocs_site_url)).path.rstrip("/")
+                if base_path:
+                    site_url = f"{site_url}{base_path}"
+        except Exception:
+            pass
+    integration = _prepare_site_chatbot(root, framework=framework, site_cfg=site_cfg, for_serve=True, site_url=site_url)
     cmd, cmd_cwd = _serve_cmd(framework, host, port, root, site_cfg, config_path=integration["config_path"])
+
+    # Start chatbot AFTER the site server binds its port so that VSCode
+    # detects the user-facing site port first.
+    def _start_chatbot() -> subprocess.Popen[bytes] | None:
+        if integration["chat_cmd"] is None:
+            return None
+        _wait_for_port(port, host=host)
+        return subprocess.Popen(
+            integration["chat_cmd"], cwd=root,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
 
     if not background:
         if integration["backend_url"]:
             print(f"[projio-site] Chatbot backend: {integration['backend_url']}")
+        site_proc = subprocess.Popen(cmd, cwd=cmd_cwd)
+        chat_proc = _start_chatbot()
         try:
-            result = subprocess.run(cmd, cwd=cmd_cwd)
-            if result.returncode != 0:
-                sys.exit(result.returncode)
+            rc = site_proc.wait()
+            if rc != 0:
+                sys.exit(rc)
             return {"pid": 0, "port": port, "framework": framework, "url": f"http://{host}:{port}"}
         finally:
-            chat_proc = integration["chat_proc"]
             if chat_proc is not None:
                 try:
                     chat_proc.terminate()
@@ -464,6 +566,7 @@ def serve(
                     pass
 
     proc = subprocess.Popen(cmd, cwd=cmd_cwd)
+    chat_proc = _start_chatbot()
     record: dict[str, Any] = {
         "pid": proc.pid,
         "service": "site",
@@ -475,7 +578,6 @@ def serve(
     }
     servers = _read_servers(root)
     servers.append(record)
-    chat_proc = integration["chat_proc"]
     if chat_proc is not None:
         servers.append(
             {
@@ -485,7 +587,7 @@ def serve(
                 "port": int(str(integration["backend_url"]).rsplit(":", 1)[1]),
                 "root": str(root),
                 "started_at": datetime.now(timezone.utc).isoformat(),
-                "command": _indexio_serve_cmd(root, site_cfg["chatbot"], host=site_cfg["chatbot"]["host"], port=int(str(integration["backend_url"]).rsplit(":", 1)[1])),
+                "command": integration["chat_cmd"],
             }
         )
     _write_servers(root, servers)

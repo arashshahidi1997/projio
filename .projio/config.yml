@@ -2,7 +2,7 @@ project_name: projio
 project_kind: generic
 description: ''
 indexio:
-  config: .indexio/config.yaml
+  config: .projio/indexio/config.yaml
   persist_dir: .projio/index
 biblio:
   enabled: true

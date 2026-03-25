@@ -60,7 +60,9 @@ The MCP server (`src/projio/mcp/server.py`) is the primary agent interface. It r
 - `mcp/biblio.py` — `citekey_resolve`, `paper_context`, `paper_absent_refs`, `library_get`
 - `mcp/notio.py` — `note_list`, `note_latest`, `note_search`
 - `mcp/codio.py` — `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`
-- `mcp/pipeio.py` — `pipeio_flow_list`, `pipeio_flow_status`, `pipeio_nb_status`, `pipeio_registry_validate`
+- `mcp/pipeio.py` — `pipeio_flow_list`, `pipeio_flow_status`, `pipeio_nb_status`, `pipeio_nb_create`, `pipeio_nb_sync`, `pipeio_nb_publish`, `pipeio_registry_validate`
+- `mcp/datalad.py` — `datalad_save`, `datalad_status`, `datalad_push`, `datalad_pull`, `datalad_siblings`
+- `mcp/site.py` — `site_detect`, `site_build`, `site_deploy`, `site_serve`, `site_stop`, `site_list`
 - `mcp/context.py` — `project_context`, `runtime_conventions`
 
 Server is run via `python -m projio.mcp.server` with `PROJIO_ROOT` env var pointing to the target project.
@@ -68,6 +70,21 @@ Server is run via `python -m projio.mcp.server` with `PROJIO_ROOT` env var point
 ### Agent Workflow Philosophy
 
 Projio promotes **search before creation**: discover existing implementations, consult notes and literature, then make an explicit engineering decision (reuse, wrap, depend, or implement new). The MCP tools support this workflow by providing structured queries rather than raw file inspection.
+
+### Runtime Environment Convention
+
+Projio-managed projects use two distinct environments, configured in `~/.config/projio/config.yml` under `runtime:`:
+
+| Key | Env | Purpose |
+|-----|-----|---------|
+| `projio_python` | `rag` | Python used to run `projio` itself and project Python |
+| `datalad_bin` | `labpy` | DataLad + git-annex binary |
+
+The generated `.projio/projio.mk` substitutes these into `PROJIO ?=` and `DATALAD ?=`. `projio_python` takes precedence over `python_bin` for the `PROJIO` variable; `python_bin` still controls `PYTHON` for project code. Projects can override either key in their own `.projio/config.yml`.
+
+### Claude Code Integration
+
+Projio scaffolds `.claude/settings.json` with pre-approved tool permissions (including `mcp__projio__*` and `mcp__worklog__*`) and `.mcp.json` for the MCP server. Both files are gitignored via the `# >>> projio >>>` block. Use `projio git untrack` to stop tracking them if they were committed before being gitignored.
 
 ### Codio Library System Layers
 

@@ -1,6 +1,6 @@
 PYTHON ?= python
 PUBLISH ?= /storage2/arash/infra/bin/publish_pypi.sh
-DATALAD ?= /storage/share/python/environments/Anaconda3/envs/cogpy/bin/datalad
+DATALAD ?= /storage/share/python/environments/Anaconda3/envs/labpy/bin/datalad
 MSG ?= Update projio
 
 RUNTIME_PATH := $(patsubst %/,%,$(dir $(DATALAD))):$(patsubst %/,%,$(dir $(PYTHON))):$(patsubst %/,%,$(dir $(PUBLISH)))

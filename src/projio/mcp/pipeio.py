@@ -150,6 +150,84 @@ def pipeio_contracts_validate() -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def pipeio_nb_create(
+    pipe: str,
+    flow: str,
+    name: str,
+    kind: str = "investigate",
+    description: str = "",
+) -> JsonDict:
+    """Scaffold a new notebook for a flow.
+
+    Creates a percent-format .py script with bootstrap cells and registers
+    it in notebook.yml.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name.
+        name: Notebook name (e.g. 'investigate_noise').
+        kind: Prefix convention (investigate, explore, demo).
+        description: One-line purpose for the notebook header.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_create")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_create  # type: ignore[import]
+        return json_dict(mcp_nb_create(
+            root, pipe=pipe, flow=flow, name=name,
+            kind=kind, description=description,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_nb_sync(
+    pipe: str,
+    flow: str,
+    name: str,
+    formats: list[str] | None = None,
+) -> JsonDict:
+    """Sync a specific notebook via jupytext (pair + convert).
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name.
+        name: Notebook basename (without extension).
+        formats: Which formats to produce (default: ['ipynb', 'myst']).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_sync")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_sync  # type: ignore[import]
+        return json_dict(mcp_nb_sync(
+            root, pipe=pipe, flow=flow, name=name, formats=formats,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_nb_publish(pipe: str, flow: str, name: str) -> JsonDict:
+    """Publish a notebook's myst markdown to the docs tree.
+
+    Copies the .md file to docs/pipelines/<pipe>/<flow>/notebooks/nb-<name>.md.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name.
+        name: Notebook basename (without extension).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_publish")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_publish  # type: ignore[import]
+        return json_dict(mcp_nb_publish(root, pipe=pipe, flow=flow, name=name))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_registry_validate() -> JsonDict:
     """Validate pipeline registry consistency (code vs docs, config schema)."""
     if not _pipeio_available():
