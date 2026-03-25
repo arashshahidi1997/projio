@@ -285,6 +285,29 @@ def pipeio_nb_publish_tool(pipe: str, flow: str, name: str):
     return pipeio.pipeio_nb_publish(pipe=pipe, flow=flow, name=name)
 
 
+@server.tool("pipeio_nb_pipeline")
+def pipeio_nb_pipeline_tool(
+    pipe: str,
+    flow: str,
+    name: str,
+    formats: list[str] = [],
+    build_site: bool = False,
+):
+    """Composite notebook publish: sync → publish → docs_collect → docs_nav in one call.
+    Optionally triggers site_build at the end."""
+    return pipeio.pipeio_nb_pipeline(
+        pipe=pipe, flow=flow, name=name,
+        formats=formats or None,
+        build_site=build_site,
+    )
+
+
+@server.tool("pipeio_mkdocs_nav_patch")
+def pipeio_mkdocs_nav_patch_tool():
+    """Apply pipeio docs nav fragment to mkdocs.yml (find/replace Pipelines section)."""
+    return pipeio.pipeio_mkdocs_nav_patch()
+
+
 @server.tool("pipeio_registry_validate")
 def pipeio_registry_validate_tool():
     """Validate pipeline registry consistency (code vs docs, config schema)."""

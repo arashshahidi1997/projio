@@ -242,6 +242,151 @@ def pipeio_nb_publish(pipe: str, flow: str, name: str) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def pipeio_nb_pipeline(
+    pipe: str,
+    flow: str,
+    name: str,
+    formats: list[str] | None = None,
+    build_site: bool = False,
+) -> JsonDict:
+    """Composite notebook publish: sync → publish → docs_collect → docs_nav.
+
+    Runs the full notebook-to-docs pipeline in one call.  Optionally triggers
+    a site build at the end.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name.
+        name: Notebook basename (without extension).
+        formats: Jupytext formats to produce (default: ['ipynb', 'myst']).
+        build_site: If True, run site_build after docs collection.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_pipeline")
+
+    steps: dict[str, JsonDict] = {}
+
+    # Step 1: nb_sync
+    result = pipeio_nb_sync(pipe=pipe, flow=flow, name=name, formats=formats)
+    steps["nb_sync"] = result
+    if "error" in result:
+        return json_dict({"steps": steps, "completed": False, "failed_at": "nb_sync"})
+
+    # Step 2: nb_publish
+    result = pipeio_nb_publish(pipe=pipe, flow=flow, name=name)
+    steps["nb_publish"] = result
+    if "error" in result:
+        return json_dict({"steps": steps, "completed": False, "failed_at": "nb_publish"})
+
+    # Step 3: docs_collect
+    result = pipeio_docs_collect()
+    steps["docs_collect"] = result
+    if "error" in result:
+        return json_dict({"steps": steps, "completed": False, "failed_at": "docs_collect"})
+
+    # Step 4: docs_nav
+    result = pipeio_docs_nav()
+    steps["docs_nav"] = result
+    if "error" in result:
+        return json_dict({"steps": steps, "completed": False, "failed_at": "docs_nav"})
+
+    # Optional Step 5: site_build
+    if build_site:
+        from .site import site_build
+        result = site_build()
+        steps["site_build"] = result
+        if "error" in result:
+            return json_dict({"steps": steps, "completed": False, "failed_at": "site_build"})
+
+    return json_dict({"steps": steps, "completed": True})
+
+
+def pipeio_mkdocs_nav_patch() -> JsonDict:
+    """Apply the pipeio docs nav fragment to mkdocs.yml.
+
+    Reads the generated nav from ``pipeio_docs_nav``, finds or creates the
+    ``Pipelines`` section in ``mkdocs.yml``, and writes the updated file.
+    Returns the diff of what changed.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_mkdocs_nav_patch")
+
+    root = get_project_root()
+    mkdocs_path = root / "mkdocs.yml"
+    if not mkdocs_path.exists():
+        mkdocs_path = root / "mkdocs.yaml"
+    if not mkdocs_path.exists():
+        return json_dict({"error": "mkdocs.yml not found"})
+
+    # Get nav fragment from pipeio
+    try:
+        from pipeio.mcp import mcp_docs_nav
+        nav_result = mcp_docs_nav(root)
+    except Exception as exc:
+        return json_dict({"error": f"docs_nav failed: {exc}"})
+
+    fragment_yaml = nav_result.get("nav_fragment", "")
+    if not fragment_yaml or fragment_yaml.startswith("#"):
+        return json_dict({"error": "No pipeline docs to inject (docs/pipelines/ empty or missing)"})
+
+    # Parse the nav fragment
+    try:
+        import yaml
+        fragment = yaml.safe_load(fragment_yaml)
+    except Exception as exc:
+        return json_dict({"error": f"Failed to parse nav fragment: {exc}"})
+
+    if not isinstance(fragment, list):
+        fragment = [fragment]
+
+    # The fragment is a list like [{"Pipelines": {...}}]
+    # Extract the Pipelines entry
+    pipelines_entry = None
+    for item in fragment:
+        if isinstance(item, dict) and "Pipelines" in item:
+            pipelines_entry = item
+            break
+    if pipelines_entry is None:
+        pipelines_entry = {"Pipelines": fragment}
+
+    # Read and patch mkdocs.yml
+    try:
+        import yaml
+        original = mkdocs_path.read_text(encoding="utf-8")
+        config = yaml.safe_load(original) or {}
+    except Exception as exc:
+        return json_dict({"error": f"Failed to read mkdocs.yml: {exc}"})
+
+    nav = config.get("nav")
+    if nav is None:
+        nav = []
+        config["nav"] = nav
+
+    # Find and replace existing Pipelines entry, or append
+    replaced = False
+    for i, entry in enumerate(nav):
+        if isinstance(entry, dict) and "Pipelines" in entry:
+            nav[i] = pipelines_entry
+            replaced = True
+            break
+    if not replaced:
+        nav.append(pipelines_entry)
+
+    # Write back
+    try:
+        updated = yaml.dump(config, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        mkdocs_path.write_text(updated, encoding="utf-8")
+    except Exception as exc:
+        return json_dict({"error": f"Failed to write mkdocs.yml: {exc}"})
+
+    return json_dict({
+        "patched": True,
+        "path": str(mkdocs_path.relative_to(root)),
+        "replaced_existing": replaced,
+        "pipelines_nav": pipelines_entry,
+    })
+
+
 def pipeio_registry_validate() -> JsonDict:
     """Validate pipeline registry consistency (code vs docs, config schema)."""
     if not _pipeio_available():
