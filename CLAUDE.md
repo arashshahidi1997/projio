@@ -56,11 +56,11 @@ These live as git submodules under `packages/` and are optional dependencies —
 
 The MCP server (`src/projio/mcp/server.py`) is the primary agent interface. It registers tools from each subsystem module:
 
-- `mcp/rag.py` — `rag_query`, `rag_query_multi`, `corpus_list` (via indexio)
-- `mcp/biblio.py` — `citekey_resolve`, `paper_context`, `paper_absent_refs`, `library_get`
-- `mcp/notio.py` — `note_list`, `note_latest`, `note_search`
-- `mcp/codio.py` — `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`
-- `mcp/pipeio.py` — `pipeio_flow_list`, `pipeio_flow_status`, `pipeio_nb_status`, `pipeio_nb_create`, `pipeio_nb_sync`, `pipeio_nb_publish`, `pipeio_registry_validate`
+- `mcp/rag.py` — `rag_query`, `rag_query_multi`, `corpus_list`, `indexio_build`, `indexio_sources_list`, `indexio_sources_sync` (via indexio)
+- `mcp/biblio.py` — `citekey_resolve`, `paper_context`, `paper_absent_refs`, `library_get`, `biblio_rag_sync`
+- `mcp/notio.py` — `note_list`, `note_latest`, `note_search`, `notio_reindex`
+- `mcp/codio.py` — `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`, `codio_rag_sync`, `codio_add`
+- `mcp/pipeio.py` — `pipeio_flow_list`, `pipeio_flow_status`, `pipeio_nb_status`, `pipeio_nb_create`, `pipeio_nb_sync`, `pipeio_nb_publish`, `pipeio_nb_analyze`, `pipeio_nb_exec`, `pipeio_nb_pipeline`, `pipeio_mod_list`, `pipeio_mod_resolve`, `pipeio_mod_create`, `pipeio_rule_list`, `pipeio_rule_stub`, `pipeio_rule_insert`, `pipeio_rule_update`, `pipeio_config_read`, `pipeio_config_patch`, `pipeio_config_init`, `pipeio_dag`, `pipeio_completion`, `pipeio_cross_flow`, `pipeio_log_parse`, `pipeio_run`, `pipeio_run_status`, `pipeio_run_dashboard`, `pipeio_run_kill`, `pipeio_registry_scan`, `pipeio_registry_validate`, `pipeio_contracts_validate`, `pipeio_docs_collect`, `pipeio_docs_nav`, `pipeio_mkdocs_nav_patch`, `pipeio_modkey_bib`
 - `mcp/datalad.py` — `datalad_save`, `datalad_status`, `datalad_push`, `datalad_pull`, `datalad_siblings`
 - `mcp/site.py` — `site_detect`, `site_build`, `site_deploy`, `site_serve`, `site_stop`, `site_list`
 - `mcp/context.py` — `project_context`, `runtime_conventions`

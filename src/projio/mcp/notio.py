@@ -51,19 +51,48 @@ def note_latest(note_type: str = "") -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
-def note_read(path: str) -> JsonDict:
-    """Read a specific note by its relative path.
+def note_read(path: str = "", note_id: str = "") -> JsonDict:
+    """Read a specific note by its relative path or note ID.
 
     Args:
-        path: Relative path to the note file.
+        path: Relative path to the note file (as returned by note_list).
+        note_id: Timestamp ID, capture ID, or filename fragment (alternative to path).
     """
     if not _notio_available():
         return _unavailable("note_read")
+    if not path and not note_id:
+        return {"error": "provide either 'path' or 'note_id'"}
     root = get_project_root()
     try:
         from notio.query import read_note  # type: ignore[import]
+        if not path and note_id:
+            from notio.query import resolve_note  # type: ignore[import]
+            resolved = resolve_note(root, note_id)
+            if not resolved:
+                return json_dict({"error": f"no note matching '{note_id}'"})
+            path = resolved.get("path", "")
+            if not path:
+                return json_dict({"error": f"resolved note has no path: {resolved}"})
         note = read_note(root, path)
         return json_dict(note or {"error": f"note not found: {path}"})
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def note_resolve(note_id: str) -> JsonDict:
+    """Resolve a note by its timestamp ID, capture ID, or filename fragment.
+
+    Args:
+        note_id: Timestamp (e.g. '20260326-134127'), capture ID
+            (e.g. '20260326-134127-9a803f'), or any substring of the filename.
+    """
+    if not _notio_available():
+        return _unavailable("note_resolve")
+    root = get_project_root()
+    try:
+        from notio.query import resolve_note  # type: ignore[import]
+        note = resolve_note(root, note_id)
+        return json_dict(note or {"error": f"no note matching '{note_id}'"})
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -134,6 +163,37 @@ def note_types() -> JsonDict:
             for name, t in config.note_types.items()
         }
         return json_dict({"types": types})
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def notio_reindex(note_type: str = "") -> JsonDict:
+    """Regenerate index.md files for note type directories and the root index.
+
+    Args:
+        note_type: Specific note type to reindex (e.g. 'idea', 'issue'). Empty = all types.
+    """
+    if not _notio_available():
+        return _unavailable("notio_reindex")
+    root = get_project_root()
+    try:
+        from notio.config import load_config  # type: ignore[import]
+        from notio.core import build_root_index, build_type_index  # type: ignore[import]
+
+        config = load_config(root)
+        rebuilt: list[str] = []
+        if note_type:
+            if note_type not in config.note_types:
+                return json_dict({"error": f"unknown note type: {note_type}", "available": sorted(config.note_types)})
+            path = build_type_index(config, note_type)
+            rebuilt.append(str(path.relative_to(root)))
+        else:
+            for name in sorted(config.note_types):
+                path = build_type_index(config, name)
+                rebuilt.append(str(path.relative_to(root)))
+        root_path = build_root_index(config)
+        rebuilt.append(str(root_path.relative_to(root)))
+        return json_dict({"rebuilt": rebuilt, "count": len(rebuilt)})
     except Exception as exc:
         return json_dict({"error": str(exc)})
 

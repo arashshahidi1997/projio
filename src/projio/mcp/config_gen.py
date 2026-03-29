@@ -19,15 +19,23 @@ def generate_mcp_config(
         python_bin: Python binary to use. Falls back to ``sys.executable``.
     """
     python = python_bin or sys.executable
-    return {
-        "mcpServers": {
-            "projio": {
-                "command": python,
-                "args": ["-m", "projio.mcp.server"],
-                "env": {"PROJIO_ROOT": str(root)},
-            },
+    servers: dict[str, Any] = {
+        "projio": {
+            "command": python,
+            "args": ["-m", "projio.mcp.server"],
+            "env": {"PROJIO_ROOT": str(root)},
         },
     }
+    # Add worklog if installed (use python -m, same pattern as projio)
+    try:
+        import worklog.mcp_server  # noqa: F401
+        servers["worklog"] = {
+            "command": python,
+            "args": ["-m", "worklog.mcp_server"],
+        }
+    except ImportError:
+        pass
+    return {"mcpServers": servers}
 
 
 def write_mcp_config(
@@ -37,12 +45,27 @@ def write_mcp_config(
     output: Path | None = None,
     yes: bool = False,
 ) -> Path:
-    """Write (or preview) .mcp.json at the project root.
+    """Write (or merge into) .mcp.json at the project root.
+
+    If the file already exists, merges generated servers into the existing
+    config (updating projio/worklog entries, preserving others).
 
     Returns the output path.
     """
     out_path = output or (root / ".mcp.json")
-    payload = generate_mcp_config(root, python_bin=python_bin)
+    generated = generate_mcp_config(root, python_bin=python_bin)
+
+    # Merge into existing file if present
+    if out_path.exists():
+        try:
+            existing = json.loads(out_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            existing = {}
+        existing.setdefault("mcpServers", {}).update(generated["mcpServers"])
+        payload = existing
+    else:
+        payload = generated
+
     rendered = json.dumps(payload, indent=2) + "\n"
 
     if not yes:

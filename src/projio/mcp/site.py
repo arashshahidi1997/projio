@@ -53,15 +53,34 @@ def site_build(framework: str | None = None, strict: bool = False) -> JsonDict:
 def site_deploy(target: str = "gitlab") -> JsonDict:
     """Deploy the doc site by pushing to the configured pages sibling.
 
-    This is a thin wrapper that resolves the pages sibling from
-    .projio/config.yml helpers.sibling and pushes via datalad.
+    If ``docs/`` is a git submodule (subdataset), it is pushed first so that
+    the subdataset content reaches the remote before the main dataset pushes
+    the updated submodule pointer.  Both pushes are non-recursive.
 
     Args:
         target: Sibling name to push to (default 'gitlab').
     """
     from .datalad import datalad_push
 
-    return datalad_push(sibling=target)
+    root = get_project_root()
+    results: dict = {}
+
+    # Staged push: if docs/ is a subdataset, push it first
+    gitmodules = root / ".gitmodules"
+    if gitmodules.is_file() and "docs" in gitmodules.read_text():
+        docs_result = datalad_push(sibling=target, dataset="docs")
+        results["docs_push"] = docs_result
+
+    # Then push the main dataset (carries the updated submodule pointer)
+    main_result = datalad_push(sibling=target)
+    results["main_push"] = main_result
+
+    # Report overall success
+    docs_ok = "docs_push" not in results or results["docs_push"].get("returncode", 1) == 0
+    main_ok = results["main_push"].get("returncode", 1) == 0
+    results["deployed"] = docs_ok and main_ok
+
+    return json_dict(results)
 
 
 def site_detect() -> JsonDict:

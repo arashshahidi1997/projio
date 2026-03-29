@@ -83,15 +83,17 @@ def _run(args: list[str], cwd: str | None = None) -> dict[str, Any]:
 
 
 def _resolve_dataset(root: Path, dataset: str | None) -> tuple[list[str], str]:
-    """Return ``(-d, path)`` args and the cwd for a datalad command.
+    """Return ``(-C, path)`` prefix args and the cwd for a datalad command.
 
-    When *dataset* is given (e.g. ``"packages/pipeio"``), the command targets
-    that subdataset.  Otherwise the project root is used.
+    When *dataset* is given (e.g. ``"packages/pipeio"``), the returned args
+    are ``["-C", "<abs_path>"]`` — placed *before* the datalad subcommand so
+    that datalad operates from within the subdataset directory (like
+    ``git -C``).  Otherwise the project root is used with no extra args.
     """
     from pathlib import Path as _P
     if dataset:
         ds_path = (root / dataset).resolve()
-        return ["-d", str(ds_path)], str(ds_path)
+        return ["-C", str(ds_path)], str(ds_path)
     return [], str(root)
 
 
@@ -105,7 +107,7 @@ def datalad_status(recursive: bool = True, dataset: str = "") -> JsonDict:
     root = get_project_root()
     dl = _resolve_datalad_cmd()
     ds_args, cwd = _resolve_dataset(root, dataset or None)
-    cmd = [*dl, "status", *ds_args]
+    cmd = [*dl, *ds_args, "status"]
     if recursive:
         cmd.append("-r")
     return json_dict(_run(cmd, cwd=cwd))
@@ -123,7 +125,7 @@ def datalad_save(message: str = "Update", recursive: bool = True, dataset: str =
     root = get_project_root()
     dl = _resolve_datalad_cmd()
     ds_args, cwd = _resolve_dataset(root, dataset or None)
-    cmd = [*dl, "save", *ds_args, "-m", message]
+    cmd = [*dl, *ds_args, "save", "-m", message]
     if recursive:
         cmd.append("-r")
     if path:
@@ -131,31 +133,38 @@ def datalad_save(message: str = "Update", recursive: bool = True, dataset: str =
     return json_dict(_run(cmd, cwd=cwd))
 
 
-def datalad_push(sibling: str = "github", dataset: str = "") -> JsonDict:
+def datalad_push(sibling: str = "github", dataset: str = "", recursive: bool = False) -> JsonDict:
     """Push the project dataset (or a subdataset) to a sibling.
 
     Args:
         sibling: Name of the datalad sibling to push to (default "github").
         dataset: Relative path to a subdataset (e.g. 'packages/pipeio'). Empty = project root.
+        recursive: Include subdatasets (default False). Recursive pushes are slow
+            and fail on subdatasets that lack the target sibling.
     """
     root = get_project_root()
     dl = _resolve_datalad_cmd()
     ds_args, cwd = _resolve_dataset(root, dataset or None)
-    cmd = [*dl, "push", *ds_args, "-r", "--to", sibling]
+    cmd = [*dl, *ds_args, "push", "--to", sibling]
+    if recursive:
+        cmd.append("-r")
     return json_dict(_run(cmd, cwd=cwd))
 
 
-def datalad_pull(sibling: str = "origin", dataset: str = "") -> JsonDict:
+def datalad_pull(sibling: str = "origin", dataset: str = "", recursive: bool = False) -> JsonDict:
     """Pull (update + merge) from a datalad sibling.
 
     Args:
         sibling: Name of the datalad sibling to pull from (default "origin").
         dataset: Relative path to a subdataset (e.g. 'packages/pipeio'). Empty = project root.
+        recursive: Include subdatasets (default False).
     """
     root = get_project_root()
     dl = _resolve_datalad_cmd()
     ds_args, cwd = _resolve_dataset(root, dataset or None)
-    cmd = [*dl, "update", *ds_args, "-r", "--merge", "-s", sibling]
+    cmd = [*dl, *ds_args, "update", "--merge", "-s", sibling]
+    if recursive:
+        cmd.append("-r")
     return json_dict(_run(cmd, cwd=cwd))
 
 
@@ -168,7 +177,7 @@ def datalad_siblings(dataset: str = "") -> JsonDict:
     root = get_project_root()
     dl = _resolve_datalad_cmd()
     ds_args, cwd = _resolve_dataset(root, dataset or None)
-    cmd = [*dl, "siblings", *ds_args]
+    cmd = [*dl, *ds_args, "siblings"]
     return json_dict(_run(cmd, cwd=cwd))
 
 

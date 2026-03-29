@@ -143,6 +143,123 @@ def codio_add_urls(urls: list[str], clone: bool = False, shallow: bool = False) 
         return json_dict({"error": str(exc)})
 
 
+def codio_rag_sync(force_init: bool = False) -> JsonDict:
+    """Register codio library sources into the indexio config.
+
+    Wraps ``codio rag sync``. Generates ``codio-notes``, ``codio-catalog``,
+    and per-library ``codio-src-{name}`` sources from the registry. After this,
+    run ``indexio_build`` to index code-library knowledge.
+
+    The target indexio config path is read from ``indexio.config`` in
+    ``.projio/config.yml`` (defaults to ``.projio/indexio/config.yaml``).
+    Source-tree globs are language-dependent: Python → ``**/*.py``,
+    MATLAB → ``**/*.m``, unknown languages → ``**/*``.
+
+    Args:
+        force_init: Re-initialize the RAG config even if it already exists.
+    """
+    if not _codio_available():
+        return _unavailable("codio_rag_sync")
+    root = get_project_root()
+    try:
+        from codio import load_config, Registry  # type: ignore[import]
+        from codio.rag import sync_codio_rag_sources  # type: ignore[import]
+        from projio.init import load_projio_config
+        config = load_config(root)
+        registry = Registry(config=config)
+        # Resolve indexio config path from the projio project config so we
+        # write to the same file that rag_query and indexio_build use.
+        projio_cfg = load_projio_config(root)
+        idx_cfg = projio_cfg.get("indexio") or {}
+        config_rel = idx_cfg.get("config", ".projio/indexio/config.yaml")
+        config_path = root / config_rel
+        result = sync_codio_rag_sources(
+            root, config, config_path=config_path, force_init=force_init,
+            catalog=registry.catalog,
+        )
+        return json_dict({
+            "config_path": str(result.config_path),
+            "created": result.created,
+            "initialized": result.initialized,
+            "added": list(result.added),
+            "updated": list(result.updated),
+            "removed": list(result.removed),
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def codio_add(
+    name: str,
+    kind: str,
+    path: str = "",
+    language: str = "",
+    repo_url: str = "",
+    pip_name: str = "",
+    license: str = "",  # noqa: A002
+    summary: str = "",
+    capabilities: list[str] | None = None,
+    priority: str = "tier2",
+    runtime_import: str = "reference_only",
+    status: str = "active",
+) -> JsonDict:
+    """Register a library into the codio registry with metadata.
+
+    Adds or updates both the catalog entry (shared identity) and the project
+    profile entry (local policies). Use this when ``codio_discover`` returns
+    empty and you want to register a locally available library.
+
+    Args:
+        name: Library slug (e.g. "yasa", "mne").
+        kind: Library kind — one of: internal, external_mirror, utility.
+        path: Local filesystem path to the library source tree (for mirrors).
+        language: Dominant programming language (e.g. "python").
+        repo_url: Upstream repository URL.
+        pip_name: PyPI / conda package name.
+        license: Software license identifier (e.g. "MIT", "Apache-2.0").
+        summary: Short one-line description.
+        capabilities: List of capability tags (e.g. ["signal-processing", "sleep-staging"]).
+        priority: Project priority tier — one of: tier1, tier2, tier3.
+        runtime_import: Import policy — one of: internal, pip_only, reference_only.
+        status: Registry status — one of: active, candidate, deprecated, archived.
+    """
+    if not _codio_available():
+        return _unavailable("codio_add")
+    root = get_project_root()
+    try:
+        from codio import load_config, Registry  # type: ignore[import]
+        from codio.models import LibraryCatalogEntry, ProjectProfileEntry  # type: ignore[import]
+        from codio.skills.update import add_library  # type: ignore[import]
+        config = load_config(root)
+        registry = Registry(config=config)
+
+        catalog_entry = LibraryCatalogEntry(
+            name=name,
+            kind=kind,
+            path=path,
+            language=language,
+            repo_url=repo_url,
+            pip_name=pip_name,
+            license=license,
+            summary=summary,
+        )
+        profile_entry = ProjectProfileEntry(
+            name=name,
+            priority=priority,
+            runtime_import=runtime_import,
+            capabilities=capabilities or [],
+            status=status,
+        )
+        add_library(registry, catalog_entry, profile_entry)
+        return json_dict({
+            "name": name,
+            "kind": kind,
+            "status": "registered",
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def codio_discover(query: str, language: str | None = None) -> JsonDict:
     """Search for libraries matching a capability query.
 

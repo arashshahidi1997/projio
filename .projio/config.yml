@@ -1,5 +1,6 @@
 project_name: projio
 project_kind: generic
+push_sibling: github
 description: ''
 indexio:
   config: .projio/indexio/config.yaml

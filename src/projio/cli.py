@@ -366,9 +366,14 @@ def main(argv: Iterable[str] | None = None) -> None:
 
         root = Path(args.root).expanduser().resolve()
         cfg = load_effective_config(root)
-        python_bin = get_nested(cfg, "runtime", "python_bin", default=None)
+        python_bin = get_nested(cfg, "runtime", "projio_python", default=None) or \
+                     get_nested(cfg, "runtime", "python_bin", default=None)
         output = Path(args.output) if args.output else None
         write_mcp_config(root, python_bin=python_bin, output=output, yes=args.yes)
         return
 
     raise SystemExit(2)
+
+
+if __name__ == "__main__":
+    main()

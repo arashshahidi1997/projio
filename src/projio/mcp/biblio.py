@@ -176,31 +176,99 @@ def biblio_merge(dry_run: bool = False) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
-def biblio_docling(citekey: str, force: bool = False) -> JsonDict:
+def biblio_docling(citekey: str, force: bool = False, background: bool = False) -> JsonDict:
     """Run Docling on a paper's PDF to extract full text as markdown.
+
+    After a successful extraction, automatically runs ref-md standardization
+    if GROBID TEI output already exists for this citekey.
 
     Args:
         citekey: BibTeX citekey to process.
         force: Re-run even if outputs already exist.
+        background: If true, launch in background and return a job_id immediately.
+                    Use biblio_docling_status(job_id) to check progress.
     """
     if not _biblio_available():
         return _unavailable("biblio_docling")
+
+    if background:
+        try:
+            from biblio.jobs import launch_docling_background
+            root = get_project_root()
+            job_id = launch_docling_background(root, citekey, force=force)
+            return json_dict({
+                "background": True,
+                "job_id": job_id,
+                "citekey": citekey.lstrip("@"),
+                "status": "running",
+                "hint": "Use biblio_docling_status(job_id) to check progress.",
+            })
+        except Exception as exc:
+            return json_dict({"error": str(exc), "citekey": citekey})
+
     try:
         cfg = _load_biblio_cfg()
         from biblio.docling import run_docling_for_key
         out = run_docling_for_key(cfg, citekey, force=force)
-        return json_dict({
+        result: JsonDict = {
             "citekey": citekey.lstrip("@"),
             "md_path": str(out.md_path),
             "json_path": str(out.json_path),
             "outdir": str(out.outdir),
-        })
+        }
+        # Auto-chain ref-md if GROBID TEI already exists
+        try:
+            from biblio.grobid import grobid_outputs_for_key
+            from biblio.ref_md import run_ref_md_for_key
+            grobid_out = grobid_outputs_for_key(cfg, citekey)
+            if grobid_out.tei_path.exists():
+                ref_out = run_ref_md_for_key(cfg, citekey, force=force)
+                result["ref_md_path"] = str(ref_out.md_path)
+                result["ref_md"] = "resolved"
+            else:
+                result["ref_md"] = "skipped (GROBID TEI not yet available)"
+        except Exception as ref_exc:
+            result["ref_md"] = f"failed: {ref_exc}"
+        return json_dict(result)
     except Exception as exc:
         return json_dict({"error": str(exc), "citekey": citekey})
 
 
+def biblio_docling_status(job_id: str) -> JsonDict:
+    """Check the status of a background biblio_docling job.
+
+    Args:
+        job_id: Job ID returned by biblio_docling(..., background=True).
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_docling_status")
+    try:
+        from biblio.jobs import get_job_status
+        root = get_project_root()
+        info = get_job_status(root, job_id)
+        if info is None:
+            return json_dict({"error": f"No job found with id: {job_id}"})
+        result: JsonDict = {
+            "job_id": info.job_id,
+            "status": info.status,
+            "citekey": info.citekey,
+            "started": info.started,
+            "finished": info.finished,
+        }
+        if info.result is not None:
+            result["result"] = info.result
+        if info.error is not None:
+            result["error"] = info.error
+        return json_dict(result)
+    except Exception as exc:
+        return json_dict({"error": str(exc), "job_id": job_id})
+
+
 def biblio_grobid(citekey: str, force: bool = False) -> JsonDict:
     """Run GROBID on a paper's PDF to extract structured header and references.
+
+    After a successful extraction, automatically runs ref-md standardization
+    if Docling markdown output already exists for this citekey.
 
     Args:
         citekey: BibTeX citekey to process.
@@ -212,15 +280,88 @@ def biblio_grobid(citekey: str, force: bool = False) -> JsonDict:
         cfg = _load_biblio_cfg()
         from biblio.grobid import run_grobid_for_key
         out = run_grobid_for_key(cfg, citekey, force=force)
-        return json_dict({
+        result: JsonDict = {
             "citekey": citekey.lstrip("@"),
             "header_path": str(out.header_path),
             "references_path": str(out.references_path),
             "tei_path": str(out.tei_path),
             "outdir": str(out.outdir),
-        })
+        }
+        # Auto-chain ref-md if Docling markdown already exists
+        try:
+            from biblio.docling import outputs_for_key as docling_outputs_for_key
+            from biblio.ref_md import run_ref_md_for_key
+            docling_out = docling_outputs_for_key(cfg, citekey)
+            if docling_out.md_path.exists():
+                ref_out = run_ref_md_for_key(cfg, citekey, force=force)
+                result["ref_md_path"] = str(ref_out.md_path)
+                result["ref_md"] = "resolved"
+            else:
+                result["ref_md"] = "skipped (Docling markdown not yet available)"
+        except Exception as ref_exc:
+            result["ref_md"] = f"failed: {ref_exc}"
+        return json_dict(result)
     except Exception as exc:
         return json_dict({"error": str(exc), "citekey": citekey})
+
+
+def biblio_graph_expand(
+    citekeys: list[str] | None = None,
+    direction: str = "references",
+    merge: bool = True,
+    force: bool = False,
+) -> JsonDict:
+    """Expand the OpenAlex reference graph from resolved seed records.
+
+    Args:
+        citekeys: Optional list of citekeys to expand (default: all seeds).
+        direction: Expansion direction: "references", "citing", or "both".
+        merge: Merge with existing graph_candidates.json (default: True).
+        force: Re-fetch cached OpenAlex records (default: False).
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_graph_expand")
+    root = get_project_root()
+    try:
+        from biblio.mcp import graph_expand
+        result = graph_expand(
+            root=root,
+            citekeys=citekeys,
+            direction=direction,
+            merge=merge,
+            force=force,
+        )
+        return json_dict(result)
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_rag_sync(force_init: bool = False) -> JsonDict:
+    """Register biblio docling sources into the indexio config.
+
+    Wraps ``biblio rag sync``. After this, run ``indexio_build`` (optionally
+    with ``sources=["biblio_docling"]``) to index the paper full-texts.
+
+    Args:
+        force_init: Re-initialize the RAG config even if it already exists.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_rag_sync")
+    root = get_project_root()
+    try:
+        from biblio.rag import sync_biblio_rag_config
+        result = sync_biblio_rag_config(root, force_init=force_init)
+        return json_dict({
+            "config_path": str(result.config_path),
+            "created": result.created,
+            "initialized": result.initialized,
+            "added": list(result.added),
+            "updated": list(result.updated),
+            "removed": list(result.removed),
+            "follow_up_cmd": result.follow_up_cmd,
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
 
 
 def biblio_grobid_check() -> JsonDict:

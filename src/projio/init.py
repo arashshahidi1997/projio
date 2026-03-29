@@ -229,11 +229,19 @@ def _projio_mk(root: Path) -> str:
         cfg = load_effective_config(root)
         runtime = cfg.get("runtime", {})
     except Exception:
+        cfg = {}
         runtime = {}
     python_bin = runtime.get("python_bin")
     datalad_bin = runtime.get("datalad_bin")
     projio_python = runtime.get("projio_python")
+    push_sibling = cfg.get("push_sibling") or cfg.get("datalad_remote") or "github"
     mk = PROJIO_MK
+    if push_sibling != "github":
+        mk = mk.replace(
+            "$(DATALAD) push --to github",
+            f"$(DATALAD) push --to {push_sibling}",
+            1,
+        )
     if python_bin:
         mk = mk.replace("PYTHON  ?= python", f"PYTHON  ?= {python_bin}", 1)
     if projio_python:
@@ -250,6 +258,16 @@ def _projio_mk(root: Path) -> str:
         )
     if datalad_bin:
         mk = mk.replace("DATALAD ?= datalad", f"DATALAD ?= {datalad_bin}", 1)
+        # Derive labpy python for MKDOCS from datalad_bin path
+        # e.g. .../envs/labpy/bin/datalad → .../envs/labpy/bin/python
+        datalad_path = Path(datalad_bin)
+        labpy_python = datalad_path.parent / "python"
+        if labpy_python.exists():
+            mk = mk.replace(
+                "MKDOCS  ?= $(PYTHON) -m mkdocs",
+                f"MKDOCS  ?= {labpy_python} -m mkdocs",
+                1,
+            )
     return mk
 
 
@@ -486,6 +504,7 @@ def _gitignore_entries_for_framework(site_framework: str) -> list[str]:
         ".claude/settings.json",
         ".projio/servers.json",
         ".projio/site/",
+        ".projio/indexio/index/",
         ".projio.mkdocs.yml",
         "site/",
     ]
@@ -885,6 +904,14 @@ def _scaffold_claude(root: Path, component_dir: Path) -> None:
     # Update permissions to be path-scoped
     update_claude_permissions(root, dry_run=False)
 
+    # .mcp.json — MCP server config for Claude Code
+    from .mcp.config_gen import write_mcp_config
+    mcp_json = root / ".mcp.json"
+    if not mcp_json.exists():
+        write_mcp_config(root, yes=True)
+    else:
+        print(f"  [skip] .mcp.json already exists")
+
     # CLAUDE.md — project context with tool routing
     claude_md = root / "CLAUDE.md"
     if not claude_md.exists():
@@ -1032,6 +1059,8 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Multi-facet search | `rag_query_multi(queries)` | Run multiple greps |")
         rows.append("| Check indexed sources | `corpus_list()` | Inspect Chroma store directly |")
         rows.append("| Rebuild search index | `indexio_build()` | Run `indexio build` in terminal |")
+        rows.append("| Check indexed sources | `indexio_sources_list()` | Inspect config files directly |")
+        rows.append("| Sync all subsystem sources | `indexio_sources_sync(build=True)` | Run sync commands manually |")
 
     if has_biblio:
         rows.append("| Ingest papers by DOI | `biblio_ingest(dois)` | Write BibTeX by hand |")
@@ -1044,14 +1073,17 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Extract full text | `biblio_docling(citekey)` | Run `biblio docling` in terminal |")
         rows.append("| Extract references | `biblio_grobid(citekey)` | Run `biblio grobid` in terminal |")
         rows.append("| Check GROBID server | `biblio_grobid_check()` | Curl the GROBID API manually |")
+        rows.append("| Sync biblio sources to index | `biblio_rag_sync()` | Run `biblio rag sync` in terminal |")
 
     if has_notio:
         rows.append("| Create a note/task/idea | `note_create(note_type)` | Create markdown files directly |")
         rows.append("| List recent notes | `note_list()` | List files in notes/ directory |")
         rows.append("| Read a note | `note_read(path)` | Read the file directly |")
+        rows.append("| Find note by ID/timestamp | `note_resolve(note_id)` | Grep filenames or semantic search |")
         rows.append("| Search notes | `note_search(query)` | Grep through notes/ |")
         rows.append("| Update note metadata | `note_update(path, fields)` | Edit frontmatter directly |")
         rows.append("| See note types | `note_types()` | Read notio.toml directly |")
+        rows.append("| Rebuild note indexes | `notio_reindex(note_type?)` | Regenerate index.md manually |")
 
     if has_codio:
         rows.append("| Add a library | `codio_add_urls(urls)` | Edit YAML registry files |")
@@ -1060,11 +1092,41 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| List all libraries | `codio_list()` | Parse registry files directly |")
         rows.append("| Check registry vocabulary | `codio_vocab()` | Read schema docs |")
         rows.append("| Validate registry | `codio_validate()` | Run consistency checks manually |")
+        rows.append("| Register a library | `codio_add(name, kind)` | Edit YAML registry files |")
+        rows.append("| Sync codio sources to index | `codio_rag_sync()` | Run `codio rag sync` in terminal |")
 
     if has_pipeio:
+        rows.append("| List pipeline flows | `pipeio_flow_list(pipe)` | Parse registry YAML directly |")
+        rows.append("| Flow status | `pipeio_flow_status(pipe, flow)` | Inspect flow dirs manually |")
         rows.append("| Scaffold a notebook | `pipeio_nb_create(pipe, flow, name)` | Create .py files manually |")
         rows.append("| Sync notebook formats | `pipeio_nb_sync(pipe, flow, name)` | Run jupytext manually |")
         rows.append("| Publish notebook to docs | `pipeio_nb_publish(pipe, flow, name)` | Copy files manually |")
+        rows.append("| Analyze notebook structure | `pipeio_nb_analyze(pipe, flow, name)` | Parse .py files manually |")
+        rows.append("| Execute notebook | `pipeio_nb_exec(pipe, flow, name, params)` | Run papermill manually |")
+        rows.append("| Full notebook pipeline | `pipeio_nb_pipeline(pipe, flow, name)` | Chain sync/publish/collect manually |")
+        rows.append("| Scaffold a mod (with I/O wiring) | `pipeio_mod_create(pipe, flow, mod, inputs, outputs, params_spec)` | Create script/doc files manually |")
+        rows.append("| List mods | `pipeio_mod_list(pipe, flow)` | Parse registry manually |")
+        rows.append("| List Snakemake rules | `pipeio_rule_list(pipe, flow)` | Parse Snakefiles manually |")
+        rows.append("| Generate rule stub | `pipeio_rule_stub(pipe, flow, rule_name)` | Write rule text manually |")
+        rows.append("| Insert rule into Snakefile | `pipeio_rule_insert(pipe, flow, rule_name)` | Edit Snakefiles manually |")
+        rows.append("| Patch an existing rule | `pipeio_rule_update(pipe, flow, rule_name, add_inputs)` | Edit Snakefiles manually |")
+        rows.append("| Rule dependency graph | `pipeio_dag(pipe, flow)` | Trace rule deps manually |")
+        rows.append("| Session completion | `pipeio_completion(pipe, flow)` | Glob output dirs manually |")
+        rows.append("| Cross-flow chains | `pipeio_cross_flow(pipe)` | Compare configs manually |")
+        rows.append("| Scaffold new flow config | `pipeio_config_init(pipe, flow, input_dir, output_dir)` | Create config.yml manually |")
+        rows.append("| Read flow config | `pipeio_config_read(pipe, flow)` | Parse config.yml directly |")
+        rows.append("| Patch flow config | `pipeio_config_patch(pipe, flow)` | Edit config.yml directly |")
+        rows.append("| Parse Snakemake logs | `pipeio_log_parse(pipe, flow)` | Read log files manually |")
+        rows.append("| Launch Snakemake run | `pipeio_run(pipe, flow)` | Run snakemake in terminal |")
+        rows.append("| Check run progress | `pipeio_run_status(run_id)` | Check screen sessions manually |")
+        rows.append("| Run dashboard | `pipeio_run_dashboard()` | Aggregate run info manually |")
+        rows.append("| Kill a run | `pipeio_run_kill(run_id)` | Kill screen sessions manually |")
+        rows.append("| Scan for pipelines | `pipeio_registry_scan()` | Walk filesystem manually |")
+        rows.append("| Validate registry | `pipeio_registry_validate()` | Check consistency manually |")
+        rows.append("| Validate I/O contracts | `pipeio_contracts_validate()` | Check configs manually |")
+        rows.append("| Collect pipeline docs | `pipeio_docs_collect()` | Copy doc files manually |")
+        rows.append("| Generate docs nav | `pipeio_docs_nav()` | Build nav YAML manually |")
+        rows.append("| Patch mkdocs nav | `pipeio_mkdocs_nav_patch()` | Edit mkdocs.yml manually |")
 
     # Site tools (always available)
     rows.append("| Build doc site | `site_build()` | Run `make docs` or `mkdocs build` |")
@@ -1100,6 +1162,27 @@ and `runtime_conventions()` to see available Makefile targets.
 
         if workflow_parts:
             sections.append("## Workflow conventions\n\n" + "\n".join(workflow_parts) + "\n")
+
+    # Cross-project dispatch guidance (worklog MCP is available everywhere)
+    sections.append("""\
+## Cross-project dispatch
+
+When filing observations for another project via worklog MCP:
+
+**Model selection:** haiku (trivial/typo) · sonnet (single-module, clear scope) · opus (default, multi-package, architectural)
+
+**Dispatch decision:**
+- Well-scoped bug with clear fix → `worklog_note(text, project_id, kind="issue", auto_dispatch=True, model="sonnet")`
+- Complex/architectural issue → `worklog_note(text, project_id, kind="issue", auto_dispatch=True)` (opus is default)
+- Observation, no immediate action → `worklog_note(text, project_id)` (no auto_dispatch)
+- Need result now → `run_prompt(project, prompt)` (synchronous)
+
+Queue timeout is 30 minutes. Use `tail_task(queue_id)` to monitor running tasks.
+Use `note_resolve(note_id)` to find notes by timestamp/capture ID.
+
+**Task promotion:** `promote_to_task` only uses LLM enrichment for voice captures.
+Agent-written notes get a template prompt pointing at the source — no LLM call needed.
+""")
 
     # Skills section
     skills_dir = root / ".projio" / "skills"

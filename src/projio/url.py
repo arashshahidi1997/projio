@@ -75,13 +75,25 @@ def _gitlab_site_urls(root: Path) -> list[str]:
     return urls
 
 
+def _configured_pages_url(root: Path) -> str | None:
+    """Read pages_url from .projio/config.yml if set."""
+    try:
+        from .config import load_effective_config
+        cfg = load_effective_config(root)
+        return cfg.get("pages_url") or None
+    except Exception:
+        return None
+
+
 def print_urls(root: str | Path) -> None:
     root_path = Path(root).expanduser().resolve()
     remotes = git_remote_names(root_path)
     if not remotes:
         print("No git remotes configured.")
         return
+    configured_pages = _configured_pages_url(root_path)
     gitlab_urls = _gitlab_site_urls(root_path)
+    pages_printed = False
     for remote in remotes:
         raw = _remote_get_url(root_path, remote)
         if raw is None:
@@ -89,6 +101,10 @@ def print_urls(root: str | Path) -> None:
             continue
         repo_url = _normalize_repo_url(raw)
         print(f"{remote}: {repo_url}")
-        pages_url = _derive_pages_url(repo_url, gitlab_urls=gitlab_urls)
-        if pages_url is not None:
-            print(f"{remote} pages: {pages_url}")
+        if configured_pages and not pages_printed:
+            print(f"{remote} pages: {configured_pages}")
+            pages_printed = True
+        elif not configured_pages:
+            pages_url = _derive_pages_url(repo_url, gitlab_urls=gitlab_urls)
+            if pages_url is not None:
+                print(f"{remote} pages: {pages_url}")
