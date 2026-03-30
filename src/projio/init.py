@@ -160,6 +160,7 @@ PYTHON  ?= python
 DATALAD ?= datalad
 MKDOCS  ?= $(PYTHON) -m mkdocs
 PROJIO  ?= $(PYTHON) -m projio
+PUBLISH ?= $(PYTHON) -m twine upload
 MSG     ?= Update
 
 .PHONY: save push url
@@ -256,6 +257,13 @@ def _projio_mk(root: Path) -> str:
             f"PROJIO  ?= {python_bin} -m projio",
             1,
         )
+    publish_script = runtime.get("publish_script")
+    if publish_script:
+        mk = mk.replace(
+            "PUBLISH ?= $(PYTHON) -m twine upload",
+            f"PUBLISH ?= {publish_script}",
+            1,
+        )
     if datalad_bin:
         mk = mk.replace("DATALAD ?= datalad", f"DATALAD ?= {datalad_bin}", 1)
         # Derive labpy python for MKDOCS from datalad_bin path
@@ -303,10 +311,10 @@ check:
 \t$(PYTHON) -m twine check dist/*
 
 publish-test:
-\t$(PYTHON) -m twine upload --repository testpypi dist/*
+\t$(PUBLISH) --repository testpypi dist/*
 
 publish:
-\t$(PYTHON) -m twine upload dist/*
+\t$(PUBLISH) dist/*
 
 clean:
 \trm -rf build dist .pytest_cache .mypy_cache src/*.egg-info
@@ -1099,12 +1107,14 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| List pipeline flows | `pipeio_flow_list(pipe)` | Parse registry YAML directly |")
         rows.append("| Flow status | `pipeio_flow_status(pipe, flow)` | Inspect flow dirs manually |")
         rows.append("| Scaffold a notebook | `pipeio_nb_create(pipe, flow, name)` | Create .py files manually |")
+        rows.append("| Update notebook metadata | `pipeio_nb_update(pipe, flow, name)` | Edit notebook.yml directly |")
         rows.append("| Sync notebook formats | `pipeio_nb_sync(pipe, flow, name)` | Run jupytext manually |")
         rows.append("| Publish notebook to docs | `pipeio_nb_publish(pipe, flow, name)` | Copy files manually |")
         rows.append("| Analyze notebook structure | `pipeio_nb_analyze(pipe, flow, name)` | Parse .py files manually |")
         rows.append("| Execute notebook | `pipeio_nb_exec(pipe, flow, name, params)` | Run papermill manually |")
         rows.append("| Full notebook pipeline | `pipeio_nb_pipeline(pipe, flow, name)` | Chain sync/publish/collect manually |")
         rows.append("| Scaffold a mod (with I/O wiring) | `pipeio_mod_create(pipe, flow, mod, inputs, outputs, params_spec)` | Create script/doc files manually |")
+        rows.append("| Mod context (rules, scripts, doc, config) | `pipeio_mod_context(pipe, flow, mod)` | Multiple reads manually |")
         rows.append("| List mods | `pipeio_mod_list(pipe, flow)` | Parse registry manually |")
         rows.append("| List Snakemake rules | `pipeio_rule_list(pipe, flow)` | Parse Snakefiles manually |")
         rows.append("| Generate rule stub | `pipeio_rule_stub(pipe, flow, rule_name)` | Write rule text manually |")

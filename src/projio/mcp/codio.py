@@ -1,7 +1,12 @@
-"""MCP tools: codio_list, codio_get, codio_registry, codio_vocab, codio_validate, codio_discover."""
+"""MCP tools: codio_list, codio_get, codio_registry, codio_vocab, codio_validate, codio_discover, codio_func_doc."""
 from __future__ import annotations
 
 import dataclasses
+import importlib
+import inspect
+import json
+import subprocess
+import textwrap
 from typing import Any
 
 from .common import JsonDict, get_project_root, json_dict
@@ -279,3 +284,126 @@ def codio_discover(query: str, language: str | None = None) -> JsonDict:
         return json_dict(dataclasses.asdict(result))
     except Exception as exc:
         return json_dict({"error": str(exc)})
+
+
+_INTROSPECT_SNIPPET = textwrap.dedent("""\
+    import importlib, inspect, json, sys
+    pkg, mod_name, func = sys.argv[1], sys.argv[2], sys.argv[3] or None
+    qualname = f"{pkg}.{mod_name}"
+    try:
+        mod = importlib.import_module(qualname)
+    except ImportError as e:
+        json.dump({"error": f"Cannot import {qualname}: {e}"}, sys.stdout); sys.exit(0)
+    if func:
+        fn = getattr(mod, func, None)
+        if fn is None or not callable(fn):
+            json.dump({"error": f"{func} not found or not callable in {qualname}"}, sys.stdout); sys.exit(0)
+        try: sig = str(inspect.signature(fn))
+        except (ValueError, TypeError): sig = "(???)"
+        json.dump({"function": func, "module": qualname, "signature": f"{func}{sig}", "docstring": fn.__doc__ or ""}, sys.stdout)
+    else:
+        entries = []
+        for name in sorted(dir(mod)):
+            if name.startswith("_"): continue
+            obj = getattr(mod, name)
+            if not callable(obj): continue
+            try: sig = str(inspect.signature(obj))
+            except (ValueError, TypeError): sig = "(???)"
+            doc = (obj.__doc__ or "").strip().split(chr(10), 1)[0]
+            entries.append({"name": name, "signature": f"{name}{sig}", "doc": doc})
+        json.dump({"module": qualname, "functions": entries}, sys.stdout)
+""")
+
+
+def _resolve_conda() -> str:
+    """Return the conda binary path from projio config or fall back to 'conda'."""
+    try:
+        from projio.init import load_projio_config
+        root = get_project_root()
+        cfg = load_projio_config(root)
+        return cfg.get("runtime", {}).get("conda", "conda")
+    except Exception:
+        return "conda"
+
+
+def _func_doc_subprocess(env: str, package: str, module: str, function: str | None) -> JsonDict:
+    """Run introspection in a different conda env via subprocess."""
+    conda = _resolve_conda()
+    cmd = [conda, "run", "-n", env, "python", "-c",
+           _INTROSPECT_SNIPPET, package, module, function or ""]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    except FileNotFoundError:
+        return json_dict({"error": f"conda not found at {conda}"})
+    except subprocess.TimeoutExpired:
+        return json_dict({"error": f"Introspection in env '{env}' timed out"})
+    if proc.returncode != 0:
+        return json_dict({"error": f"subprocess failed (rc={proc.returncode}): {proc.stderr.strip()}"})
+    try:
+        return json_dict(json.loads(proc.stdout))
+    except json.JSONDecodeError:
+        return json_dict({"error": f"Bad JSON from subprocess: {proc.stdout[:200]}"})
+
+
+def _func_doc_local(package: str, module: str, function: str | None) -> JsonDict:
+    """In-process introspection (current env)."""
+    qualname = f"{package}.{module}"
+    try:
+        mod = importlib.import_module(qualname)
+    except ImportError as exc:
+        return json_dict({"error": f"Cannot import {qualname}: {exc}"})
+
+    if function is not None:
+        fn = getattr(mod, function, None)
+        if fn is None or not callable(fn):
+            return json_dict({"error": f"{function} not found or not callable in {qualname}"})
+        try:
+            sig = str(inspect.signature(fn))
+        except (ValueError, TypeError):
+            sig = "(???)"
+        return json_dict({
+            "function": function,
+            "module": qualname,
+            "signature": f"{function}{sig}",
+            "docstring": fn.__doc__ or "",
+        })
+
+    entries = []
+    for name in sorted(dir(mod)):
+        if name.startswith("_"):
+            continue
+        obj = getattr(mod, name)
+        if not callable(obj):
+            continue
+        try:
+            sig = str(inspect.signature(obj))
+        except (ValueError, TypeError):
+            sig = "(???)"
+        doc = obj.__doc__ or ""
+        first_line = doc.strip().split("\n", 1)[0] if doc else ""
+        entries.append({"name": name, "signature": f"{name}{sig}", "doc": first_line})
+    return json_dict({"module": qualname, "functions": entries})
+
+
+def codio_func_doc(
+    package: str,
+    module: str,
+    function: str | None = None,
+    env: str | None = None,
+) -> JsonDict:
+    """Live introspection of an installed Python package.
+
+    Returns function signatures and docstrings via importlib + inspect.
+    If *function* is given, returns that function's full signature and docstring.
+    If omitted, lists all public functions with signatures and first-line docstrings.
+
+    Args:
+        package: Top-level package name (e.g. "numpy").
+        module: Module path within the package (e.g. "linalg").
+        function: Specific function name. Omit to browse the whole module.
+        env: Conda environment name. If given, runs introspection in that env
+             via ``conda run``. If omitted, uses the current (server) env.
+    """
+    if env:
+        return _func_doc_subprocess(env, package, module, function)
+    return _func_doc_local(package, module, function)

@@ -73,6 +73,39 @@ def pipeio_nb_status() -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def pipeio_nb_update(
+    pipe: str,
+    flow: str,
+    name: str,
+    status: str = "",
+    description: str = "",
+    kind: str = "",
+) -> JsonDict:
+    """Update notebook metadata (status, description, kind) in notebook.yml.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name.
+        name: Notebook name (stem, without extension).
+        status: New status (draft/active/stale/promoted/archived).
+        description: New one-line description.
+        kind: New kind (investigate/explore/demo/validate).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_update")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_update  # type: ignore[import]
+        return json_dict(mcp_nb_update(
+            root, pipe=pipe, flow=flow, name=name,
+            status=status or None,
+            description=description or None,
+            kind=kind or None,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_mod_list(pipe: str, flow: str = "") -> JsonDict:
     """List mods for a specific pipeline flow.
 
@@ -102,6 +135,26 @@ def pipeio_mod_resolve(modkeys: list[str]) -> JsonDict:
     try:
         from pipeio.mcp import mcp_mod_resolve  # type: ignore[import]
         return json_dict(mcp_mod_resolve(root, modkeys=modkeys))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_mod_context(pipe: str, flow: str = "", mod: str = "") -> JsonDict:
+    """Bundled read context for a mod: rules, scripts, doc, config params.
+
+    Returns everything needed to understand and work on a mod in one call.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name (optional for single-flow pipes).
+        mod: Module name.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_mod_context")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_mod_context  # type: ignore[import]
+        return json_dict(mcp_mod_context(root, pipe=pipe, flow=flow or None, mod=mod))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 

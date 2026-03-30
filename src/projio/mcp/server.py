@@ -295,6 +295,15 @@ def codio_add_tool(
     )
 
 
+@server.tool("codio_func_doc")
+def codio_func_doc_tool(package: str, module: str, function: str = "", env: str = ""):
+    """Live introspection of an installed Python package. Returns function signatures and docstrings.
+    If function is given, returns that function's full signature and docstring.
+    If omitted, lists all public functions with signatures and first-line docstrings (browsing mode).
+    Set env to a conda environment name to introspect packages in that env (e.g. "cogpy")."""
+    return codio.codio_func_doc(package=package, module=module, function=function or None, env=env or None)
+
+
 # --- Pipeio tools ---
 
 @server.tool("pipeio_flow_list")
@@ -315,6 +324,25 @@ def pipeio_nb_status_tool():
     return pipeio.pipeio_nb_status()
 
 
+@server.tool("pipeio_nb_update")
+def pipeio_nb_update_tool(
+    pipe: str,
+    flow: str,
+    name: str,
+    status: str = "",
+    description: str = "",
+    kind: str = "",
+):
+    """Update notebook metadata (status, description, kind) in notebook.yml.
+
+    status: draft/active/stale/promoted/archived.
+    kind: investigate/explore/demo/validate."""
+    return pipeio.pipeio_nb_update(
+        pipe=pipe, flow=flow, name=name,
+        status=status, description=description, kind=kind,
+    )
+
+
 @server.tool("pipeio_mod_list")
 def pipeio_mod_list_tool(pipe: str, flow: str = ""):
     """List mods (logical modules) for a pipeline flow."""
@@ -325,6 +353,14 @@ def pipeio_mod_list_tool(pipe: str, flow: str = ""):
 def pipeio_mod_resolve_tool(modkeys: list[str]):
     """Resolve modkeys (pipe-X_flow-Y_mod-Z) into metadata and doc locations."""
     return pipeio.pipeio_mod_resolve(modkeys=modkeys)
+
+
+@server.tool("pipeio_mod_context")
+def pipeio_mod_context_tool(pipe: str, flow: str = "", mod: str = ""):
+    """Bundled read context for a mod: rules, scripts, doc, config params, bids signatures.
+
+    Returns everything needed to understand and work on a mod in one MCP call."""
+    return pipeio.pipeio_mod_context(pipe=pipe, flow=flow, mod=mod)
 
 
 @server.tool("pipeio_registry_scan")
