@@ -375,6 +375,13 @@ def pipeio_flow_status_tool(pipe: str, flow: str):
     return pipeio.pipeio_flow_status(pipe=pipe, flow=flow)
 
 
+@server.tool("pipeio_flow_fork")
+def pipeio_flow_fork_tool(pipe: str, flow: str, new_flow: str, new_pipe: str = ""):
+    """Fork a flow: copy code directory and register as a new flow.
+    Original is untouched."""
+    return pipeio.pipeio_flow_fork(pipe=pipe, flow=flow, new_flow=new_flow, new_pipe=new_pipe)
+
+
 @server.tool("pipeio_flow_deregister")
 def pipeio_flow_deregister_tool(pipe: str, flow: str):
     """Remove a flow from the pipeline registry. Files on disk are untouched.

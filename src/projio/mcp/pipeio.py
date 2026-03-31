@@ -136,6 +136,36 @@ def pipeio_flow_status(pipe: str, flow: str) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def pipeio_flow_fork(
+    pipe: str,
+    flow: str,
+    new_flow: str,
+    new_pipe: str = "",
+) -> JsonDict:
+    """Fork a flow: copy its code directory and register as a new flow.
+
+    Creates a full copy of the source flow's code (Snakefile, config,
+    notebooks, scripts) under a new name. The original is untouched.
+
+    Args:
+        pipe: Source pipeline name.
+        flow: Source flow name.
+        new_flow: Name for the forked flow.
+        new_pipe: Target pipe (default: same as source).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_flow_fork")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_flow_fork  # type: ignore[import]
+        return json_dict(mcp_flow_fork(
+            root, pipe=pipe, flow=flow,
+            new_flow=new_flow, new_pipe=new_pipe or None,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_flow_deregister(pipe: str, flow: str) -> JsonDict:
     """Remove a flow from the pipeline registry.
 
