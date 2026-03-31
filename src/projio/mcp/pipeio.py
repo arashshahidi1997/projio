@@ -136,14 +136,32 @@ def pipeio_flow_status(pipe: str, flow: str) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
-def pipeio_nb_status() -> JsonDict:
-    """Show notebook sync and publication status across all flows."""
+def pipeio_nb_status(
+    pipe: str = "",
+    flow: str = "",
+    name: str = "",
+) -> JsonDict:
+    """Show notebook sync and publication status.
+
+    Optionally filter by pipe, flow, or notebook name to avoid scanning
+    the entire project.
+
+    Args:
+        pipe: Filter to a specific pipeline (optional).
+        flow: Filter to a specific flow (optional).
+        name: Filter to a specific notebook name (optional).
+    """
     if not _pipeio_available():
         return _unavailable("pipeio_nb_status")
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_nb_status  # type: ignore[import]
-        return json_dict(mcp_nb_status(root))
+        return json_dict(mcp_nb_status(
+            root,
+            pipe=pipe or None,
+            flow=flow or None,
+            name=name or None,
+        ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -355,14 +373,27 @@ def pipeio_nb_sync(
     flow: str,
     name: str,
     formats: list[str] | None = None,
+    direction: str = "py2nb",
+    force: bool = False,
 ) -> JsonDict:
     """Sync a specific notebook via jupytext (pair + convert).
+
+    Supports bidirectional sync:
+    - direction='py2nb' (default): regenerate .ipynb/.md from .py source.
+      Use after the agent edits the .py file.
+    - direction='nb2py': update .py from the paired .ipynb.
+      Use after a human edits the .ipynb interactively.
+
+    Skips files that are already up-to-date (mtime check) unless force=True.
 
     Args:
         pipe: Pipeline name.
         flow: Flow name.
         name: Notebook basename (without extension).
         formats: Which formats to produce (default: ['ipynb', 'myst']).
+            Only used for py2nb direction.
+        direction: 'py2nb' or 'nb2py'.
+        force: If True, sync even if files are up-to-date.
     """
     if not _pipeio_available():
         return _unavailable("pipeio_nb_sync")
@@ -372,7 +403,7 @@ def pipeio_nb_sync(
         python_bin = _resolve_project_python()
         return json_dict(mcp_nb_sync(
             root, pipe=pipe, flow=flow, name=name, formats=formats,
-            python_bin=python_bin,
+            python_bin=python_bin, direction=direction, force=force,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
@@ -416,6 +447,29 @@ def pipeio_nb_analyze(pipe: str, flow: str, name: str) -> JsonDict:
     try:
         from pipeio.mcp import mcp_nb_analyze  # type: ignore[import]
         return json_dict(mcp_nb_analyze(root, pipe=pipe, flow=flow, name=name))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_nb_diff(pipe: str, flow: str, name: str) -> JsonDict:
+    """Show sync state between .py and paired .ipynb for a notebook.
+
+    Returns which file is newer, whether they're in sync, and the
+    recommended sync direction. Call this before nb_sync to decide
+    the right direction, or to check if human edits need to be
+    pulled into the .py source.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name.
+        name: Notebook basename (without extension).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_diff")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_diff  # type: ignore[import]
+        return json_dict(mcp_nb_diff(root, pipe=pipe, flow=flow, name=name))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 

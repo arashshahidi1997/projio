@@ -319,9 +319,9 @@ def pipeio_flow_status_tool(pipe: str, flow: str):
 
 
 @server.tool("pipeio_nb_status")
-def pipeio_nb_status_tool():
-    """Show notebook sync and publication status across all flows."""
-    return pipeio.pipeio_nb_status()
+def pipeio_nb_status_tool(pipe: str = "", flow: str = "", name: str = ""):
+    """Show notebook sync and publication status. Optionally filter by pipe, flow, or name."""
+    return pipeio.pipeio_nb_status(pipe=pipe, flow=flow, name=name)
 
 
 @server.tool("pipeio_nb_update")
@@ -414,11 +414,16 @@ def pipeio_nb_sync_tool(
     flow: str,
     name: str,
     formats: list[str] = [],
+    direction: str = "py2nb",
+    force: bool = False,
 ):
-    """Sync a notebook via jupytext (produce .ipynb and/or .md from .py)."""
+    """Sync a notebook via jupytext. direction='py2nb' (default) regenerates
+    .ipynb/.md from .py; direction='nb2py' updates .py from the .ipynb
+    (use after human edits). Skips up-to-date files unless force=True."""
     return pipeio.pipeio_nb_sync(
         pipe=pipe, flow=flow, name=name,
         formats=formats or None,
+        direction=direction, force=force,
     )
 
 
@@ -433,6 +438,13 @@ def pipeio_nb_analyze_tool(pipe: str, flow: str, name: str):
     """Analyze a notebook's static structure: imports, RunCard fields, PipelineContext
     usage, section headers, and cogpy function calls."""
     return pipeio.pipeio_nb_analyze(pipe=pipe, flow=flow, name=name)
+
+
+@server.tool("pipeio_nb_diff")
+def pipeio_nb_diff_tool(pipe: str, flow: str, name: str):
+    """Show sync state between .py and .ipynb: which is newer, whether in sync,
+    and the recommended sync direction. Call before nb_sync to decide direction."""
+    return pipeio.pipeio_nb_diff(pipe=pipe, flow=flow, name=name)
 
 
 @server.tool("pipeio_nb_pipeline")
