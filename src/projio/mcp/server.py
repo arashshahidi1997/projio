@@ -375,6 +375,13 @@ def pipeio_flow_status_tool(pipe: str, flow: str):
     return pipeio.pipeio_flow_status(pipe=pipe, flow=flow)
 
 
+@server.tool("pipeio_flow_deregister")
+def pipeio_flow_deregister_tool(pipe: str, flow: str):
+    """Remove a flow from the pipeline registry. Files on disk are untouched.
+    Use pipeio_registry_scan() to re-register if needed."""
+    return pipeio.pipeio_flow_deregister(pipe=pipe, flow=flow)
+
+
 @server.tool("pipeio_nb_status")
 def pipeio_nb_status_tool(pipe: str = "", flow: str = "", name: str = ""):
     """Show notebook sync and publication status. Optionally filter by pipe, flow, or name."""

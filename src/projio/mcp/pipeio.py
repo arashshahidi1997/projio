@@ -136,6 +136,27 @@ def pipeio_flow_status(pipe: str, flow: str) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def pipeio_flow_deregister(pipe: str, flow: str) -> JsonDict:
+    """Remove a flow from the pipeline registry.
+
+    Only removes the registry entry — does NOT delete code, config, docs,
+    or notebook files from the filesystem. Use pipeio_registry_scan() to
+    re-register if needed.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_flow_deregister")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_flow_deregister  # type: ignore[import]
+        return json_dict(mcp_flow_deregister(root, pipe=pipe, flow=flow))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_nb_status(
     pipe: str = "",
     flow: str = "",
