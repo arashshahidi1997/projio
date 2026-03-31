@@ -39,7 +39,7 @@ Projio orchestrates four specialized subsystems, each managing a knowledge domai
 | **biblio** | literature | Bibliography management, citekey resolution, paper context extraction |
 | **notio** | notes | Structured project notes (experiment logs, design decisions, idea capture) |
 | **codio** | code intelligence | Library registry, code reuse discovery, implementation strategy |
-| **pipeio** | pipelines | Pipeline registry, notebook lifecycle, flow management, I/O contracts |
+| **pipeio** | pipelines | Agent-facing pipeline authoring & discovery, contracts, notebook lifecycle |
 
 These live as git submodules under `packages/` and are optional dependencies — the system degrades gracefully when any are absent.
 

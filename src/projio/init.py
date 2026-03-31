@@ -1188,6 +1188,10 @@ When filing observations for another project via worklog MCP:
 - Need result now → `run_prompt(project, prompt)` (synchronous)
 
 Queue timeout is 30 minutes. Use `tail_task(queue_id)` to monitor running tasks.
+`list_queue()` defaults to active entries only; pass `status="all"` for history.
+`schedule_queue` accepts `"now"` for immediate execution with full observability.
+CLI: `worklog queue`, `worklog queue tail <id>`, `worklog queue cancel <id>`.
+
 Use `note_resolve(note_id)` to find notes by timestamp/capture ID.
 
 **Task promotion:** `promote_to_task` only uses LLM enrichment for voice captures.

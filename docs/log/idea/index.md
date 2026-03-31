@@ -2,6 +2,8 @@
 
 ## Contents
 
+- [idea-arash-20260331-022337-352248 title:idea](idea-arash-20260331-022337-352248.md)
+- [idea-arash-20260331-003958-077273 title:idea](idea-arash-20260331-003958-077273.md)
 - [idea-arash-20260330-174518-164647 title:pipeio v2 roadmap: lean scope, snakebids/DataLad alignment](idea-arash-20260330-174518-164647.md)
 - [idea-arash-20260330-162752-883803 title:pipeio smart read tools: mod_context and notebook metadata](idea-arash-20260330-162752-883803.md)
 - [idea-arash-20260330-010344-522695 title:codio_func_doc cross-env introspection](idea-arash-20260330-010344-522695.md)
