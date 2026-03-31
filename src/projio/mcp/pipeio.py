@@ -474,6 +474,36 @@ def pipeio_nb_diff(pipe: str, flow: str, name: str) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def pipeio_nb_lab(
+    pipe: str = "",
+    flow: str = "",
+    sync: bool = True,
+) -> JsonDict:
+    """Build/refresh the Jupyter Lab symlink manifest.
+
+    Creates .projio/pipeio/lab/<pipe>/<flow>/<name>.ipynb symlinks
+    pointing to real notebook files. Optionally syncs py→ipynb first.
+    Returns manifest state: linked notebooks, stale cleaned, lab_dir.
+
+    Args:
+        pipe: Filter to a specific pipeline (optional).
+        flow: Filter to a specific flow (optional).
+        sync: If True (default), sync py→ipynb before linking.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_lab")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_lab  # type: ignore[import]
+        python_bin = _resolve_project_python()
+        return json_dict(mcp_nb_lab(
+            root, pipe=pipe or None, flow=flow or None,
+            sync=sync, python_bin=python_bin,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_nb_pipeline(
     pipe: str,
     flow: str,

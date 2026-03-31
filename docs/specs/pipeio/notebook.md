@@ -173,6 +173,7 @@ pipeio nb diff
 pipeio nb exec
 pipeio nb publish
 pipeio nb status
+pipeio nb lab      [--pipe PIPE] [--flow FLOW] [--no-sync] [--refresh]
 pipeio nb new      --mode explore|demo [--flow PIPE/FLOW] NAME
 ```
 

@@ -9,7 +9,7 @@ pipeio exposes tools through projio's MCP server for AI agent access to pipeline
 | Category | Count | Status |
 |----------|-------|--------|
 | Flow & registry | 4 | **Keep** |
-| Notebook lifecycle | 9 | **Keep** |
+| Notebook lifecycle | 10 | **Keep** |
 | Mod management | 4 | **Keep** |
 | Rule authoring | 4 | **Keep** |
 | Config authoring | 3 | **Keep** (config_read, config_patch, config_init) |
@@ -179,6 +179,16 @@ pipeio_nb_diff(pipe: str, flow: str, name: str) → dict
 ```
 
 Returns: `status` (synced | py_newer | ipynb_newer | unpaired | orphaned_ipynb | missing), `recommendation`, `executed`, `cell_count`.
+
+#### `pipeio_nb_lab`
+
+Build/refresh a Jupyter Lab symlink manifest in `.projio/pipeio/lab/`. Creates `<pipe>/<flow>/<name>.ipynb` symlinks pointing to real notebook files. Optionally syncs py→ipynb first.
+
+```
+pipeio_nb_lab(pipe: str = "", flow: str = "", sync: bool = True) → dict
+```
+
+Returns: `lab_dir`, `linked` (list of name/pipe/flow/target), `stale_cleaned`, `count`.
 
 #### `pipeio_nb_pipeline`
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from . import biblio, codio, context, datalad, notio, pipeio, rag, site as site_mcp
+from . import biblio, codio, context, datalad, manuscripto, notio, pipeio, rag, site as site_mcp
 
 server = FastMCP("projio")
 
@@ -221,6 +221,50 @@ def note_search_tool(query: str, k: int = 5):
 def notio_reindex_tool(note_type: str = ""):
     """Regenerate index.md files for note type directories. Empty note_type = all types."""
     return notio.notio_reindex(note_type=note_type)
+
+
+# --- Manuscript tools ---
+
+@server.tool("manuscript_init")
+def manuscript_init_tool(name: str, template: str = "generic"):
+    """Scaffold a new manuscript with default sections."""
+    return manuscripto.manuscript_init(name=name, template=template)
+
+
+@server.tool("manuscript_list")
+def manuscript_list_tool():
+    """List all manuscripts in the project."""
+    return manuscripto.manuscript_list()
+
+
+@server.tool("manuscript_status")
+def manuscript_status_tool(name: str):
+    """Show manuscript sections, figures, and completion status."""
+    return manuscripto.manuscript_status(name=name)
+
+
+@server.tool("manuscript_build")
+def manuscript_build_tool(name: str, format: str = "pdf"):
+    """Assemble sections and render to PDF/LaTeX/Markdown."""
+    return manuscripto.manuscript_build(name=name, format=format)
+
+
+@server.tool("manuscript_validate")
+def manuscript_validate_tool(name: str):
+    """Validate citations, figures, sections, and pandoc availability."""
+    return manuscripto.manuscript_validate(name=name)
+
+
+@server.tool("manuscript_assemble")
+def manuscript_assemble_tool(name: str):
+    """Generate assembled markdown without rendering."""
+    return manuscripto.manuscript_assemble(name=name)
+
+
+@server.tool("manuscript_figure_insert")
+def manuscript_figure_insert_tool(name: str, section: str, figure_id: str, position: str = "end"):
+    """Insert a figio figure reference into a manuscript section."""
+    return manuscripto.manuscript_figure_insert(name=name, section=section, figure_id=figure_id, position=position)
 
 
 # --- Codio tools ---
@@ -458,6 +502,14 @@ def pipeio_nb_diff_tool(pipe: str, flow: str, name: str):
     """Show sync state between .py and .ipynb: which is newer, whether in sync,
     and the recommended sync direction. Call before nb_sync to decide direction."""
     return pipeio.pipeio_nb_diff(pipe=pipe, flow=flow, name=name)
+
+
+@server.tool("pipeio_nb_lab")
+def pipeio_nb_lab_tool(pipe: str = "", flow: str = "", sync: bool = True):
+    """Build/refresh Jupyter Lab symlink manifest in .projio/pipeio/lab/.
+    Creates symlinks to active .ipynb notebooks, optionally syncs py→ipynb first.
+    Returns manifest state (linked notebooks, lab_dir)."""
+    return pipeio.pipeio_nb_lab(pipe=pipe, flow=flow, sync=sync)
 
 
 @server.tool("pipeio_nb_pipeline")
