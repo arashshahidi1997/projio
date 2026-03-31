@@ -48,6 +48,8 @@ Notebook `.py` files carry structured docstring metadata:
 ## notebook.yml Schema
 
 ```yaml
+kernel: cogpy                 # flow-level default kernel (Jupyter kernelspec name)
+
 publish:
   docs_dir: /abs/path/to/docs/reports/.../notebooks   # where to publish
   prefix: nb-                                           # filename prefix for published copies
@@ -57,6 +59,7 @@ entries:
     kind: investigate         # investigate | explore | demo | validate
     description: "Prototype noise characterization demo"
     status: active            # draft | active | stale | promoted | archived
+    kernel: neuropy-env       # per-notebook override (takes precedence over flow kernel)
     pair_ipynb: true          # create .ipynb and pair with jupytext
     pair_myst: true           # create .md (MyST) and pair
     publish_myst: true        # copy .md to docs_dir after execution
@@ -64,10 +67,23 @@ entries:
   - path: notebooks/investigate_noise_tfspace_demo/investigate_noise_tfspace_demo.py
     kind: investigate
     status: active
-    pair_ipynb: true
+    pair_ipynb: true          # inherits kernel: cogpy from flow level
     pair_myst: true
     publish_myst: true
 ```
+
+### Kernel Resolution
+
+Kernels are resolved with entry-level taking precedence over flow-level:
+
+```
+entry.kernel > config.kernel > (no override)
+```
+
+When set, the kernel name is:
+- Embedded in `.ipynb` metadata via `jupytext --set-kernel` during sync
+- Passed to papermill via `-k` during execution
+- Shown in `nb_status` and `nb_lab` manifest output
 
 ### NotebookConfig Pydantic Model
 
@@ -77,6 +93,7 @@ class NotebookEntry(BaseModel):
     kind: str = ""                # investigate | explore | demo | validate
     description: str = ""         # human-readable description
     status: str = "active"        # draft | active | stale | promoted | archived
+    kernel: str = ""              # Jupyter kernelspec name (overrides flow default)
     pair_ipynb: bool = False
     pair_myst: bool = False
     publish_myst: bool = False
@@ -88,6 +105,7 @@ class PublishConfig(BaseModel):
     prefix: str = "nb-"
 
 class NotebookConfig(BaseModel):
+    kernel: str = ""              # flow-level default kernel
     publish: PublishConfig = PublishConfig()
     entries: list[NotebookEntry] = []
 ```
