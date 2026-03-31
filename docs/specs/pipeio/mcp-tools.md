@@ -9,7 +9,7 @@ pipeio exposes tools through projio's MCP server for AI agent access to pipeline
 | Category | Count | Status |
 |----------|-------|--------|
 | Flow & registry | 4 | **Keep** |
-| Notebook lifecycle | 10 | **Keep** |
+| Notebook lifecycle | 13 | **Keep** |
 | Mod management | 4 | **Keep** |
 | Rule authoring | 4 | **Keep** |
 | Config authoring | 3 | **Keep** (config_read, config_patch, config_init) |
@@ -185,10 +185,38 @@ Returns: `status` (synced | py_newer | ipynb_newer | unpaired | orphaned_ipynb |
 Build/refresh a Jupyter Lab symlink manifest in `.projio/pipeio/lab/`. Creates `<pipe>/<flow>/<name>.ipynb` symlinks pointing to real notebook files. Optionally syncs py→ipynb first.
 
 ```
-pipeio_nb_lab(pipe: str = "", flow: str = "", sync: bool = True) → dict
+pipeio_nb_lab(pipe: str = "", flow: str = "", sync: bool = False) → dict
 ```
 
-Returns: `lab_dir`, `linked` (list of name/pipe/flow/target), `stale_cleaned`, `count`.
+Returns: `lab_dir`, `linked` (list of name/pipe/flow/target/kernel), `stale_cleaned`, `count`.
+
+#### `pipeio_nb_scan`
+
+Scan for unregistered percent-format `.py` notebooks in `notebooks/` directories. Pass `register=True` to auto-add them to `notebook.yml`.
+
+```
+pipeio_nb_scan(register: bool = False) → dict
+```
+
+Returns: `total`, `registered`, `unregistered`, `notebooks` (list with name/path/registered/newly_registered).
+
+#### `pipeio_nb_read`
+
+Read a notebook's `.py` content with metadata, sync state, and structural analysis in a single call. Returns content alongside status, kernel, mod, description, sections, imports, RunCard, cogpy calls.
+
+```
+pipeio_nb_read(pipe: str, flow: str, name: str) → dict
+```
+
+#### `pipeio_nb_audit`
+
+Audit all notebooks: staleness, config completeness, mod coverage gaps. Returns per-notebook issues and flow-level coverage report.
+
+```
+pipeio_nb_audit() → dict
+```
+
+Issues detected: `no_description`, `no_kind`, `no_kernel`, `no_mod`, `ipynb_stale`, `ipynb_has_unsynced_edits`, `ipynb_missing`, `py_missing`, `draft_but_substantial`, `pair_ipynb_disabled`, `mod_without_notebook`.
 
 #### `pipeio_nb_pipeline`
 

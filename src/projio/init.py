@@ -1106,13 +1106,19 @@ and `runtime_conventions()` to see available Makefile targets.
     if has_pipeio:
         rows.append("| List pipeline flows | `pipeio_flow_list(pipe)` | Parse registry YAML directly |")
         rows.append("| Flow status | `pipeio_flow_status(pipe, flow)` | Inspect flow dirs manually |")
+        rows.append("| Scan for unregistered notebooks | `pipeio_nb_scan(register?)` | Walk filesystem manually |")
+        rows.append("| Notebook status (filtered) | `pipeio_nb_status(pipe?, flow?, name?)` | Parse notebook.yml manually |")
+        rows.append("| Audit notebook quality | `pipeio_nb_audit()` | Manual inspection |")
+        rows.append("| Read notebook content + metadata | `pipeio_nb_read(pipe, flow, name)` | Read .py + parse YAML manually |")
+        rows.append("| Check .py↔.ipynb sync state | `pipeio_nb_diff(pipe, flow, name)` | Compare mtimes manually |")
         rows.append("| Scaffold a notebook | `pipeio_nb_create(pipe, flow, name)` | Create .py files manually |")
         rows.append("| Update notebook metadata | `pipeio_nb_update(pipe, flow, name)` | Edit notebook.yml directly |")
-        rows.append("| Sync notebook formats | `pipeio_nb_sync(pipe, flow, name)` | Run jupytext manually |")
+        rows.append("| Sync notebook (bidirectional) | `pipeio_nb_sync(pipe, flow, name, direction?)` | Run jupytext manually |")
         rows.append("| Publish notebook to docs | `pipeio_nb_publish(pipe, flow, name)` | Copy files manually |")
         rows.append("| Analyze notebook structure | `pipeio_nb_analyze(pipe, flow, name)` | Parse .py files manually |")
         rows.append("| Execute notebook | `pipeio_nb_exec(pipe, flow, name, params)` | Run papermill manually |")
         rows.append("| Full notebook pipeline | `pipeio_nb_pipeline(pipe, flow, name)` | Chain sync/publish/collect manually |")
+        rows.append("| Build Jupyter Lab manifest | `pipeio_nb_lab(pipe?, flow?, sync?)` | Create symlinks manually |")
         rows.append("| Scaffold a mod (with I/O wiring) | `pipeio_mod_create(pipe, flow, mod, inputs, outputs, params_spec)` | Create script/doc files manually |")
         rows.append("| Mod context (rules, scripts, doc, config) | `pipeio_mod_context(pipe, flow, mod)` | Multiple reads manually |")
         rows.append("| List mods | `pipeio_mod_list(pipe, flow)` | Parse registry manually |")
@@ -1175,6 +1181,32 @@ and `runtime_conventions()` to see available Makefile targets.
         if workflow_parts:
             sections.append("## Workflow conventions\n\n" + "\n".join(workflow_parts) + "\n")
 
+    if has_pipeio:
+        sections.append("""\
+## Notebook workflow
+
+**Agentic notebook lifecycle** — use these tools in sequence:
+
+1. **Discover:** `pipeio_nb_scan()` → find unregistered notebooks, `register=True` to auto-add
+2. **Triage:** `pipeio_nb_status(pipe, flow)` → filtered sync state; or `pipeio_nb_audit()` → holistic quality report with issues and mod coverage gaps
+3. **Understand:** `pipeio_nb_read(pipe, flow, name)` → full .py content + metadata + analysis in one call
+4. **Check sync:** `pipeio_nb_diff(pipe, flow, name)` → which file is newer, recommended direction
+5. **Fix config:** `pipeio_nb_update(...)` → set status, description, kind, mod
+6. **Sync:** `pipeio_nb_sync(..., direction='py2nb')` after editing .py; `direction='nb2py'` to pull human's .ipynb edits
+
+**Notebook addressing:** All nb tools use `(pipe, flow, name)` — never raw file paths.
+
+**Bidirectional sync:**
+- Agent edits `.py` → `nb_sync(direction='py2nb')` → human opens in Jupyter Lab
+- Human edits `.ipynb` → `nb_diff` shows `ipynb_newer` → `nb_sync(direction='nb2py')` → agent reads updated .py
+
+**Kernel config:** `notebook.yml` has `kernel` at flow level and per-entry. Embedded in .ipynb via `--set-kernel` on sync, passed to papermill via `-k` on exec.
+
+**Mod association:** `notebook.yml` entries have an optional `mod` field linking notebooks to flow mods. `nb_audit` reports mods without notebooks.
+
+**Script reading:** Use `pipeio_mod_context(pipe, flow, mod)` to read Snakemake rule scripts — it returns full script content alongside rules, docs, and config.
+""")
+
     # Cross-project dispatch guidance (worklog MCP is available everywhere)
     sections.append("""\
 ## Cross-project dispatch
@@ -1186,12 +1218,14 @@ When filing observations for another project via worklog MCP:
 **Dispatch decision:**
 - Well-scoped bug with clear fix → `worklog_note(text, project_id, kind="issue", auto_dispatch=True, model="sonnet")`
 - Complex/architectural issue → `worklog_note(text, project_id, kind="issue", auto_dispatch=True)` (opus is default)
+- Direct task, no promotion needed → `worklog_note(text, project_id, kind="task", auto_dispatch=True)` (wraps body in ## Prompt, enqueues directly)
 - Observation, no immediate action → `worklog_note(text, project_id)` (no auto_dispatch)
 - Need result now → `run_prompt(project, prompt)` (synchronous)
 
 Queue timeout is 30 minutes. Use `tail_task(queue_id)` to monitor running tasks.
-`list_queue()` defaults to active entries only; pass `status="all"` for history.
-`schedule_queue` accepts `"now"` for immediate execution with full observability.
+`list_queue()` defaults to active entries only, newest-first, compact output.
+Filter with `schedule_id=`, `since="24h"`, `project=`. Pass `status="all"` for history.
+`schedule_queue` accepts `scheduled_at="now"` for immediate or `after="queue_id"` for dependency-based scheduling.
 CLI: `worklog queue`, `worklog queue tail <id>`, `worklog queue cancel <id>`.
 
 Use `note_resolve(note_id)` to find notes by timestamp/capture ID.
