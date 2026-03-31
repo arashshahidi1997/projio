@@ -224,8 +224,10 @@ def pipeio_nb_update(
     status: str = "",
     description: str = "",
     kind: str = "",
+    mod: str = "",
+    kernel: str = "",
 ) -> JsonDict:
-    """Update notebook metadata (status, description, kind) in notebook.yml.
+    """Update notebook metadata in notebook.yml.
 
     Args:
         pipe: Pipeline name.
@@ -234,6 +236,8 @@ def pipeio_nb_update(
         status: New status (draft/active/stale/promoted/archived).
         description: New one-line description.
         kind: New kind (investigate/explore/demo/validate).
+        mod: Associated mod name.
+        kernel: Jupyter kernel name.
     """
     if not _pipeio_available():
         return _unavailable("pipeio_nb_update")
@@ -245,6 +249,8 @@ def pipeio_nb_update(
             status=status or None,
             description=description or None,
             kind=kind or None,
+            mod=mod or None,
+            kernel=kernel or None,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
@@ -455,6 +461,35 @@ def pipeio_nb_sync(
         return json_dict(mcp_nb_sync(
             root, pipe=pipe, flow=flow, name=name, formats=formats,
             python_bin=python_bin, direction=direction, force=force,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_nb_sync_flow(
+    pipe: str,
+    flow: str,
+    direction: str = "py2nb",
+    force: bool = False,
+) -> JsonDict:
+    """Batch-sync all notebooks in a flow.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name.
+        direction: 'py2nb' or 'nb2py'.
+        force: If True, sync even if up-to-date.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_sync_flow")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_sync_flow  # type: ignore[import]
+        python_bin = _resolve_project_python()
+        return json_dict(mcp_nb_sync_flow(
+            root, pipe=pipe, flow=flow,
+            direction=direction, force=force,
+            python_bin=python_bin,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})

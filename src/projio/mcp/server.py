@@ -403,14 +403,18 @@ def pipeio_nb_update_tool(
     status: str = "",
     description: str = "",
     kind: str = "",
+    mod: str = "",
+    kernel: str = "",
 ):
-    """Update notebook metadata (status, description, kind) in notebook.yml.
+    """Update notebook metadata in notebook.yml.
 
     status: draft/active/stale/promoted/archived.
-    kind: investigate/explore/demo/validate."""
+    kind: investigate/explore/demo/validate.
+    mod: associated pipeline mod. kernel: Jupyter kernel name."""
     return pipeio.pipeio_nb_update(
         pipe=pipe, flow=flow, name=name,
         status=status, description=description, kind=kind,
+        mod=mod, kernel=kernel,
     )
 
 
@@ -495,6 +499,16 @@ def pipeio_nb_sync_tool(
         pipe=pipe, flow=flow, name=name,
         formats=formats or None,
         direction=direction, force=force,
+    )
+
+
+@server.tool("pipeio_nb_sync_flow")
+def pipeio_nb_sync_flow_tool(
+    pipe: str, flow: str, direction: str = "py2nb", force: bool = False,
+):
+    """Batch-sync all notebooks in a flow. Syncs every notebook in notebook.yml."""
+    return pipeio.pipeio_nb_sync_flow(
+        pipe=pipe, flow=flow, direction=direction, force=force,
     )
 
 
