@@ -1,26 +1,19 @@
-# indexio config
-#
-# Copy this file into your repo, then customize the source globs.
-# The local store is a per-clone writable cache.
-#
-# You can compose from smaller configs:
-#
-# includes:
-#   - bib/config/indexio.yaml
-
-embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+embedding_model: sentence-transformers/all-MiniLM-L6-v2
 chunk_size_chars: 1000
 chunk_overlap_chars: 200
-
 default_store: local
-
 stores:
   local:
     persist_directory: .cache/indexio/chroma_db
     read_only: false
-    description: "Per-clone writable Chroma cache"
-
+    description: Per-clone writable Chroma cache
 sources:
-  - id: "docs"
-    corpus: "docs"
-    glob: "docs/**/*.md"
+- id: docs
+  corpus: docs
+  glob: docs/**/*.md
+- id: codio-notes
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/docs/reference/codelib/libraries/**/*.md
+- id: codio-catalog
+  corpus: codelib
+  path: /storage2/arash/projects/projio/.codio/catalog.yml

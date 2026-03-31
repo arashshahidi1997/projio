@@ -52,3 +52,22 @@ Session: `n/a` | Task: `task-arash-20260330-175554-840850.md`
 No datalad save needed since there are no new changes.
 
 Session: `3dad73ad` | Task: `task-arash-20260330-175554-589019.md`
+
+## 2026-03-31 03:36 | projio | opus | 1 steps
+
+**Task 2:** Wrote comprehensive audit note (`idea-arash-20260331-033442-033443`) covering: current implementation analysis (4 run tools), datalad run semantics, new interface design, replacement strategy, 6 open questions with recommendations, and 4-phase migration plan.
+
+Session: `dd9c6c81` | Task: `task-arash-20260330-175232-430442.md`
+
+## 2026-03-31 03:43 | projio | opus | 1 steps
+
+1. **config_patch YAML round-trip fidelity** — spurious formatting diffs from flow-style normalization (`issue-arash-20260331-034216-830892`)
+2. **DAG edge resolution for `out_paths()` references** — DAG returns 0 edges for ecephys despite clear dependency chain (`issue-arash-20260331-034232-267346`)
+
+Session: `eb2cd156` | Task: `task-arash-20260330-175554-840850.md`
+
+## 2026-03-31 03:49 | projio | opus | 1 steps
+
+Section 6 identifies 7 operations a future `pipeio_flow_migrate` tool could automate.
+
+Session: `acfce680` | Task: `task-arash-20260330-180056-943959.md`

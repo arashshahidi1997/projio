@@ -1,0 +1,6 @@
+profiles:
+  snakemake:
+    priority: tier2
+    runtime_import: reference_only
+    decision_default: new
+    status: candidate

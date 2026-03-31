@@ -16,6 +16,81 @@ def _resolve_project_python() -> str | None:
     return None
 
 
+def _resolve_snakemake_cmd(use_conda: str = "") -> list[str]:
+    """Resolve the snakemake command with conda wrapping if needed.
+
+    Checks (in order):
+    1. Explicit ``use_conda`` env name (e.g. ``"cogpy"``)
+    2. ``SNAKEMAKE`` Makefile variable
+    3. ``snakemake`` on PATH (with conda wrapping if in a conda env)
+    4. Known fallback: ``cogpy`` conda env
+    5. Bare ``["snakemake"]``
+
+    Args:
+        use_conda: Force a specific conda environment name.
+    """
+    import shlex
+    import shutil
+
+    from .datalad import _conda_wrap
+
+    # 1. Explicit conda env override
+    if use_conda:
+        return _conda_run_cmd(use_conda, "snakemake")
+
+    # 2. Makefile variable
+    vars_ = resolve_makefile_vars()
+    if "SNAKEMAKE" in vars_:
+        expanded = _expand(vars_["SNAKEMAKE"], vars_)
+        tokens = shlex.split(expanded)
+        if len(tokens) > 1:
+            return tokens
+        wrapped = _conda_wrap(tokens[0])
+        if wrapped:
+            return wrapped
+        return tokens
+
+    # 3. On PATH
+    binary = shutil.which("snakemake")
+    if binary:
+        wrapped = _conda_wrap(binary)
+        if wrapped:
+            return wrapped
+        return [binary]
+
+    # 4. Known fallback: cogpy conda env
+    cmd = _conda_run_cmd("cogpy", "snakemake")
+    if cmd:
+        return cmd
+
+    # 5. Bare fallback
+    return ["snakemake"]
+
+
+def _conda_run_cmd(env_name: str, cmd_name: str) -> list[str]:
+    """Build a ``conda run -n <env> <cmd>`` token list.
+
+    Finds the conda binary by checking common Anaconda installation paths.
+    Returns bare ``[cmd_name]`` if conda cannot be found.
+    """
+    from pathlib import Path
+
+    # Find conda binary from known locations
+    for base in ("/storage/share/python/environments/Anaconda3",):
+        for rel in ("condabin/conda", "bin/conda"):
+            conda = Path(base) / rel
+            if conda.is_file():
+                return [str(conda), "run", "-n", env_name, cmd_name]
+
+    # Try conda on PATH
+    import shutil
+    conda_bin = shutil.which("conda")
+    if conda_bin:
+        return [conda_bin, "run", "-n", env_name, cmd_name]
+
+    return [cmd_name]
+
+
 def _pipeio_available() -> bool:
     try:
         import pipeio  # noqa: F401
@@ -831,25 +906,94 @@ def pipeio_nb_exec(
         return json_dict({"error": str(exc)})
 
 
-def pipeio_dag(
+def pipeio_dag_export(
     pipe: str,
     flow: str = "",
-    target: str = "",
+    graph_type: str = "rulegraph",
+    output_format: str = "dot",
 ) -> JsonDict:
-    """Query the rule dependency graph via static Snakefile analysis.
+    """Export rule/job DAG via snakemake's native graph output.
 
     Args:
         pipe: Pipeline name.
         flow: Flow name (optional for single-flow pipes).
-        target: Return only the subgraph reachable from this rule (optional).
+        graph_type: rulegraph (compact), dag (full jobs), or d3dag (JSON).
+        output_format: dot, mermaid, svg (requires graphviz), or json (d3dag only).
     """
     if not _pipeio_available():
-        return _unavailable("pipeio_dag")
+        return _unavailable("pipeio_dag_export")
     root = get_project_root()
     try:
-        from pipeio.mcp import mcp_dag  # type: ignore[import]
-        return json_dict(mcp_dag(
-            root, pipe=pipe, flow=flow or None, target=target or None,
+        from pipeio.mcp import mcp_dag_export  # type: ignore[import]
+        return json_dict(mcp_dag_export(
+            root, pipe=pipe, flow=flow or None,
+            graph_type=graph_type, output_format=output_format,
+            snakemake_cmd=_resolve_snakemake_cmd(),
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_report(
+    pipe: str,
+    flow: str = "",
+    output_path: str = "",
+    target: str = "",
+) -> JsonDict:
+    """Generate a snakemake HTML report for a flow.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name (optional for single-flow pipes).
+        output_path: Where to write the report (relative to root). Auto-generated if empty.
+        target: Target rule to run before report (e.g. "report" for partial output flows).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_report")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_report  # type: ignore[import]
+        return json_dict(mcp_report(
+            root, pipe=pipe, flow=flow or None,
+            output_path=output_path, target=target,
+            snakemake_cmd=_resolve_snakemake_cmd(),
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_target_paths(
+    pipe: str,
+    flow: str = "",
+    group: str = "",
+    member: str = "",
+    entities: dict[str, str] | None = None,
+    expand: bool = False,
+) -> JsonDict:
+    """Resolve output paths for a flow's registry entries.
+
+    Three modes:
+    - No group: list available groups and members with path patterns.
+    - group + member + entities: resolve a single concrete path.
+    - expand=True: glob for all matching paths on disk, filtered by entities.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name (optional for single-flow pipes).
+        group: Registry group name (e.g. "preproc").
+        member: Registry member name (e.g. "cleaned").
+        entities: Wildcard entities (e.g. {"sub": "01", "ses": "04"}).
+        expand: If True, enumerate all matching paths on disk.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_target_paths")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_target_paths  # type: ignore[import]
+        return json_dict(mcp_target_paths(
+            root, pipe=pipe, flow=flow or None,
+            group=group, member=member,
+            entities=entities, expand=expand,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
@@ -934,7 +1078,9 @@ def pipeio_run(
     targets: list[str] | None = None,
     cores: int = 1,
     dryrun: bool = False,
+    use_conda: bool = False,
     extra_args: list[str] | None = None,
+    wildcards: dict[str, str] | None = None,
 ) -> JsonDict:
     """Launch Snakemake in a detached screen session.
 
@@ -944,17 +1090,25 @@ def pipeio_run(
         targets: Snakemake target rules (optional).
         cores: Number of cores (default 1).
         dryrun: If True, do a dry run.
+        use_conda: Pass --use-conda to snakemake (use conda envs defined in rules).
         extra_args: Additional Snakemake CLI arguments.
+        wildcards: Entity filters for scoping runs (e.g. {"subject": "01", "session": "04"}).
+            Maps to snakebids --filter-{key} {value} CLI flags.
     """
     if not _pipeio_available():
         return _unavailable("pipeio_run")
     root = get_project_root()
+    run_extra = list(extra_args or [])
+    if use_conda:
+        run_extra.append("--use-conda")
     try:
         from pipeio.mcp import mcp_run  # type: ignore[import]
         return json_dict(mcp_run(
             root, pipe=pipe, flow=flow or None,
             targets=targets, cores=cores, dryrun=dryrun,
-            extra_args=extra_args,
+            extra_args=run_extra or None,
+            snakemake_cmd=_resolve_snakemake_cmd(),
+            wildcards=wildcards,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})

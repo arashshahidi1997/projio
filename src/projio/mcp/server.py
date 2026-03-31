@@ -662,11 +662,54 @@ def pipeio_nb_exec_tool(
     )
 
 
-@server.tool("pipeio_dag")
-def pipeio_dag_tool(pipe: str, flow: str = "", target: str = ""):
-    """Query the rule dependency graph via static Snakefile analysis.
-    Returns nodes, edges, roots, leaves. Optionally filter to ancestors of a target rule."""
-    return pipeio.pipeio_dag(pipe=pipe, flow=flow, target=target)
+@server.tool("pipeio_dag_export")
+def pipeio_dag_export_tool(
+    pipe: str,
+    flow: str = "",
+    graph_type: str = "rulegraph",
+    output_format: str = "dot",
+):
+    """Export rule/job DAG via snakemake's native graph output.
+    graph_type: rulegraph (compact), dag (full jobs), d3dag (JSON).
+    output_format: dot, mermaid, svg (needs graphviz), json (d3dag only)."""
+    return pipeio.pipeio_dag_export(
+        pipe=pipe, flow=flow,
+        graph_type=graph_type, output_format=output_format,
+    )
+
+
+@server.tool("pipeio_report")
+def pipeio_report_tool(
+    pipe: str,
+    flow: str = "",
+    output_path: str = "",
+    target: str = "",
+):
+    """Generate snakemake HTML report with runtime stats, provenance, and annotated outputs.
+    target: rule to run first (e.g. "report" for flows with partial outputs)."""
+    return pipeio.pipeio_report(
+        pipe=pipe, flow=flow,
+        output_path=output_path, target=target,
+    )
+
+
+@server.tool("pipeio_target_paths")
+def pipeio_target_paths_tool(
+    pipe: str,
+    flow: str = "",
+    group: str = "",
+    member: str = "",
+    entities: dict[str, str] | None = None,
+    expand: bool = False,
+):
+    """Resolve output paths for a flow's registry entries.
+    Three modes: (1) no group → list groups/members/patterns,
+    (2) group+member+entities → resolve single path,
+    (3) expand=True → glob all matching paths filtered by entities."""
+    return pipeio.pipeio_target_paths(
+        pipe=pipe, flow=flow, group=group, member=member,
+        entities=entities, expand=expand,
+    )
 
 
 @server.tool("pipeio_completion")
@@ -697,14 +740,20 @@ def pipeio_run_tool(
     targets: list[str] = [],
     cores: int = 1,
     dryrun: bool = False,
+    use_conda: bool = False,
     extra_args: list[str] = [],
+    wildcards: dict[str, str] | None = None,
 ):
     """Launch Snakemake in a detached screen session. State tracked in .pipeio/runs.json.
-    Returns run_id and screen session name for later status queries."""
+    Returns run_id and screen session name for later status queries.
+    use_conda: pass --use-conda to snakemake (use conda envs defined in rules).
+    wildcards: entity filters for scoping (e.g. {"subject": "01", "session": "04"}) → --filter-{key} {value}."""
     return pipeio.pipeio_run(
         pipe=pipe, flow=flow,
         targets=targets or None, cores=cores, dryrun=dryrun,
+        use_conda=use_conda,
         extra_args=extra_args or None,
+        wildcards=wildcards,
     )
 
 

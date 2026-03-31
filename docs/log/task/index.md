@@ -10,6 +10,13 @@
 
 ## status: done
 
+- [task-arash-20260330-180056-943959 status:done title:Audit pixecog preprocess/ieeg and write migration guide to pipeio v2 snakebids app design](task-arash-20260330-180056-943959.md)
+- [task-arash-20260330-175554-840850 status:done title:Run live MCP integration test against pixecog preprocessing pipeline](task-arash-20260330-175554-840850.md)
+- [task-arash-20260330-175554-589019 status:done title:Add snakebids app detection to registry_scan (non-breaking)](task-arash-20260330-175554-589019.md)
+- [task-arash-20260330-175553-676358 status:done title:Save and commit all pipeio changes from 2026-03-30 session](task-arash-20260330-175553-676358.md)
+- [task-arash-20260330-175233-141709 status:done title:Audit pipeio_run, run_status, run_dashboard, run_kill for datalad run migration plan](task-arash-20260330-175233-141709.md)
+- [task-arash-20260330-175232-430442 status:done title:Update pipeio specs and CLAUDE.md docs for v2 architectural decisions](task-arash-20260330-175232-430442.md)
+- [task-arash-20260330-175231-488273 status:done title:Flatten pipe/flow hierarchy to flow + category tag in registry model](task-arash-20260330-175231-488273.md)
 - [task-arash-20260330-031432-455338 status:done title:Fix 3 pipeio bugs: rule_insert double-wrap, config_patch whitespace, dropped anchor](task-arash-20260330-031432-455338.md)
 - [task-arash-20260328-200549-976370 status:done title:indexio CLI missing --update flag: The MCP `indexio_build(update=True)` works bu](task-arash-20260328-200549-976370.md)
 - [task-arash-20260328-193742-747938 status:done title:Address the 4 open indexio/CLI bug reports filed today](task-arash-20260328-193742-747938.md)
@@ -25,7 +32,7 @@
 
 ## status: pending
 
-- [task-arash-20260330-180056-943959 status:pending title:Audit pixecog preprocess/ieeg and write migration guide to pipeio v2 snakebids app design](task-arash-20260330-180056-943959.md)
+- [task-arash-20260331-145359-712330 status:pending title:Audit pipeio docs against implementation](task-arash-20260331-145359-712330.md)
 - [task-arash-20260329-230343-774295 status:pending title:codio_func_doc — MCP tool to return function signature + docstring from any installed package](task-arash-20260329-230343-774295.md)
 - [task-arash-20260328-092458-062195 status:pending title:Task from 20260327-141523-996883](task-arash-20260328-092458-062195.md)
 - [task-arash-20260328-011427-733990 status:pending title:## Bug: projio note_read tool requires `path` param but note_list only returns m](task-arash-20260328-011427-733990.md)
@@ -54,13 +61,4 @@
 - [task-arash-20260318-000129-436019 status:pending title:Tutorial: Ecosystem overview (install, init workspace, connect MCP, verify tools)](task-arash-20260318-000129-436019.md)
 - [task-arash-20260318-000127-440315 status:pending title:Makefile: add DataLad subdataset management targets (pull-origin, push-origin, push-gitlab, pull-gitlab)](task-arash-20260318-000127-440315.md)
 - [task-arash-20260318-000125-085964 status:pending title:Publish prep: rename codio to codio-tools, bump versions, publish all subpackages + projio](task-arash-20260318-000125-085964.md)
-
-## status: scheduled
-
-- [task-arash-20260330-175554-840850 status:scheduled title:Run live MCP integration test against pixecog preprocessing pipeline](task-arash-20260330-175554-840850.md)
-- [task-arash-20260330-175554-589019 status:scheduled title:Add snakebids app detection to registry_scan (non-breaking)](task-arash-20260330-175554-589019.md)
-- [task-arash-20260330-175553-676358 status:scheduled title:Save and commit all pipeio changes from 2026-03-30 session](task-arash-20260330-175553-676358.md)
-- [task-arash-20260330-175233-141709 status:scheduled title:Audit pipeio_run, run_status, run_dashboard, run_kill for datalad run migration plan](task-arash-20260330-175233-141709.md)
-- [task-arash-20260330-175232-430442 status:scheduled title:Update pipeio specs and CLAUDE.md docs for v2 architectural decisions](task-arash-20260330-175232-430442.md)
-- [task-arash-20260330-175231-488273 status:scheduled title:Flatten pipe/flow hierarchy to flow + category tag in registry model](task-arash-20260330-175231-488273.md)
 

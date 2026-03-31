@@ -1,0 +1,7 @@
+libraries:
+  snakemake:
+    kind: external_mirror
+    repo_url: git@github.com:snakemake/snakemake.git
+    repo_id: snakemake--snakemake
+    added_by: import
+    added_date: '2026-03-31'

@@ -1,22 +1,22 @@
 # pipeio Specifications
 
-Design specifications for **pipeio** — pipeline registry, notebook lifecycle, and flow management for research repositories.
+Design specifications for **pipeio** — an agent-facing authoring and discovery layer for computational pipelines in research repositories.
 
-pipeio is the fifth ecosystem subsystem in projio, managing computational pipeline workflows organized in a **pipe / flow / mod** hierarchy.
+pipeio makes pipeline knowledge (registry, configs, rules, contracts, notebooks) queryable and actionable for AI agents. It delegates execution to Snakemake, provenance to DataLad, path resolution to snakebids, and app lifecycle to snakebids deployment modes.
 
 ## Spec Documents
 
 | Spec | Domain | Status |
 |------|--------|--------|
 | [Overview & Architecture](overview.md) | Package scope, design principles, ecosystem fit | Draft |
-| [Registry](registry.md) | Pipe/flow/mod hierarchy, YAML schema, scan & validation | Draft |
-| [Flow Config](flow-config.md) | Per-flow `config.yml` schema, output registry (data contracts) | Draft |
-| [Path Resolution](path-resolution.md) | `PathResolver` protocol, `PipelineContext`, `Session`, `Stage` | Draft |
+| [Registry](registry.md) | Pipe/flow/mod hierarchy, YAML schema, scan & validation | **Implemented** |
+| [Flow Config](flow-config.md) | Per-flow `config.yml` schema, output registry (data contracts) | **Implemented** |
+| [Path Resolution](path-resolution.md) | `PathResolver` protocol, `PipelineContext`, `Session`, `Stage` | **Implemented** (SimpleResolver) |
 | [Notebook Lifecycle](notebook.md) | Pair, sync, execute, publish — replacing Makefile shell scripts | Draft |
-| [Scaffolding](scaffolding.md) | Flow and mod creation from templates | Draft |
-| [Contracts](contracts.md) | Declarative input/output validation framework | Draft |
-| [CLI](cli.md) | Command-line interface design | Draft |
-| [MCP Tools](mcp-tools.md) | Agent-facing tools via projio MCP server | Draft |
+| [Scaffolding](scaffolding.md) | Flow and mod creation from templates | Partial (`flow new` works) |
+| [Contracts](contracts.md) | Declarative input/output validation framework | Draft (models defined) |
+| [CLI](cli.md) | Command-line interface design | **Implemented** (core commands) |
+| [MCP Tools](mcp-tools.md) | Agent-facing tools via projio MCP server | **Implemented** |
 
 ## Reference Implementation
 
@@ -24,8 +24,10 @@ These specs are derived from an audit of the pixecog project's pipeline infrastr
 
 ## Design Principles
 
-1. **Workflow-engine-agnostic core** — the `PathResolver` protocol abstracts away Snakemake/snakebids; adapters implement it
-2. **Declarative over imperative** — registries and configs are YAML; validation is schema-driven
-3. **Graceful degradation** — pipeio works without optional extras (`[bids]`, `[notebook]`)
-4. **Search before creation** — registry queries help discover existing flows before scaffolding new ones
-5. **Notebook as first-class artifact** — the lifecycle (pair/sync/exec/publish) is managed, not ad-hoc
+1. **Agent-facing authoring layer** — pipeio makes pipeline knowledge queryable and provides safe authoring operations; it does not own execution, provenance, or path resolution
+2. **One flow = one derivative** — each flow is a self-contained snakebids app producing one derivative directory; `pipe` is a category tag
+3. **Delegation over duplication** — execution → Snakemake, provenance → DataLad, paths → snakebids `bids()`, app lifecycle → snakebids
+4. **Declarative over imperative** — registries and configs are YAML; validation is schema-driven
+5. **Graceful degradation** — pipeio works without optional extras (`[bids]`, `[notebook]`)
+6. **Search before creation** — registry queries help discover existing flows before scaffolding new ones
+7. **Notebook as first-class artifact** — the lifecycle (pair/sync/exec/publish) is managed, not ad-hoc

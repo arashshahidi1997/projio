@@ -1,3 +1,8 @@
-# Codio repository registry — tracked repos (managed, attached, external)
-# See: codio vocab --field storage  for allowed values
-repositories: {}
+repositories:
+  snakemake--snakemake:
+    url: git@github.com:snakemake/snakemake.git
+    hosting: github
+    storage: managed
+    local_path: .projio/codio/mirrors/snakemake--snakemake
+    default_branch: main
+

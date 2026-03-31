@@ -27,3 +27,6 @@
 	path = packages/figio
 	url = ./packages/figio
 	datalad-id = 84966136-7bea-442b-856e-786f9738682a
+[submodule ".projio/codio/mirrors/snakemake--snakemake"]
+	path = .projio/codio/mirrors/snakemake--snakemake
+	url = git@github.com:snakemake/snakemake.git

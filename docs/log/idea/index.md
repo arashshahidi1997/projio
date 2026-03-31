@@ -2,6 +2,9 @@
 
 ## Contents
 
+- [idea-arash-20260331-144156-755098 title:pf — pipeio flow navigator shell helper (like wg for projects)](idea-arash-20260331-144156-755098.md)
+- [idea-arash-20260331-034700-514331 title:Migration guide: pixecog preprocess/ieeg → pipeio v2 snakebids app](idea-arash-20260331-034700-514331.md)
+- [idea-arash-20260331-033442-033443 title:Audit pipeio run tools — datalad run migration design](idea-arash-20260331-033442-033443.md)
 - [idea-arash-20260331-022337-352248 title:idea](idea-arash-20260331-022337-352248.md)
 - [idea-arash-20260331-003958-077273 title:idea](idea-arash-20260331-003958-077273.md)
 - [idea-arash-20260330-174518-164647 title:pipeio v2 roadmap: lean scope, snakebids/DataLad alignment](idea-arash-20260330-174518-164647.md)
