@@ -23,3 +23,7 @@
 	url = https://github.com/arashshahidi1997/pipeio.git
 	datalad-id = 78502d99-5102-4adf-9acf-8adee78140f3
 	datalad-url = /storage/share/git/ria-store/alias/pipeio
+[submodule "packages/figio"]
+	path = packages/figio
+	url = ./packages/figio
+	datalad-id = 84966136-7bea-442b-856e-786f9738682a
