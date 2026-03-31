@@ -504,6 +504,26 @@ def pipeio_nb_lab(
         return json_dict({"error": str(exc)})
 
 
+def pipeio_nb_scan(register: bool = False) -> JsonDict:
+    """Scan for percent-format .py notebooks and compare against notebook.yml.
+
+    Discovers .py files with # %% cell markers in notebooks/ directories
+    and reports which are registered vs unregistered.
+
+    Args:
+        register: If True, auto-register unregistered notebooks into
+            notebook.yml with defaults (pair_ipynb=True, status=draft).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_scan")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_scan  # type: ignore[import]
+        return json_dict(mcp_nb_scan(root, register=register))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_nb_pipeline(
     pipe: str,
     flow: str,

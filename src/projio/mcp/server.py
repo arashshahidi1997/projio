@@ -512,6 +512,13 @@ def pipeio_nb_lab_tool(pipe: str = "", flow: str = "", sync: bool = False):
     return pipeio.pipeio_nb_lab(pipe=pipe, flow=flow, sync=sync)
 
 
+@server.tool("pipeio_nb_scan")
+def pipeio_nb_scan_tool(register: bool = False):
+    """Scan for unregistered percent-format .py notebooks in notebooks/ directories.
+    Pass register=True to auto-add them to notebook.yml."""
+    return pipeio.pipeio_nb_scan(register=register)
+
+
 @server.tool("pipeio_nb_pipeline")
 def pipeio_nb_pipeline_tool(
     pipe: str,
