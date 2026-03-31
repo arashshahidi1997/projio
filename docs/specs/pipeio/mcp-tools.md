@@ -9,14 +9,15 @@ pipeio exposes tools through projio's MCP server for AI agent access to pipeline
 | Category | Count | Status |
 |----------|-------|--------|
 | Flow & registry | 4 | **Keep** |
-| Notebook lifecycle | 7 | **Keep** |
-| Mod management | 3 | **Keep** |
+| Notebook lifecycle | 9 | **Keep** |
+| Mod management | 4 | **Keep** |
 | Rule authoring | 4 | **Keep** |
-| Config authoring | 2 | **Keep** (config_read, config_patch) |
+| Config authoring | 3 | **Keep** (config_read, config_patch, config_init) |
 | Contracts & tracking | 3 | **Keep** (contracts_validate, cross_flow, completion) |
 | Documentation | 4 | **Keep** |
-| Path resolution | 1 | **New** (target_paths) |
-| Adapters | 3 | **Thin-to-adapter** (dag_export, log_parse, config_init) |
+| Path resolution | 1 | **Keep** (target_paths) |
+| DAG & reporting | 2 | **Thin adapter** (dag_export, report) |
+| Logging | 1 | **Thin adapter** (log_parse) |
 | Execution | 4 | **Deprecated** — migrate to `datalad run` (run, run_status, run_dashboard, run_kill) |
 
 ## Tool Registration
@@ -105,10 +106,10 @@ pipeio_registry_validate() → dict
 
 #### `pipeio_nb_status`
 
-Show notebook sync and publication status across all flows.
+Show notebook sync and publication status across all flows. Optionally filter by pipe, flow, or notebook name.
 
 ```
-pipeio_nb_status() → dict
+pipeio_nb_status(pipe: str = "", flow: str = "", name: str = "") → dict
 ```
 
 #### `pipeio_nb_create`
@@ -121,10 +122,15 @@ pipeio_nb_create(pipe: str, flow: str, name: str, kind: str = "investigate", des
 
 #### `pipeio_nb_sync`
 
-Sync a notebook via jupytext (py → ipynb/myst).
+Sync a specific notebook via jupytext (bidirectional: py2nb or nb2py).
 
 ```
-pipeio_nb_sync(pipe: str, flow: str, name: str, formats: list[str] = ["ipynb", "myst"]) → dict
+pipeio_nb_sync(
+    pipe: str, flow: str, name: str,
+    formats: list[str] = ["ipynb", "myst"],
+    direction: str = "py2nb",
+    force: bool = False,
+) → dict
 ```
 
 #### `pipeio_nb_publish`
@@ -151,6 +157,29 @@ Execute a notebook via papermill with optional parameter overrides.
 pipeio_nb_exec(pipe: str, flow: str, name: str, params: dict = {}, timeout: int = 600) → dict
 ```
 
+#### `pipeio_nb_update`
+
+Update notebook metadata (status, description, kind) in `notebook.yml`.
+
+```
+pipeio_nb_update(
+    pipe: str, flow: str, name: str,
+    status: str = "",        # draft | active | stale | promoted | archived
+    description: str = "",
+    kind: str = "",          # investigate | explore | demo | validate
+) → dict
+```
+
+#### `pipeio_nb_diff`
+
+Show sync state between `.py` and paired `.ipynb`: which file is newer, whether in sync, and the recommended sync direction. Call before `nb_sync` to decide direction.
+
+```
+pipeio_nb_diff(pipe: str, flow: str, name: str) → dict
+```
+
+Returns: `status` (synced | py_newer | ipynb_newer | unpaired | orphaned_ipynb | missing), `recommendation`, `executed`, `cell_count`.
+
 #### `pipeio_nb_pipeline`
 
 Composite: sync → publish → docs_collect → docs_nav (optionally site_build).
@@ -175,6 +204,26 @@ Resolve modkey strings (`pipe-X_flow-Y_mod-Z`) into metadata and doc locations.
 
 ```
 pipeio_mod_resolve(modkeys: list[str]) → dict
+```
+
+#### `pipeio_mod_context`
+
+Bundled read context for a mod: rules, scripts content, doc content, config params, bids signatures. Returns everything needed to understand and work on a mod in one MCP call.
+
+```
+pipeio_mod_context(pipe: str, flow: str = "", mod: str = "") → dict
+```
+
+**Returns:**
+```json
+{
+  "pipe": "preprocess", "flow": "ieeg", "mod": "badlabel",
+  "rules": [{"name": "badlabel_detect", "inputs": {...}, "outputs": {...}}],
+  "scripts": {"badlabel.py": "...contents..."},
+  "doc": "...markdown contents...",
+  "config_params": {"threshold": 0.5},
+  "bids_signatures": {"npy": "sub-{subject}_ses-{session}_suffix-ieeg.npy"}
+}
 ```
 
 #### `pipeio_mod_create`
@@ -307,6 +356,29 @@ pipeio_rule_update(
 
 ### Config Authoring
 
+#### `pipeio_config_read`
+
+Read and parse a flow's config.yml with YAML anchor resolution and bids() signature mapping.
+
+```
+pipeio_config_read(pipe: str, flow: str = "") → dict
+```
+
+**Returns:** `pybids_inputs`, `registry` (resolved), `member_sets`, `params`, `bids_signatures`, `resolved_patterns`, `has_anchors`.
+
+#### `pipeio_config_patch`
+
+Validate and optionally patch a flow's config.yml. Returns unified diff preview; `apply=True` writes.
+
+```
+pipeio_config_patch(
+    pipe: str, flow: str = "",
+    registry_entry: dict = {},  # {group_name: group_dict}
+    params_entry: dict = {},    # {section: {key: value}}
+    apply: bool = False,
+) → dict
+```
+
 #### `pipeio_config_init`
 
 Scaffold a new flow's `config.yml` with pybids_inputs and registry structure. Errors if config already exists (use `config_patch` for existing configs). Auto-sets `output_registry` to `{output_dir}/pipe-{pipe}_flow-{flow}_registry.yml`.
@@ -333,29 +405,6 @@ pipeio_config_init(
   "warnings": [],
   "preview": "input_dir: raw\n..."
 }
-```
-
-#### `pipeio_config_read`
-
-Read and parse a flow's config.yml with YAML anchor resolution and bids() signature mapping.
-
-```
-pipeio_config_read(pipe: str, flow: str = "") → dict
-```
-
-**Returns:** `pybids_inputs`, `registry` (resolved), `member_sets`, `params`, `bids_signatures`, `resolved_patterns`, `has_anchors`.
-
-#### `pipeio_config_patch`
-
-Validate and optionally patch a flow's config.yml. Returns unified diff preview; `apply=True` writes.
-
-```
-pipeio_config_patch(
-    pipe: str, flow: str = "",
-    registry_entry: dict = {},  # {group_name: group_dict}
-    params_entry: dict = {},    # {section: {key: value}}
-    apply: bool = False,
-) → dict
 ```
 
 ### Path Resolution
@@ -417,9 +466,45 @@ Check per-session completion by comparing expected outputs (from registry) again
 pipeio_completion(pipe: str, flow: str = "", mod: str = "") → dict
 ```
 
-### Adapters (thin wrappers — may migrate)
+### DAG & Reporting
 
-These wrap external tool output in pipeio's structured format. They may become thinner or be replaced by direct tool calls.
+Thin adapters over Snakemake's native graph and report features.
+
+#### `pipeio_dag_export`
+
+Export rule/job DAG via Snakemake's native graph output (`--rulegraph`, `--dag`, `--d3dag`).
+
+```
+pipeio_dag_export(
+    pipe: str, flow: str = "",
+    graph_type: str = "rulegraph",   # rulegraph | dag | d3dag
+    output_format: str = "dot",       # dot | mermaid | svg | json
+) → dict
+```
+
+**Returns:**
+```json
+{
+  "pipe": "preprocess", "flow": "ieeg",
+  "graph_type": "rulegraph",
+  "output_format": "dot",
+  "content": "digraph snakemake_dag { ... }"
+}
+```
+
+#### `pipeio_report`
+
+Generate a Snakemake HTML report with runtime stats, provenance, and annotated outputs. Supports `target` param for partial-output flows.
+
+```
+pipeio_report(
+    pipe: str, flow: str = "",
+    output_path: str = "",    # auto-generated if empty
+    target: str = "",         # rule to run first, e.g. "report"
+) → dict
+```
+
+### Logging
 
 #### `pipeio_log_parse`
 
@@ -441,18 +526,20 @@ Launch a Snakemake run in a detached screen session.
 pipeio_run(
     pipe: str, flow: str = "", targets: list[str] = [],
     cores: int = 1, dryrun: bool = False,
-    use_conda: bool = False, wildcards: dict = None,
+    use_conda: bool = False,
+    extra_args: list[str] = [],
+    wildcards: dict = None,
 ) → dict
 ```
 
-Uses `stdbuf -oL` for unbuffered output. `wildcards` maps to snakebids `--filter-{key} {value}` flags for single-session scoping.
+Auto-resolves snakemake via conda env wrapping (cogpy env). Uses `stdbuf -oL` for unbuffered output, passes `--directory` to Snakemake. `use_conda` enables `--use-conda`. `wildcards` maps to snakebids `--filter-{key} {value}` flags for single-session scoping.
 
 #### `pipeio_run_status` *(deprecated)*
 
 Check status of a running or completed Snakemake run.
 
 ```
-pipeio_run_status(run_id: str) → dict
+pipeio_run_status(run_id: str = "", pipe: str = "", flow: str = "") → dict
 ```
 
 #### `pipeio_run_dashboard` *(deprecated)*
@@ -522,6 +609,9 @@ For agent instructions (CLAUDE.md / `agent_instructions` tool):
 | Patch an existing rule | `pipeio_rule_update(pipe, flow, name)` | Edit Snakefiles manually |
 | Resolve output paths | `pipeio_target_paths(pipe, flow, group, member, entities)` | Construct BIDS paths manually |
 | Export DAG | `pipeio_dag_export(pipe, flow, graph_type)` | Run snakemake --rulegraph manually |
+| Generate report | `pipeio_report(pipe, flow)` | Run snakemake --report manually |
+| Mod context (bundled read) | `pipeio_mod_context(pipe, flow, mod)` | Multiple reads manually |
+| Update notebook metadata | `pipeio_nb_update(pipe, flow, name, status)` | Edit notebook.yml directly |
 | Launch a run | `pipeio_run(pipe, flow, wildcards={"subject": "01"})` | Run snakemake in terminal |
 | Check notebook state | `pipeio_nb_status()` | Compare file timestamps manually |
 | Validate registry | `pipeio_registry_validate()` | Run validation scripts directly |

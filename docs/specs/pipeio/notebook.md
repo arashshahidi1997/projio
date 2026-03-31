@@ -54,11 +54,16 @@ publish:
 
 entries:
   - path: notebooks/investigate_noise_characterization_demo/investigate_noise_characterization_demo.py
+    kind: investigate         # investigate | explore | demo | validate
+    description: "Prototype noise characterization demo"
+    status: active            # draft | active | stale | promoted | archived
     pair_ipynb: true          # create .ipynb and pair with jupytext
     pair_myst: true           # create .md (MyST) and pair
     publish_myst: true        # copy .md to docs_dir after execution
     publish_html: false       # render HTML and copy to docs_dir
   - path: notebooks/investigate_noise_tfspace_demo/investigate_noise_tfspace_demo.py
+    kind: investigate
+    status: active
     pair_ipynb: true
     pair_myst: true
     publish_myst: true
@@ -69,12 +74,16 @@ entries:
 ```python
 class NotebookEntry(BaseModel):
     path: str
+    kind: str = ""                # investigate | explore | demo | validate
+    description: str = ""         # human-readable description
+    status: str = "active"        # draft | active | stale | promoted | archived
     pair_ipynb: bool = False
     pair_myst: bool = False
     publish_myst: bool = False
     publish_html: bool = False
 
 class PublishConfig(BaseModel):
+    format: str = "html"          # output format (html, markdown)
     docs_dir: str = ""
     prefix: str = "nb-"
 
@@ -158,11 +167,12 @@ Equivalent to the pixecog Makefile target `nb-publish`.
 ## CLI Commands
 
 ```
-pipeio nb pair     [--config notebook.yml] [--entry NAME]
-pipeio nb sync     [--config notebook.yml] [--entry NAME] [--dry]
-pipeio nb exec     [--config notebook.yml] [--entry NAME] [--timeout 600]
-pipeio nb publish  [--config notebook.yml] [--entry NAME] [--format myst|html|ipynb]
-pipeio nb status   [--config notebook.yml]
+pipeio nb pair     [--force]
+pipeio nb sync     [--direction py2nb|nb2py] [--force]
+pipeio nb diff
+pipeio nb exec
+pipeio nb publish
+pipeio nb status
 pipeio nb new      --mode explore|demo [--flow PIPE/FLOW] NAME
 ```
 
