@@ -524,6 +524,44 @@ def pipeio_nb_scan(register: bool = False) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def pipeio_nb_read(pipe: str, flow: str, name: str) -> JsonDict:
+    """Read a notebook's .py content with metadata, sync state, and analysis.
+
+    Returns the full .py source alongside status, kernel, mod, description,
+    structural analysis (sections, imports, RunCard), and sync state — all
+    in a single call.
+
+    Args:
+        pipe: Pipeline name.
+        flow: Flow name.
+        name: Notebook basename (without extension).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_read")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_read  # type: ignore[import]
+        return json_dict(mcp_nb_read(root, pipe=pipe, flow=flow, name=name))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_nb_audit() -> JsonDict:
+    """Audit all notebooks: staleness, config completeness, mod coverage.
+
+    Returns per-notebook issues (missing description, stale ipynb, no kernel,
+    no mod, draft-but-substantial) and flow-level mod coverage gaps.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_audit")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_audit  # type: ignore[import]
+        return json_dict(mcp_nb_audit(root))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_nb_pipeline(
     pipe: str,
     flow: str,

@@ -519,6 +519,20 @@ def pipeio_nb_scan_tool(register: bool = False):
     return pipeio.pipeio_nb_scan(register=register)
 
 
+@server.tool("pipeio_nb_read")
+def pipeio_nb_read_tool(pipe: str, flow: str, name: str):
+    """Read a notebook's .py content with metadata, sync state, and structural
+    analysis (sections, imports, RunCard, cogpy calls) in a single call."""
+    return pipeio.pipeio_nb_read(pipe=pipe, flow=flow, name=name)
+
+
+@server.tool("pipeio_nb_audit")
+def pipeio_nb_audit_tool():
+    """Audit all notebooks: staleness, config completeness, mod coverage gaps.
+    Returns per-notebook issues and flow-level coverage report."""
+    return pipeio.pipeio_nb_audit()
+
+
 @server.tool("pipeio_nb_pipeline")
 def pipeio_nb_pipeline_tool(
     pipe: str,
