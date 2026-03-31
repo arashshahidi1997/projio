@@ -477,7 +477,7 @@ def pipeio_nb_diff(pipe: str, flow: str, name: str) -> JsonDict:
 def pipeio_nb_lab(
     pipe: str = "",
     flow: str = "",
-    sync: bool = True,
+    sync: bool = False,
 ) -> JsonDict:
     """Build/refresh the Jupyter Lab symlink manifest.
 
@@ -488,7 +488,7 @@ def pipeio_nb_lab(
     Args:
         pipe: Filter to a specific pipeline (optional).
         flow: Filter to a specific flow (optional).
-        sync: If True (default), sync py→ipynb before linking.
+        sync: If True, sync py→ipynb before linking (default False).
     """
     if not _pipeio_available():
         return _unavailable("pipeio_nb_lab")

@@ -505,9 +505,9 @@ def pipeio_nb_diff_tool(pipe: str, flow: str, name: str):
 
 
 @server.tool("pipeio_nb_lab")
-def pipeio_nb_lab_tool(pipe: str = "", flow: str = "", sync: bool = True):
+def pipeio_nb_lab_tool(pipe: str = "", flow: str = "", sync: bool = False):
     """Build/refresh Jupyter Lab symlink manifest in .projio/pipeio/lab/.
-    Creates symlinks to active .ipynb notebooks, optionally syncs py→ipynb first.
+    Creates symlinks to active .ipynb notebooks. Pass sync=True to sync py→ipynb first.
     Returns manifest state (linked notebooks, lab_dir)."""
     return pipeio.pipeio_nb_lab(pipe=pipe, flow=flow, sync=sync)
 
