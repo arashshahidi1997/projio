@@ -2,12 +2,14 @@
 
 ## Purpose
 
-Research pipeline flows produce notebooks that serve two roles:
+Research pipeline flows produce notebooks that serve two roles with distinct lifecycles:
 
-1. **Exploratory** — investigate approaches, test parameters, validate ideas before promoting into pipeline scripts
-2. **Demo/report** — show pipeline-produced artifacts, generate QC reports
+1. **Exploratory** (`kind: investigate` or `explore`) — prototype analysis, test parameters, validate approaches before absorbing into mod scripts. End state: `status: archived` once code is promoted to Snakemake rules.
+2. **Demo** (`kind: demo` or `validate`) — showcase mod outputs in narrative form, generate QC reports for publication. End state: `status: promoted` with `publish_html: true`, published to the project site.
 
-pipeio manages the notebook lifecycle: pair, sync, execute, publish. This replaces the ~350 lines of Makefile shell scripts currently duplicated across every flow.
+Both types are linked to a flow mod via the `mod` field in `notebook.yml`.
+
+pipeio manages the notebook lifecycle: scan, pair, sync (bidirectional), execute, audit, publish. `nb_audit` detects lifecycle mismatches (e.g., exploratory notebook still active after mod has scripts, demo notebook not set to publish).
 
 ## Notebook Directory Convention
 

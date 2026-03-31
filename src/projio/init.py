@@ -1185,14 +1185,54 @@ and `runtime_conventions()` to see available Makefile targets.
         sections.append("""\
 ## Notebook workflow
 
-**Agentic notebook lifecycle** — use these tools in sequence:
+### Two notebook lifecycles
+
+Notebooks serve two distinct purposes, tracked by the `kind` field in `notebook.yml`:
+
+**Exploratory** (`kind: investigate` or `explore`):
+- Prototype analysis, test parameters, validate approaches
+- Linked to a mod via `mod` field — the mod this notebook feeds into
+- End state: code absorbed into mod scripts → `pipeio_nb_update(status='archived')`
+- Not published (internal working artifact)
+
+**Demo** (`kind: demo` or `validate`):
+- Showcase mod outputs in narrative form, generate QC reports
+- Linked to a mod via `mod` field — the mod this notebook demonstrates
+- End state: executed + published to site as HTML → `pipeio_nb_update(status='promoted')`
+- Must have `publish_html: true` in notebook.yml
+
+### Lifecycle transitions
+
+**Archiving an exploratory notebook** (code absorbed into mod):
+```
+pipeio_nb_update(pipe, flow, name, status='archived')
+```
+Verify the mod has corresponding rules/scripts first via `pipeio_mod_context`.
+
+**Promoting a demo notebook** (ready for site publication):
+```
+pipeio_nb_update(pipe, flow, name, status='promoted')
+pipeio_nb_pipeline(pipe, flow, name)  # sync → publish → docs
+```
+
+### Audit checks
+
+`pipeio_nb_audit()` detects lifecycle mismatches:
+- `demo_not_publishable` — demo notebook without `publish_html: true`
+- `explore_absorbed_not_archived` — exploratory notebook still active but its mod already has scripts
+- `demo_executed_not_promoted` — demo notebook executed but not promoted
+- `promoted_not_publishable` — promoted status but publish_html is off
+- `archived_still_publishable` — archived notebook still set to publish
+
+### Agentic workflow
 
 1. **Discover:** `pipeio_nb_scan()` → find unregistered notebooks, `register=True` to auto-add
-2. **Triage:** `pipeio_nb_status(pipe, flow)` → filtered sync state; or `pipeio_nb_audit()` → holistic quality report with issues and mod coverage gaps
+2. **Triage:** `pipeio_nb_status(pipe, flow)` → filtered sync state; or `pipeio_nb_audit()` → holistic quality report
 3. **Understand:** `pipeio_nb_read(pipe, flow, name)` → full .py content + metadata + analysis in one call
 4. **Check sync:** `pipeio_nb_diff(pipe, flow, name)` → which file is newer, recommended direction
-5. **Fix config:** `pipeio_nb_update(...)` → set status, description, kind, mod
-6. **Sync:** `pipeio_nb_sync(..., direction='py2nb')` after editing .py; `direction='nb2py'` to pull human's .ipynb edits
+5. **Fix config:** `pipeio_nb_update(...)` → set status, description, kind, mod, kernel
+6. **Sync:** `pipeio_nb_sync(..., direction='py2nb')` after editing .py; `direction='nb2py'` to pull human edits
+7. **Batch sync:** `pipeio_nb_sync_flow(pipe, flow)` → sync all stale notebooks in a flow
 
 **Notebook addressing:** All nb tools use `(pipe, flow, name)` — never raw file paths.
 
@@ -1201,8 +1241,6 @@ and `runtime_conventions()` to see available Makefile targets.
 - Human edits `.ipynb` → `nb_diff` shows `ipynb_newer` → `nb_sync(direction='nb2py')` → agent reads updated .py
 
 **Kernel config:** `notebook.yml` has `kernel` at flow level and per-entry. Embedded in .ipynb via `--set-kernel` on sync, passed to papermill via `-k` on exec.
-
-**Mod association:** `notebook.yml` entries have an optional `mod` field linking notebooks to flow mods. `nb_audit` reports mods without notebooks.
 
 **Script reading:** Use `pipeio_mod_context(pipe, flow, mod)` to read Snakemake rule scripts — it returns full script content alongside rules, docs, and config.
 """)
