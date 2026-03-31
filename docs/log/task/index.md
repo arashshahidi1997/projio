@@ -10,6 +10,7 @@
 
 ## status: done
 
+- [task-arash-20260331-145359-712330 status:done title:Audit pipeio docs against implementation](task-arash-20260331-145359-712330.md)
 - [task-arash-20260330-180056-943959 status:done title:Audit pixecog preprocess/ieeg and write migration guide to pipeio v2 snakebids app design](task-arash-20260330-180056-943959.md)
 - [task-arash-20260330-175554-840850 status:done title:Run live MCP integration test against pixecog preprocessing pipeline](task-arash-20260330-175554-840850.md)
 - [task-arash-20260330-175554-589019 status:done title:Add snakebids app detection to registry_scan (non-breaking)](task-arash-20260330-175554-589019.md)
@@ -28,11 +29,15 @@
 
 ## status: open
 
+- [task-arash-20260331-175739-980549 status:open title:## Register manuscript MCP tools in notio and projio](task-arash-20260331-175739-980549.md)
+- [task-arash-20260331-175703-656609 status:open title:## Implement manuscript subpackage in notio: schema, assembly, render, figures,](task-arash-20260331-175703-656609.md)
+- [task-arash-20260331-175617-644481 status:open title:## Design spec: manuscript as a notio subpackage](task-arash-20260331-175617-644481.md)
+- [task-arash-20260331-175508-399347 status:open title:## Register manuscripto in projio: MCP tools, submodule, optional dependency](task-arash-20260331-175508-399347.md)
+- [task-arash-20260331-175439-058148 status:open title:## Implement manuscripto core: assembly, render, and notio section type](task-arash-20260331-175439-058148.md)
 - [task-arash-20260318-022253-067748 status:open title:Debug worklog-projio agent_instructions integration](task-arash-20260318-022253-067748.md)
 
 ## status: pending
 
-- [task-arash-20260331-145359-712330 status:pending title:Audit pipeio docs against implementation](task-arash-20260331-145359-712330.md)
 - [task-arash-20260329-230343-774295 status:pending title:codio_func_doc — MCP tool to return function signature + docstring from any installed package](task-arash-20260329-230343-774295.md)
 - [task-arash-20260328-092458-062195 status:pending title:Task from 20260327-141523-996883](task-arash-20260328-092458-062195.md)
 - [task-arash-20260328-011427-733990 status:pending title:## Bug: projio note_read tool requires `path` param but note_list only returns m](task-arash-20260328-011427-733990.md)
@@ -61,4 +66,13 @@
 - [task-arash-20260318-000129-436019 status:pending title:Tutorial: Ecosystem overview (install, init workspace, connect MCP, verify tools)](task-arash-20260318-000129-436019.md)
 - [task-arash-20260318-000127-440315 status:pending title:Makefile: add DataLad subdataset management targets (pull-origin, push-origin, push-gitlab, pull-gitlab)](task-arash-20260318-000127-440315.md)
 - [task-arash-20260318-000125-085964 status:pending title:Publish prep: rename codio to codio-tools, bump versions, publish all subpackages + projio](task-arash-20260318-000125-085964.md)
+
+## status: queued
+
+- [task-arash-20260331-173957-317788 status:queued title:DAG SVG export to docs + pipeio_docs_build convenience tool](task-arash-20260331-173957-317788.md)
+
+## status: scheduled
+
+- [task-arash-20260331-175356-958039 status:scheduled title:## Scaffold manuscripto package under packages/](task-arash-20260331-175356-958039.md)
+- [task-arash-20260331-175313-566067 status:scheduled title:## manuscripto design spec — architecture and API surface](task-arash-20260331-175313-566067.md)
 

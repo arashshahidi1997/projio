@@ -51,12 +51,14 @@ def note_latest(note_type: str = "") -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
-def note_read(path: str = "", note_id: str = "") -> JsonDict:
+def note_read(path: str = "", note_id: str = "", note_type: str = "") -> JsonDict:
     """Read a specific note by its relative path or note ID.
 
     Args:
         path: Relative path to the note file (as returned by note_list).
         note_id: Timestamp ID, capture ID, or filename fragment (alternative to path).
+        note_type: Optional note type hint (e.g. 'idea', 'issue') — used with note_id
+            to narrow the search to a specific type folder.
     """
     if not _notio_available():
         return _unavailable("note_read")

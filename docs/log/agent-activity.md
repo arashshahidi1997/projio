@@ -71,3 +71,22 @@ Session: `eb2cd156` | Task: `task-arash-20260330-175554-840850.md`
 Section 6 identifies 7 operations a future `pipeio_flow_migrate` tool could automate.
 
 Session: `acfce680` | Task: `task-arash-20260330-180056-943959.md`
+
+## 2026-03-31 17:26 | projio | opus | 1 steps
+
+| File | Fixes |
+|------|-------|
+| **mcp-tools.md** | Added `pipeio_nb_update`, `pipeio_mod_context`, `pipeio_dag_export`, `pipeio_report` sections; fixed `nb_status`/`nb_sync`/`run_status`/`run` signatures; moved `config_init` to Config Authoring; restructured Adapters → DAG & Reporting + Logging; updated category table counts; added new entries to Agent Routing table |
+| **registry.md** | Added `app_type: str = ""` to FlowEntry model; updated registry path to `.projio/pipeio/registry.yml` ...
+
+Session: `fd48d498` | Task: `task-arash-20260331-145359-712330.md`
+
+## 2026-03-31 18:11 | projio | opus | 1 steps
+
+**Task 2 — Implementation** (`packages/notio/src/notio/manuscript/`):
+- `schema.py` — `ManuscriptSpec` dataclass with `from_yaml()`, `from_dict()`, `to_dict()`, and `scaffold_spec()` for scaffolding
+- `assembly.py` — `strip_frontmatter()`, `adjust_headings()`, `load_sections()`, `assemble()`, `write_assembled()`
+- `render.py` — `find_pandoc()`, `build_pandoc_command()`, `render_single()`, `render()` — full pandoc pipeline
+- `figures.py` — `resolve_figure_paths()`, `insert_figure_references()`...
+
+Session: `f9189029` | Task: `task-arash-20260331-175617-644481.md`

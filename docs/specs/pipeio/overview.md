@@ -85,7 +85,7 @@ This hierarchy is formalized in a registry YAML and can be discovered by scannin
 ## Configuration Layers
 
 1. **Project config** (`.projio/config.yml` → `pipeio:` section) — project-level settings
-2. **Pipeline registry** (`.pipeio/registry.yml`) — pipe/flow/mod hierarchy mapping
+2. **Pipeline registry** (`.projio/pipeio/registry.yml`, legacy: `.pipeio/registry.yml`) — pipe/flow/mod hierarchy mapping
 3. **Flow config** (`config.yml` per flow) — inputs, outputs, output registry (data contract)
 4. **Notebook config** (`notebook.yml` per flow) — notebook lifecycle settings
 
@@ -93,7 +93,7 @@ This hierarchy is formalized in a registry YAML and can be discovered by scannin
 
 ### MCP Tools
 
-pipeio exposes 35 tools through projio's MCP server across 7 categories:
+pipeio exposes 38 tools through projio's MCP server across 10 categories:
 
 | Category | Tools | Status |
 |----------|-------|--------|
@@ -101,10 +101,12 @@ pipeio exposes 35 tools through projio's MCP server across 7 categories:
 | **Notebook lifecycle** | `nb_status`, `nb_create`, `nb_update`, `nb_sync`, `nb_publish`, `nb_analyze`, `nb_exec`, `nb_pipeline` | Keep |
 | **Mod management** | `mod_list`, `mod_resolve`, `mod_context`, `mod_create` | Keep |
 | **Rule authoring** | `rule_list`, `rule_stub`, `rule_insert`, `rule_update` | Keep |
-| **Config authoring** | `config_read`, `config_patch` | Keep |
+| **Config authoring** | `config_read`, `config_patch`, `config_init` | Keep |
 | **Contracts & tracking** | `contracts_validate`, `cross_flow`, `completion` | Keep |
 | **Documentation** | `docs_collect`, `docs_nav`, `mkdocs_nav_patch`, `modkey_bib` | Keep |
-| **Adapters** | `dag`, `log_parse`, `config_init` | Thin-to-adapter |
+| **Path resolution** | `target_paths` | Keep |
+| **DAG & reporting** | `dag_export`, `report` | Thin adapter |
+| **Logging** | `log_parse` | Thin adapter |
 | **Execution** | `run`, `run_status`, `run_dashboard`, `run_kill` | Deprecated |
 
 See [MCP Tools](mcp-tools.md) for full API reference.

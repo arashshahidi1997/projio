@@ -175,9 +175,16 @@ def note_latest_tool(note_type: str = ""):
 
 
 @server.tool("note_read")
-def note_read_tool(path: str = "", note_id: str = ""):
-    """Read a note by relative path (from note_list) or by note_id (timestamp/capture ID)."""
-    return notio.note_read(path=path, note_id=note_id)
+def note_read_tool(path: str = "", note_id: str = "", note_type: str = ""):
+    """Read a note by relative path (from note_list) or by note_id (timestamp/capture ID).
+
+    Args:
+        path: Relative path returned by note_list (e.g. 'docs/log/idea/idea-arash-...md').
+        note_id: Timestamp ID, capture ID, or filename fragment (alternative to path).
+        note_type: Optional note type hint (e.g. 'idea', 'issue') — used with note_id
+            to narrow the search to a specific type folder.
+    """
+    return notio.note_read(path=path, note_id=note_id, note_type=note_type)
 
 
 @server.tool("note_resolve")
@@ -267,7 +274,13 @@ def codio_discover_tool(query: str, language: str = ""):
 
 @server.tool("codio_rag_sync")
 def codio_rag_sync_tool(force_init: bool = False):
-    """Register codio library sources (notes, catalog, src trees) into the indexio config."""
+    """Register codio library sources (notes, catalog, src trees) into the indexio config.
+
+    The target indexio config path is read from ``indexio.config`` in ``.projio/config.yml``
+    (defaults to ``.projio/indexio/config.yaml``). Source-tree globs are language-dependent:
+    Python → ``**/*.py``, MATLAB → ``**/*.m``, unknown languages → ``**/*``. After sync,
+    run ``indexio_build`` to index the registered sources.
+    """
     return codio.codio_rag_sync(force_init=force_init)
 
 

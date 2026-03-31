@@ -47,7 +47,8 @@ The main entry point for notebooks and scripts:
 class PipelineContext:
     root: Path                    # project root
     resolver: PathResolver        # injected adapter
-    meta: dict[str, Any] = {}    # flow metadata (pipe, flow, config)
+    config: FlowConfig = FlowConfig()  # loaded flow configuration
+    meta: dict[str, Any] = {}    # flow metadata (pipe, flow names)
 
     def session(self, **entities: str) -> Session:
         """Bind entities to create a session handle."""
@@ -63,7 +64,6 @@ Two paths to create a `PipelineContext`:
 ctx = PipelineContext.from_registry(
     "preprocess", flow="ieeg",
     root=project_root,
-    adapter="bids",               # selects BidsResolver
 )
 ```
 
@@ -90,7 +90,7 @@ ctx.have("badlabel", "npy", subject="test", session="01", task="pre")
 ctx.pattern("badlabel", "npy")    # → template string with {subject}, {session}, etc.
 
 # Expansion (enumerate all matching sessions)
-ctx.expand("badlabel", "npy", filter={"task": "pre"}, max_n=10)
+ctx.expand("badlabel", "npy", task="pre")
 ```
 
 ## Session

@@ -3,7 +3,7 @@
 ## Entry Point
 
 ```
-pipeio [-h] {init,flow,nb,registry,contracts} ...
+pipeio [-h] {init,flow,nb,registry,contracts,docs} ...
 ```
 
 Installed via `pip install pipeio`, entry point `pipeio = "pipeio.cli:main"`.
@@ -31,14 +31,49 @@ If `.projio/config.yml` exists, adds a `pipeio:` section.
 
 ### `pipeio flow`
 
-Flow management.
+Flow management and navigation.
 
 ```
 pipeio flow list [--pipe PIPE]                    # list all flows
 pipeio flow new <pipe> <flow> [--template PATH]   # scaffold a new flow
-pipeio flow status <pipe> <flow>                  # show flow status
-pipeio flow write-registry <pipe> <flow>          # generate output registry file
+pipeio flow ids                                    # print flow names (for shell completion)
+pipeio flow path <flow>                            # print absolute code_path for a flow
+pipeio flow config <flow>                          # print absolute config_path for a flow
+pipeio flow deriv <flow>                           # print absolute output_dir (derivative directory)
+pipeio flow smk <flow> [smk_args...]               # run snakemake in flow's context
+pipeio flow status <flow>                          # show flow status (config, outputs, mods)
+pipeio flow targets <flow> [options]               # resolve output paths for registry entries
+    --group <name>, -g                             # filter by registry group
+    --member <name>, -m                            # filter by registry member
+    --entity <key=value>, -e                       # entity filters (repeatable)
+    --expand, -x                                   # glob for all matching paths
+pipeio flow run <flow> [targets] [options]         # launch snakemake in screen session
+    --cores <n>, -c                                # number of cores
+    --dryrun, -n                                   # dry run
+    --filter <key=value>, -f                       # wildcard filter (repeatable)
+pipeio flow log <flow> [--lines <n>]               # tail latest run log (default 40 lines)
+pipeio flow mods <flow>                            # list mods and their rules
 ```
+
+### `pf` — Shell Flow Navigator
+
+The `pf` helper (`packages/pipeio/bin/pf.sh`) provides quick flow navigation, similar to `wg` for projects. Source it in your shell profile.
+
+```bash
+pf                          # list all flows
+pf <flow>                   # cd to flow's code directory
+pf <flow> smk [args]        # run snakemake in flow context
+pf <flow> deriv             # cd to flow's derivative directory
+pf <flow> path              # print flow code_path
+pf <flow> config            # print flow config_path
+pf <flow> status            # show flow status
+pf <flow> targets [opts]    # resolve output paths
+pf <flow> run [opts]        # launch snakemake in screen session
+pf <flow> log [--lines N]   # tail latest run log
+pf <flow> mods              # list mods and rules
+```
+
+Includes bash/zsh completion for flow names via `pipeio flow ids`.
 
 ### `pipeio nb`
 
@@ -62,7 +97,6 @@ Pipeline registry management.
 ```
 pipeio registry scan [--pipelines-dir PATH] [--output PATH]
 pipeio registry validate [--registry PATH]
-pipeio registry show [--pipe PIPE] [--format yaml|table]
 ```
 
 ### `pipeio contracts`
@@ -70,8 +104,16 @@ pipeio registry show [--pipe PIPE] [--format yaml|table]
 Pipeline I/O validation.
 
 ```
-pipeio contracts validate <pipe/flow> [--stage inputs|outputs] [--contract PATH]
-pipeio contracts list [--pipe PIPE]
+pipeio contracts validate
+```
+
+### `pipeio docs`
+
+Pipeline documentation.
+
+```
+pipeio docs collect       # collect flow docs + notebooks → docs/pipelines/
+pipeio docs nav           # generate MkDocs nav fragment
 ```
 
 ## Common Options

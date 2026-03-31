@@ -8,15 +8,15 @@ pipeio makes pipeline knowledge (registry, configs, rules, contracts, notebooks)
 
 | Spec | Domain | Status |
 |------|--------|--------|
-| [Overview & Architecture](overview.md) | Package scope, design principles, ecosystem fit | Draft |
+| [Overview & Architecture](overview.md) | Package scope, design principles, ecosystem fit | **Implemented** |
 | [Registry](registry.md) | Pipe/flow/mod hierarchy, YAML schema, scan & validation | **Implemented** |
 | [Flow Config](flow-config.md) | Per-flow `config.yml` schema, output registry (data contracts) | **Implemented** |
-| [Path Resolution](path-resolution.md) | `PathResolver` protocol, `PipelineContext`, `Session`, `Stage` | **Implemented** (SimpleResolver) |
-| [Notebook Lifecycle](notebook.md) | Pair, sync, execute, publish — replacing Makefile shell scripts | Draft |
-| [Scaffolding](scaffolding.md) | Flow and mod creation from templates | Partial (`flow new` works) |
-| [Contracts](contracts.md) | Declarative input/output validation framework | Draft (models defined) |
-| [CLI](cli.md) | Command-line interface design | **Implemented** (core commands) |
-| [MCP Tools](mcp-tools.md) | Agent-facing tools via projio MCP server | **Implemented** |
+| [Path Resolution](path-resolution.md) | `PathResolver` protocol, `PipelineContext`, `Session`, `Stage` | **Implemented** (SimpleResolver + BidsResolver) |
+| [Notebook Lifecycle](notebook.md) | Pair, sync, execute, publish — replacing Makefile shell scripts | **Implemented** |
+| [Scaffolding](scaffolding.md) | Flow and mod creation from templates | **Implemented** (`flow new` + `mod_create`) |
+| [Contracts](contracts.md) | Declarative input/output validation framework | **Implemented** (models + validation) |
+| [CLI](cli.md) | Command-line interface design | **Implemented** (full surface + `pf` helper) |
+| [MCP Tools](mcp-tools.md) | Agent-facing tools via projio MCP server (38 tools) | **Implemented** |
 
 ## Reference Implementation
 
