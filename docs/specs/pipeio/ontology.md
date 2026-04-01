@@ -28,6 +28,11 @@ Notebooks serve two lifecycles within a flow:
 
 A Snakemake rule defines one processing step. Rules are grouped into mods by naming convention. Complex mods can split rules into `rules/{mod}.smk` files included by the main Snakefile.
 
+Rules have three execution modes:
+- **Script** (`script:`) — runs a Python script from `scripts/`. Multiple rules can share the same script with different params/inputs/outputs.
+- **Shell** (`shell:`) — runs a CLI command or MATLAB directly. No script file.
+- **Run** (`run:`) — inline Python in the Snakefile itself.
+
 ## Flow Directory Structure
 
 ```
@@ -109,7 +114,7 @@ graph TD
     Flow -->|produces| Derivative
     Flow -->|has| Notebook
     Mod -->|groups| Rule
-    Rule -->|executes| Script
+    Rule -->|may execute| Script
     Mod -->|documented by| Doc
     Notebook -->|explores| Mod
     Notebook -->|demos| Mod
@@ -123,32 +128,33 @@ graph LR
     subgraph "Flow: preprocess_ieeg"
         direction TB
         SF["Snakefile"]
-        R1["rule filter_bandpass"]
-        R2["rule filter_notch"]
-        R3["rule interpolate_bad"]
-        S1["scripts/filter_bandpass.py"]
-        S2["scripts/filter_notch.py"]
-        S3["scripts/interpolate_bad.py"]
+        R1["rule filter_bandpass<br/><i>script: filter.py</i>"]
+        R2["rule filter_notch<br/><i>script: filter.py</i>"]
+        R3["rule interpolate_bad<br/><i>script: interpolate.py</i>"]
+        R4["rule qc_report<br/><i>shell: matlab -r ...</i>"]
+        S1["scripts/filter.py<br/><i>(shared by 2 rules)</i>"]
+        S2["scripts/interpolate.py"]
         D1["docs/mod-filter.md"]
         D2["docs/mod-interpolate.md"]
         NB1[".src/investigate_noise.py<br/><i>mod: filter</i>"]
-        NB2[".src/demo_filter.py<br/><i>mod: filter</i>"]
     end
 
     subgraph "Mods"
         M1["mod: filter"]
         M2["mod: interpolate"]
+        M3["mod: qc"]
     end
 
-    SF --> R1 & R2 & R3
+    SF --> R1 & R2 & R3 & R4
     R1 --> S1
-    R2 --> S2
-    R3 --> S3
+    R2 --> S1
+    R3 --> S2
     M1 --- R1 & R2
     M2 --- R3
+    M3 --- R4
     M1 --- D1
     M2 --- D2
-    M1 --- NB1 & NB2
+    M1 --- NB1
 ```
 
 ## Lifecycle States
