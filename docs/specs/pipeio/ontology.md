@@ -14,15 +14,45 @@ The flow's **derivative directory** (`derivatives/{flow}/`) is a datalad subdata
 
 A **mod** (module) is a logical grouping of Snakemake rules within a flow. Mods are identified by rule name prefix: rules named `filter_bandpass`, `filter_notch` belong to mod `filter`. Each mod has:
 - One or more rules (in Snakefile or `rules/{mod}.smk`)
-- A script per rule (`scripts/{rule}.py`)
-- Documentation (`docs/mod-{mod}.md`)
-- Optionally, a notebook investigating or demoing its outputs
+- Optionally, scripts shared across rules (`scripts/{script}.py`)
+- Documentation in three facets: theory, spec, delta
+- Optionally, notebooks investigating or demoing its outputs (one demo per mod is ideal; flow-level demos spanning multiple mods leave `mod` empty)
+
+### Mod Documentation Facets
+
+Each mod has up to three documentation facets, stored in `{flow}/docs/{mod}/`:
+
+| Facet | File | Purpose | Evolves into |
+|-------|------|---------|-------------|
+| **Theory** | `theory.md` | Scientific rationale, method justification, citations | Manuscript methods: *"We used X because Y [@citekey]"* |
+| **Spec** | `spec.md` | Technical specification: I/O contracts, parameters, component manifest | Manuscript methods: *"Implemented as..."*, supplementary materials |
+| **Delta** | `delta.md` | Current state, known issues, refactor plans, changelog | Revision notes (temporary — removed when resolved) |
+
+**Theory** is the entry point for understanding a mod. It contains proper pandoc citations (`[@citekey]`) that resolve through biblio. Sources include idea notes, meeting notes, paper references, and exploratory notebook conclusions.
+
+**Spec** is the ground truth for implementation. Agents can auto-generate a skeleton from `mod_context` + `config_read`, then humans add intent and constraints. It answers: what should this mod produce, with what guarantees?
+
+**Delta** is operational and temporary. Created by agents after audits or when a gap is found between spec and reality. Deleted when the gap is resolved.
+
+### Docs-to-Manuscript Pipeline
+
+Mod docs are written in pandoc-compatible markdown with citations. The `manuscript_assemble` tool can pull from theory and spec docs to draft methods sections:
+
+```
+idea note (notio)
+  → theory.md (drafted with biblio citations)
+    → spec.md (from implementation decisions)
+      → manuscript methods section (assembled by manuscripto)
+```
 
 ### Notebook
 
-Notebooks serve two lifecycles within a flow:
-- **Exploratory** (`kind: investigate/explore`) — prototypes, absorbed into mod scripts when done
-- **Demo** (`kind: demo/validate`) — showcases mod outputs, published to the project site
+Notebooks live in two parallel workspaces within a flow, separated by purpose:
+
+- **`explore/`** — prototypes, investigations, parameter sweeps. Never published. Findings feed into `theory.md`. Absorbed into mod scripts when done.
+- **`demo/`** — showcases mod outputs in narrative form. Published to the project site as rendered HTML.
+
+Both workspaces share the same internal structure (`.src/`, `.myst/`, `.ipynb`). The directory determines the default publish behavior — no need to set `publish_html` per notebook unless overriding.
 
 ### Rule
 
@@ -40,34 +70,46 @@ code/pipelines/{flow}/
 ├── Snakefile                      # workflow definition (includes rules/*.smk)
 ├── config.yml                     # input/output dirs, registry groups
 ├── Makefile                       # convenience targets (delegates to pipeio CLI)
+├── publish.yml                    # flow-level publish config (dag, report, scripts)
 ├── rules/                         # optional: per-mod rule files
 │   ├── filter.smk                 #   included by Snakefile
 │   └── hpclayer.smk               #   complex mods get their own file
-├── scripts/                       # rule scripts
-│   ├── filter_bandpass.py
-│   ├── filter_notch.py
+├── scripts/                       # rule scripts (may be shared across rules)
+│   ├── filter.py
+│   ├── interpolate.py
 │   └── hpclayer_detect.py
 ├── docs/                          # flow-local documentation (source of truth)
-│   ├── index.md                   #   flow overview
-│   ├── mod-filter.md              #   per-mod docs
-│   └── mod-hpclayer.md
+│   ├── index.md                   #   flow overview + mod listing
+│   ├── filter/                    #   per-mod doc directory
+│   │   ├── theory.md              #     scientific rationale + citations
+│   │   ├── spec.md                #     technical spec + I/O contracts
+│   │   └── delta.md               #     optional: current state + plans
+│   └── hpclayer/
+│       ├── theory.md
+│       └── spec.md
 └── notebooks/                     # notebook workspace
-    ├── notebook.yml               #   config: entries, kernel, publish settings
-    ├── .src/                      #   agent territory (percent-format .py)
-    │   ├── investigate_noise.py
-    │   └── demo_filter.py
-    ├── .myst/                     #   generated MyST markdown
-    │   ├── investigate_noise.md
-    │   └── demo_filter.md
-    ├── investigate_noise.ipynb    #   human-facing (Jupyter Lab)
-    └── demo_filter.ipynb
+    ├── notebook.yml               #   config: entries, kernel, per-notebook publish
+    ├── explore/                   #   exploratory notebooks (never published)
+    │   ├── .src/                  #     agent territory
+    │   │   ├── investigate_noise.py
+    │   │   └── investigate_tfspace.py
+    │   ├── .myst/                 #     generated MyST
+    │   │   └── ...
+    │   ├── investigate_noise.ipynb    # human-facing
+    │   └── investigate_tfspace.ipynb
+    └── demo/                      #   demo notebooks (published to site)
+        ├── .src/
+        │   └── demo_filter.py
+        ├── .myst/
+        │   └── demo_filter.md
+        └── demo_filter.ipynb
 ```
 
 ## Derivative Structure
 
 ```
 derivatives/{flow}/
-├── {flow}_registry.yml            # output registry (groups, members, paths)
+├── manifest.yml            # derivative manifest
 ├── sub-01/
 │   └── {datatype}/
 │       └── sub-01_*_{suffix}.{ext}
@@ -76,22 +118,83 @@ derivatives/{flow}/
 └── all/                           # cross-subject aggregates (optional)
 ```
 
+The **manifest** (`manifest.yml`) is a copy of the flow's `registry:` config section, written to the derivative directory on each run. Downstream flows reference it via `input_manifest` in their config to discover available outputs without needing access to the source flow's code or config.
+
+```yaml
+# Cross-flow wiring in a downstream flow's config.yml
+input_dir: "derivatives/preprocess_ieeg"
+input_manifest: "derivatives/preprocess_ieeg/manifest.yml"
+```
+
+## Configuration Files
+
+### `config.yml` — Snakemake I/O
+
+Defines inputs, outputs, and registry groups. Consumed by Snakemake and snakebids.
+
+```yaml
+input_dir: "raw"
+output_dir: "derivatives/preprocess_ieeg"
+registry:
+  badlabel:
+    bids: {root: badlabel, datatype: ieeg}
+    members:
+      npy: {suffix: ieeg, extension: .npy}
+```
+
+### `notebook.yml` — notebook identity and per-notebook publish
+
+```yaml
+kernel: cogpy                      # flow-level default kernel
+entries:
+  - path: notebooks/explore/.src/investigate_noise.py
+    kind: investigate              # implied by explore/ dir, but explicit for tools
+    mod: filter
+    status: active
+    pair_ipynb: true
+  - path: notebooks/explore/.src/investigate_tfspace.py
+    kind: investigate
+    mod: filter
+    status: archived               # code absorbed into scripts
+    pair_ipynb: true
+  - path: notebooks/demo/.src/demo_filter.py
+    kind: demo                     # implied by demo/ dir
+    mod: filter
+    status: promoted
+    pair_ipynb: true
+    publish_html: true             # default for demo/, explicit for clarity
+```
+
+### `publish.yml` — flow-level publish config
+
+Controls which flow-level artifacts `docs_collect` publishes to the site. Per-notebook publish is in `notebook.yml`.
+
+```yaml
+dag: true                          # publish rule dependency graph (dag.svg)
+report: true                       # publish latest snakemake report (report.html)
+report_archive: false              # keep old reports as report-{date}.html
+scripts: true                      # generate script index with git links
+```
+
 ## Published Documentation
 
-`docs_collect` publishes flow-local docs to the project site:
+`docs_collect` reads `publish.yml` + `notebook.yml` to assemble the site:
 
 ```
 docs/pipelines/{flow}/
 ├── index.md                       # flow overview (from flow/docs/index.md)
+├── dag.svg                        # rule dependency graph (if publish.dag)
+├── report.html                    # latest snakemake report (if publish.report)
 ├── mods/
-│   ├── filter.md                  # mod docs (from flow/docs/mod-filter.md)
-│   └── hpclayer.md
+│   ├── filter/                    # mod docs (from flow/docs/filter/)
+│   │   ├── theory.md              #   scientific rationale + citations
+│   │   └── spec.md                #   technical specification
+│   └── hpclayer/
+│       ├── theory.md
+│       └── spec.md
 ├── notebooks/
-│   ├── nb-investigate_noise.md    # MyST notebooks
-│   └── nb-demo_filter.html       # rendered demo notebooks
-└── scripts/
-    ├── filter_bandpass.py         # rule scripts (syntax-highlighted by MkDocs)
-    └── hpclayer_detect.py
+│   └── nb-demo_filter.html       # rendered demo notebooks (from demo/)
+└── scripts.md                     # auto-generated script index with git links
 ```
 
 ## Entity Relationships
@@ -103,22 +206,51 @@ graph TD
     Rule["Rule<br/><i>Snakemake rule</i>"]
     Script["Script<br/><i>rule implementation</i>"]
     Notebook["Notebook<br/><i>explore or demo</i>"]
-    Config["Config<br/><i>flow config.yml</i>"]
+    Config["Config<br/><i>config.yml</i>"]
+    NbConfig["Notebook Config<br/><i>notebook.yml</i>"]
+    PubConfig["Publish Config<br/><i>publish.yml</i>"]
     Derivative["Derivative<br/><i>output dataset</i>"]
-    Doc["Mod Doc<br/><i>mod-{mod}.md</i>"]
+    Theory["Theory<br/><i>scientific rationale</i>"]
+    Spec["Spec<br/><i>technical specification</i>"]
+    Delta["Delta<br/><i>current state / plans</i>"]
+    Site["Project Site<br/><i>docs/pipelines/{flow}/</i>"]
+    DAG["DAG<br/><i>dag.svg</i>"]
+    Report["Report<br/><i>report.html</i>"]
     Registry["Registry<br/><i>flow metadata index</i>"]
+    Manuscript["Manuscript<br/><i>methods sections</i>"]
+    IdeaNote["Idea Notes<br/><i>notio</i>"]
+    Papers["Papers<br/><i>biblio</i>"]
 
     Registry -->|indexes| Flow
     Flow -->|contains| Mod
     Flow -->|has| Config
+    Flow -->|has| NbConfig
+    Flow -->|has| PubConfig
     Flow -->|produces| Derivative
-    Flow -->|has| Notebook
+    Flow -->|produces| DAG
+    Flow -->|produces| Report
     Mod -->|groups| Rule
     Rule -->|may execute| Script
-    Mod -->|documented by| Doc
-    Notebook -->|explores| Mod
-    Notebook -->|demos| Mod
+    Mod -->|has| Theory
+    Mod -->|has| Spec
+    Mod -->|has| Delta
+    Mod -->|explored by| Notebook
+    NbConfig -->|configures| Notebook
     Config -->|defines I/O for| Rule
+
+    IdeaNote -->|informs| Theory
+    Papers -->|cited in| Theory
+    Notebook -->|findings feed| Theory
+    Theory -->|assembled into| Manuscript
+    Spec -->|assembled into| Manuscript
+
+    PubConfig -->|controls| Site
+    Theory -->|collected to| Site
+    Spec -->|collected to| Site
+    Notebook -->|published to| Site
+    Script -->|copied to| Site
+    DAG -->|published to| Site
+    Report -->|published to| Site
 ```
 
 ## Naming Conventions
@@ -134,9 +266,11 @@ graph LR
         R4["rule qc_report<br/><i>shell: matlab -r ...</i>"]
         S1["scripts/filter.py<br/><i>(shared by 2 rules)</i>"]
         S2["scripts/interpolate.py"]
-        D1["docs/mod-filter.md"]
-        D2["docs/mod-interpolate.md"]
-        NB1[".src/investigate_noise.py<br/><i>mod: filter</i>"]
+        T1["docs/filter/theory.md"]
+        SP1["docs/filter/spec.md"]
+        T2["docs/interpolate/theory.md"]
+        NB1["explore/.src/investigate_noise.py<br/><i>mod: filter</i>"]
+        NB2["demo/.src/demo_filter.py<br/><i>mod: filter</i>"]
     end
 
     subgraph "Mods"
@@ -152,9 +286,9 @@ graph LR
     M1 --- R1 & R2
     M2 --- R3
     M3 --- R4
-    M1 --- D1
-    M2 --- D2
-    M1 --- NB1
+    M1 --- T1 & SP1
+    M2 --- T2
+    M1 --- NB1 & NB2
 ```
 
 ## Lifecycle States
@@ -164,17 +298,36 @@ graph LR
 scaffold → develop → validate → production
 ```
 
+### Mod lifecycle
+
+```mermaid
+graph LR
+    Idea["Idea note<br/><i>notio</i>"] --> Theory["theory.md<br/><i>drafted with biblio</i>"]
+    Theory --> NB["Exploratory notebook<br/><i>prototype approach</i>"]
+    NB --> Spec["spec.md<br/><i>from implementation</i>"]
+    Spec --> Impl["Implementation<br/><i>rules + scripts</i>"]
+    Impl --> Validate["Validate<br/><i>contracts + audit</i>"]
+    Validate --> Production["Production"]
+    Validate -->|issues found| Delta["delta.md<br/><i>gap + refactor plan</i>"]
+    Delta --> Impl
+```
+
 ### Notebook lifecycle
 ```mermaid
 graph LR
     Draft["draft"] --> Active["active"]
-    Active -->|exploratory| Archived["archived<br/><i>code absorbed<br/>into mod scripts</i>"]
-    Active -->|demo| Promoted["promoted<br/><i>published to<br/>project site</i>"]
+    Active -->|"explore/"| Archived["archived<br/><i>code absorbed into scripts<br/>findings feed theory.md</i>"]
+    Active -->|"demo/"| Promoted["promoted<br/><i>published to site as HTML</i>"]
 ```
 
-### Mod lifecycle
-```
-discover → implement → document → validate (contracts) → production
+### Documentation lifecycle
+```mermaid
+graph LR
+    IdeaNotes["Idea/meeting notes"] --> TheoryDraft["theory.md draft<br/><i>agent + biblio</i>"]
+    TheoryDraft --> TheoryReview["theory.md reviewed<br/><i>human validates</i>"]
+    TheoryReview --> SpecDraft["spec.md draft<br/><i>from mod_context</i>"]
+    SpecDraft --> SpecImpl["spec.md + implementation<br/><i>co-evolve</i>"]
+    SpecImpl --> Methods["Manuscript methods<br/><i>assembled by manuscripto</i>"]
 ```
 
 ## Registry Schema
@@ -192,7 +345,7 @@ flows:
       filter:
         name: filter
         rules: [filter_bandpass, filter_notch]
-        doc_path: code/pipelines/preprocess_ieeg/docs/mod-filter.md
+        doc_path: code/pipelines/preprocess_ieeg/docs/filter
       interpolate:
         name: interpolate
         rules: [interpolate_bad]
@@ -208,7 +361,7 @@ Mods are citable in manuscripts via BibTeX:
   title  = {mod: flow=preprocess_ieeg mod=filter},
   author = {project_name},
   year   = {2026},
-  note   = {doc_path=docs/pipelines/preprocess_ieeg/mods/filter.md; rules=filter_bandpass, filter_notch},
+  note   = {doc_path=docs/pipelines/preprocess_ieeg/mods/filter; rules=filter_bandpass, filter_notch},
 }
 ```
 
