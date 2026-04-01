@@ -40,7 +40,7 @@ The server enforces this boundary regardless of what the client allows.
 
 ## Client-side permissions: `projio add claude`
 
-Running `projio add claude` scaffolds `.claude/settings.json` with pre-approved tools:
+Running `projio add claude` or `projio claude update-permissions` scaffolds `.claude/settings.json` with pre-approved tools:
 
 ```json
 {
@@ -77,32 +77,67 @@ If you prefer to auto-approve read tools but prompt for writes, replace the wild
   "allowedTools": [
     "mcp__projio__project_context",
     "mcp__projio__runtime_conventions",
+    "mcp__projio__agent_instructions",
+    "mcp__projio__module_context",
+    "mcp__projio__skill_read",
     "mcp__projio__rag_query",
     "mcp__projio__rag_query_multi",
     "mcp__projio__corpus_list",
+    "mcp__projio__indexio_sources_list",
+    "mcp__projio__indexio_status",
+    "mcp__projio__indexio_build_status",
     "mcp__projio__citekey_resolve",
     "mcp__projio__paper_context",
     "mcp__projio__paper_absent_refs",
     "mcp__projio__library_get",
+    "mcp__projio__biblio_grobid_check",
+    "mcp__projio__biblio_docling_status",
     "mcp__projio__codio_list",
     "mcp__projio__codio_get",
     "mcp__projio__codio_registry",
     "mcp__projio__codio_vocab",
     "mcp__projio__codio_validate",
     "mcp__projio__codio_discover",
+    "mcp__projio__codio_func_doc",
     "mcp__projio__note_list",
     "mcp__projio__note_latest",
     "mcp__projio__note_read",
+    "mcp__projio__note_resolve",
     "mcp__projio__note_search",
     "mcp__projio__note_types",
+    "mcp__projio__manuscript_list",
+    "mcp__projio__manuscript_status",
+    "mcp__projio__manuscript_validate",
+    "mcp__projio__pipeio_flow_list",
+    "mcp__projio__pipeio_flow_status",
+    "mcp__projio__pipeio_nb_status",
+    "mcp__projio__pipeio_nb_read",
+    "mcp__projio__pipeio_nb_analyze",
+    "mcp__projio__pipeio_nb_diff",
+    "mcp__projio__pipeio_nb_audit",
+    "mcp__projio__pipeio_nb_scan",
+    "mcp__projio__pipeio_mod_list",
+    "mcp__projio__pipeio_mod_resolve",
+    "mcp__projio__pipeio_mod_context",
+    "mcp__projio__pipeio_rule_list",
+    "mcp__projio__pipeio_config_read",
+    "mcp__projio__pipeio_registry_validate",
+    "mcp__projio__pipeio_contracts_validate",
+    "mcp__projio__pipeio_target_paths",
+    "mcp__projio__pipeio_completion",
+    "mcp__projio__pipeio_cross_flow",
+    "mcp__projio__pipeio_dag_export",
+    "mcp__projio__pipeio_run_status",
+    "mcp__projio__pipeio_run_dashboard",
+    "mcp__projio__datalad_status",
+    "mcp__projio__datalad_siblings",
     "mcp__projio__site_detect",
-    "mcp__projio__site_list",
-    "mcp__projio__biblio_grobid_check"
+    "mcp__projio__site_list"
   ]
 }
 ```
 
-With this configuration, the agent can freely query project knowledge but will prompt before calling write tools like `biblio_ingest`, `biblio_merge`, `biblio_docling`, `biblio_grobid`, `codio_add_urls`, `indexio_build`, `note_create`, `note_update`, `biblio_library_set`, or `site_serve`/`site_stop`.
+With this configuration, the agent can freely query project knowledge but will prompt before calling write tools like `biblio_ingest`, `biblio_merge`, `biblio_docling`, `biblio_grobid`, `codio_add_urls`, `codio_add`, `indexio_build`, `indexio_sources_sync`, `note_create`, `note_update`, `notio_reindex`, `biblio_library_set`, `datalad_save`, `datalad_push`, `pipeio_run`, `pipeio_nb_create`, `pipeio_nb_sync`, `pipeio_nb_exec`, `pipeio_mod_create`, `pipeio_rule_insert`, `manuscript_build`, `manuscript_assemble`, or `site_build`/`site_serve`/`site_stop`/`site_deploy`.
 
 ## What the agent cannot do
 
@@ -111,7 +146,9 @@ Even with `mcp__projio__*` allowed, the projio MCP server does **not** expose:
 - Shell execution or arbitrary command running
 - File system access outside `PROJIO_ROOT`
 - Network requests to arbitrary URLs (only structured API calls to OpenAlex, GitHub API, etc. as part of ingestion)
-- Deletion of files or data (tools are append/update only)
+- Deletion of files from disk
+
+Note: `pipeio_flow_deregister` removes a flow's entry from the registry YAML, but leaves all code and data files on disk. `pipeio_run_kill` terminates a `screen` session but does not delete outputs.
 
 ## Recommendations
 
@@ -124,8 +161,9 @@ Even with `mcp__projio__*` allowed, the projio MCP server does **not** expose:
 ## Setup commands
 
 ```bash
-projio mcp-config -C . --yes   # generate .mcp.json (server config)
-projio add claude               # scaffold .claude/settings.json (client permissions)
+projio mcp-config -C . --yes        # generate .mcp.json (server config)
+projio add claude                    # scaffold .claude/settings.json (client permissions)
+projio claude -C . update-permissions  # update existing permissions to project root scope
 ```
 
-Both are idempotent — they skip files that already exist. To regenerate, delete the file and re-run.
+Both `mcp-config` and `add claude` are idempotent — they skip files that already exist. To regenerate, delete the file and re-run. `claude update-permissions` always writes the updated permissions regardless of whether the file already exists.
