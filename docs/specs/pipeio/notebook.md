@@ -13,21 +13,27 @@ pipeio manages the notebook lifecycle: scan, pair, sync (bidirectional), execute
 
 ## Notebook Directory Convention
 
-Each notebook lives in its own subdirectory within the flow's `notebooks/` directory:
+Notebooks use a split layout that separates human-facing files from agent/build artifacts:
 
 ```
 code/pipelines/preprocess/ieeg/
 └── notebooks/
     ├── notebook.yml                              # lifecycle config
-    ├── investigate_noise_characterization_demo/
-    │   ├── investigate_noise_characterization_demo.py    # source of truth
-    │   ├── investigate_noise_characterization_demo.ipynb  # generated (paired)
-    │   └── investigate_noise_characterization_demo.md     # generated (myst)
-    └── investigate_noise_tfspace_demo/
-        ├── investigate_noise_tfspace_demo.py
-        ├── investigate_noise_tfspace_demo.ipynb
-        └── investigate_noise_tfspace_demo.md
+    ├── investigate_noise.ipynb                    # human-facing (Jupyter Lab)
+    ├── explore_params.ipynb
+    ├── .src/                                     # agent territory
+    │   ├── investigate_noise.py                  # source of truth (percent-format)
+    │   └── explore_params.py
+    └── .myst/                                    # build artifacts (generated)
+        ├── investigate_noise.md
+        └── explore_params.md
 ```
+
+- **`notebooks/`** — human territory: `.ipynb` files visible in Jupyter Lab
+- **`.src/`** — agent territory: `.py` percent-format files (source of truth)
+- **`.myst/`** — generated MyST markdown for docs pipeline
+
+Legacy layouts (flat `notebooks/name.py` or subdirectory `notebooks/name/name.py`) are still supported. Use `pipeio nb migrate --yes` to convert to the `.src/` layout.
 
 ### Source of Truth
 
@@ -193,7 +199,9 @@ pipeio nb diff
 pipeio nb exec
 pipeio nb publish
 pipeio nb status
-pipeio nb lab      [--pipe PIPE] [--flow FLOW] [--no-sync] [--refresh]
+pipeio nb lab      [--pipe PIPE] [--flow FLOW] [--sync] [--refresh]
+pipeio nb scan     [--register]
+pipeio nb migrate  [--yes]
 pipeio nb new      --mode explore|demo [--flow PIPE/FLOW] NAME
 ```
 
