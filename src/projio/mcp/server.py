@@ -513,9 +513,10 @@ def pipeio_nb_sync_flow_tool(
 
 
 @server.tool("pipeio_nb_publish")
-def pipeio_nb_publish_tool(pipe: str, flow: str, name: str):
-    """Publish a notebook's myst markdown to the docs tree."""
-    return pipeio.pipeio_nb_publish(pipe=pipe, flow=flow, name=name)
+def pipeio_nb_publish_tool(pipe: str, flow: str, name: str, format: str = ""):
+    """Publish a notebook to docs/pipelines/<pipe>/<flow>/notebooks/.
+    Publishes myst and/or html based on notebook.yml. Pass format='html' to force HTML."""
+    return pipeio.pipeio_nb_publish(pipe=pipe, flow=flow, name=name, format=format)
 
 
 @server.tool("pipeio_nb_analyze")

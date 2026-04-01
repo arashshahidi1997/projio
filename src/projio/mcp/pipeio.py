@@ -495,22 +495,27 @@ def pipeio_nb_sync_flow(
         return json_dict({"error": str(exc)})
 
 
-def pipeio_nb_publish(pipe: str, flow: str, name: str) -> JsonDict:
-    """Publish a notebook's myst markdown to the docs tree.
+def pipeio_nb_publish(pipe: str, flow: str, name: str, format: str = "") -> JsonDict:
+    """Publish a notebook to docs/pipelines/<pipe>/<flow>/notebooks/.
 
-    Copies the .md file to docs/pipelines/<pipe>/<flow>/notebooks/nb-<name>.md.
+    Publishes MyST markdown and/or HTML based on notebook.yml settings.
+    Pass format='html' to force HTML output (for demo notebooks),
+    or format='myst' for markdown only.
 
     Args:
         pipe: Pipeline name.
         flow: Flow name.
         name: Notebook basename (without extension).
+        format: Force format ('myst', 'html', or '' for auto from notebook.yml).
     """
     if not _pipeio_available():
         return _unavailable("pipeio_nb_publish")
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_nb_publish  # type: ignore[import]
-        return json_dict(mcp_nb_publish(root, pipe=pipe, flow=flow, name=name))
+        return json_dict(mcp_nb_publish(
+            root, pipe=pipe, flow=flow, name=name, format=format,
+        ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
