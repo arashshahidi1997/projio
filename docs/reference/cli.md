@@ -14,7 +14,10 @@
 | `projio site` | MkDocs, Sphinx, and Vite/React frontend site workflows |
 | `projio sibling` | Manage DataLad siblings |
 | `projio docs` | Project docs helpers |
+| `projio git` | Git helpers for projio-managed projects |
 | `projio auth` | Authentication diagnostics |
+| `projio claude` | Claude Code project settings |
+| `projio skill` | Manage project skills |
 | `projio mcp` | Start the FastMCP server (stdio) |
 | `projio mcp-config` | Generate `.mcp.json` for Claude Code |
 
@@ -70,8 +73,20 @@ projio sibling -C . gitlab --project sirotalab/my-repo --yes
 projio sibling -C . ria
 projio sibling -C . ria --alias mydataset --yes
 
+# git
+projio git -C . untrack
+projio git -C . untrack --dry-run
+
 # auth
 projio auth -C . doctor
+
+# claude
+projio claude -C . update-permissions
+projio claude -C . update-permissions --dry-run
+
+# skill
+projio skill -C . list
+projio skill -C . new my-analysis
 
 # mcp
 projio mcp -C .
@@ -150,6 +165,7 @@ Creates the base workspace. Does **not** activate any package components by defa
 | `--profile` | Activate a preset bundle of components (see below) |
 | `--vscode` | Write `.vscode/settings.json` with excludes |
 | `--github-pages` | Write GitHub Pages deploy workflow |
+| `--gitlab-pages` | Write GitLab Pages CI config at `.gitlab-ci.yml` |
 | `--force` | Overwrite existing config files |
 
 **Profiles:**
@@ -190,6 +206,49 @@ Deactivates a package component.
 2. Does **not** delete the component directory — data is preserved
 
 To fully remove component data, delete the directory manually after `projio remove`.
+
+### `projio config set-python`
+
+Sets `runtime.python_bin` in the project `.projio/config.yml`.
+
+```bash
+projio config -C . set-python                      # use current interpreter
+projio config -C . set-python /path/to/python      # explicit path
+projio config -C . set-python --env rag            # resolve conda env name
+```
+
+This is used by `projio mcp-config` to generate the correct `.mcp.json`.
+
+### `projio git untrack`
+
+Untracks files in the projio gitignore block that are still tracked by git. Useful after adding `.mcp.json` or `.claude/settings.json` to `.gitignore` retroactively.
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Show what would be untracked without modifying git |
+
+### `projio claude update-permissions`
+
+Scopes `Edit` and `Write` tool permissions to the project root in `.claude/settings.json`. This prevents Claude Code from accidentally editing files outside the project directory.
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Show what would change without writing |
+
+### `projio skill`
+
+Manages project skills in `.projio/skills/`.
+
+```bash
+projio skill -C . list               # list available skills
+projio skill -C . new my-analysis    # scaffold a new skill
+```
+
+Skills are markdown prompts that agents can load via `skill_read()`. The `new` subcommand creates `.projio/skills/<name>/SKILL.md` with a template.
 
 ### `projio list`
 
