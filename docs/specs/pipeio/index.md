@@ -8,6 +8,7 @@ pipeio makes pipeline knowledge (registry, configs, rules, contracts, notebooks)
 
 | Spec | Domain | Status |
 |------|--------|--------|
+| [Ontology](ontology.md) | Concepts, entity relationships, directory conventions, naming | **Current** |
 | [Overview & Architecture](overview.md) | Package scope, design principles, ecosystem fit | **Implemented** |
 | [Registry](registry.md) | Pipe/flow/mod hierarchy, YAML schema, scan & validation | **Implemented** |
 | [Flow Config](flow-config.md) | Per-flow `config.yml` schema, output registry (data contracts) | **Implemented** |
