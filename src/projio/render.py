@@ -11,12 +11,13 @@ import yaml
 RENDER_CONFIG_PATH = ".projio/render.yml"
 
 DEFAULTS = {
-    "pdf_engine": "xelatex",
-    "csl": "",
-    "bibliography": "",
+    "pdf_engine": "lualatex",
+    "csl": ".projio/render/csl/apa.csl",
+    "bibliography": ".projio/render/compiled.bib",
     "lua_filter": ".projio/filters/include.lua",
     "conda_env": "",
     "resource_path": [".", "docs", "docs/assets", "bib"],
+    "bib_sources": [".projio/biblio/merged.bib", ".projio/pipeio/modkey.bib"],
 }
 
 
@@ -24,12 +25,15 @@ DEFAULTS = {
 class RenderConfig:
     """Project-level render configuration."""
 
-    pdf_engine: str = "xelatex"
-    csl: str = ""
-    bibliography: str = ""
+    pdf_engine: str = "lualatex"
+    csl: str = ".projio/render/csl/apa.csl"
+    bibliography: str = ".projio/render/compiled.bib"
     lua_filter: str = ".projio/filters/include.lua"
     conda_env: str = ""
     resource_path: list[str] = field(default_factory=lambda: [".", "docs", "docs/assets", "bib"])
+    bib_sources: list[str] = field(
+        default_factory=lambda: [".projio/biblio/merged.bib", ".projio/pipeio/modkey.bib"],
+    )
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> RenderConfig:
@@ -40,6 +44,7 @@ class RenderConfig:
             lua_filter=data.get("lua_filter", DEFAULTS["lua_filter"]),
             conda_env=data.get("conda_env", DEFAULTS["conda_env"]),
             resource_path=data.get("resource_path", DEFAULTS["resource_path"]),
+            bib_sources=data.get("bib_sources", DEFAULTS["bib_sources"]),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -50,6 +55,7 @@ class RenderConfig:
             "lua_filter": self.lua_filter,
             "conda_env": self.conda_env,
             "resource_path": self.resource_path,
+            "bib_sources": self.bib_sources,
         }
 
 
@@ -96,7 +102,7 @@ def write_pandoc_defaults(
     """
     defaults = generate_pandoc_defaults(config, root)
     if output is None:
-        output = root / "bib" / "pandoc-defaults.yaml"
+        output = root / ".projio" / "render" / "pandoc-defaults.yaml"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
         yaml.dump(defaults, default_flow_style=False, sort_keys=False),
@@ -109,8 +115,11 @@ DEFAULT_RENDER_YML = """\
 # Project render configuration — single source of truth for pandoc settings.
 # Used by: manuscripto, master docs, projio render sync.
 pdf_engine: xelatex
-csl: ""
-bibliography: ""
+csl: .projio/render/csl/apa.csl
+bibliography: .projio/render/compiled.bib
+bib_sources:
+  - .projio/biblio/merged.bib
+  - .projio/pipeio/modkey.bib
 lua_filter: .projio/filters/include.lua
 conda_env: ""
 resource_path:

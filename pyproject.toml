@@ -50,4 +50,4 @@ projio = "projio.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-projio = ["data/filters/*.lua"]
+projio = ["data/filters/*.lua", "data/csl/*.csl"]

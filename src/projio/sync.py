@@ -170,6 +170,59 @@ def _sync_lua_filter(root: Path, *, dry_run: bool = False) -> dict[str, str]:
     return {"action": "copied", "path": str(target.relative_to(root))}
 
 
+def _get_bundled_csl_files() -> dict[str, bytes]:
+    """Read all bundled CSL files from package data."""
+    import importlib.resources
+
+    csl_dir = importlib.resources.files("projio") / "data" / "csl"
+    result: dict[str, bytes] = {}
+    for item in csl_dir.iterdir():
+        if hasattr(item, "name") and item.name.endswith(".csl"):
+            result[item.name] = item.read_bytes()
+    return result
+
+
+def _sync_csl_files(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
+    """Copy bundled CSL files to .projio/render/csl/ if missing or outdated."""
+    target_dir = root / ".projio" / "render" / "csl"
+    try:
+        bundled = _get_bundled_csl_files()
+    except Exception as exc:
+        return {"action": "error", "reason": f"cannot read bundled CSL files: {exc}"}
+
+    if not bundled:
+        return {"action": "skipped", "reason": "no bundled CSL files found"}
+
+    copied = []
+    updated = []
+    skipped = []
+
+    for name, content in sorted(bundled.items()):
+        target = target_dir / name
+        bundled_hash = hashlib.sha256(content).hexdigest()
+
+        if target.is_file():
+            existing_hash = hashlib.sha256(target.read_bytes()).hexdigest()
+            if existing_hash == bundled_hash:
+                skipped.append(name)
+                continue
+            if not dry_run:
+                target.write_bytes(content)
+            updated.append(name)
+        else:
+            if not dry_run:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(content)
+            copied.append(name)
+
+    return {
+        "action": "synced" if not dry_run else "would_sync",
+        "copied": copied,
+        "updated": updated,
+        "skipped": skipped,
+    }
+
+
 def _sync_render_config(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
     """If .projio/render.yml exists, generate pandoc-defaults.yaml."""
     render_yml = root / ".projio" / "render.yml"
@@ -179,11 +232,31 @@ def _sync_render_config(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
     from projio.render import load_render_config, write_pandoc_defaults
 
     config = load_render_config(root)
-    output = root / "bib" / "pandoc-defaults.yaml"
+    output = root / ".projio" / "render" / "pandoc-defaults.yaml"
     if dry_run:
         return {"action": "would_generate", "output": str(output.relative_to(root))}
     out_path = write_pandoc_defaults(config, root, output=output)
     return {"action": "generated", "output": str(out_path.relative_to(root))}
+
+
+def _sync_projio_mk(root: Path, *, dry_run: bool = False) -> dict[str, str]:
+    """Regenerate projio.mk to pick up new manuscripts/masters."""
+    from projio.init import _projio_mk
+
+    mk_path = root / ".projio" / "projio.mk"
+    new_content = _projio_mk(root)
+
+    if mk_path.is_file():
+        existing = mk_path.read_text(encoding="utf-8")
+        if existing == new_content:
+            return {"action": "skipped", "reason": "up to date"}
+
+    if dry_run:
+        return {"action": "would_update"}
+
+    mk_path.parent.mkdir(parents=True, exist_ok=True)
+    mk_path.write_text(new_content, encoding="utf-8")
+    return {"action": "updated"}
 
 
 def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]:
@@ -192,7 +265,8 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
     1. Discover code/lib/*/ → register in codio with role=core
     2. Detect code/utils/ → set code.project_utils in config
     3. Copy include.lua to .projio/filters/
-    4. Generate pandoc-defaults.yaml from .projio/render.yml
+    4. Copy CSL files to .projio/render/csl/
+    5. Generate .projio/render/pandoc-defaults.yaml from .projio/render.yml
 
     Args:
         root: Project root directory.
@@ -250,16 +324,32 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
     elif filter_action["action"] == "error":
         print(f"[!] Lua filter: {filter_action.get('reason', '')}")
 
-    # 4. Generate pandoc defaults from render.yml
+    # 4. Sync CSL files
+    csl_action = _sync_csl_files(root_path, dry_run=dry_run)
+    if csl_action.get("copied"):
+        print(f"{prefix}[+] CSL files → .projio/render/csl/: {', '.join(csl_action['copied'])}")
+    if csl_action.get("updated"):
+        print(f"{prefix}[~] CSL files updated: {', '.join(csl_action['updated'])}")
+    if csl_action.get("action") == "error":
+        print(f"[!] CSL sync: {csl_action.get('reason', '')}")
+
+    # 5. Generate pandoc defaults from render.yml
     render_action = _sync_render_config(root_path, dry_run=dry_run)
     if render_action["action"] in ("generated", "would_generate"):
         print(f"{prefix}[+] pandoc-defaults.yaml → {render_action.get('output', '')}")
     elif render_action["action"] == "skipped":
         pass  # silent if no render.yml
 
+    # 6. Regenerate projio.mk to pick up new manuscripts/masters
+    mk_action = _sync_projio_mk(root_path, dry_run=dry_run)
+    if mk_action["action"] in ("updated", "would_update"):
+        print(f"{prefix}[~] projio.mk regenerated")
+
     return {
         "libraries": lib_actions,
         "project_utils": utils_action,
         "lua_filter": filter_action,
+        "csl_files": csl_action,
         "render": render_action,
+        "projio_mk": mk_action,
     }
