@@ -351,18 +351,36 @@ def ecosystem_status() -> JsonDict:
     biblio_cfg = cfg.get("biblio", {}) or {}
     if biblio_cfg.get("enabled", False):
         bib_status: dict[str, Any] = {"enabled": True}
-        main_bib = root / "bib" / "main.bib"
-        bib_status["main_bib_exists"] = main_bib.exists()
-        if main_bib.exists():
+        merged_bib = root / ".projio" / "biblio" / "merged.bib"
+        compiled_bib = root / ".projio" / "render" / "compiled.bib"
+        # Fall back to legacy path
+        if not merged_bib.exists():
+            legacy_bib = root / "bib" / "main.bib"
+            if legacy_bib.exists():
+                merged_bib = legacy_bib
+        bib_status["merged_bib_exists"] = merged_bib.exists()
+        bib_status["compiled_bib_exists"] = compiled_bib.exists()
+        if merged_bib.exists():
             try:
-                from biblio.mcp import resolve_citekeys  # type: ignore[import]
-                # Just count entries in main.bib
-                import re
-                text = main_bib.read_text(encoding="utf-8")
-                entries = re.findall(r"@\w+\{(\w+)", text)
+                import re as _re
+                text = merged_bib.read_text(encoding="utf-8")
+                entries = _re.findall(r"@\w+\{(\w+)", text)
                 bib_status["citekey_count"] = len(entries)
             except Exception:
                 bib_status["citekey_count"] = "unknown"
+        # Check bib_sources staleness
+        if compiled_bib.exists():
+            compiled_mtime = compiled_bib.stat().st_mtime
+            stale_sources = []
+            for src_rel in [".projio/biblio/merged.bib", ".projio/pipeio/modkey.bib"]:
+                src = root / src_rel
+                if src.exists() and src.stat().st_mtime > compiled_mtime:
+                    stale_sources.append(src_rel)
+            if stale_sources:
+                bib_status["compiled_stale"] = True
+                bib_status["stale_sources"] = stale_sources
+            else:
+                bib_status["compiled_stale"] = False
         subsystems["biblio"] = bib_status
     else:
         subsystems["biblio"] = {"enabled": False}

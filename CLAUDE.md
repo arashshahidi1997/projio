@@ -51,7 +51,7 @@ The full paper production pipeline: **figio** (figures) + **biblio** (citations)
 - `src/projio/cli.py` — CLI entry point (`projio` command), subcommand dispatch
 - `src/projio/init.py` — Workspace scaffolding (three kinds: `generic`, `tool`, `study`)
 - `src/projio/config.py` — Two-tier config: user (`~/.config/projio/config.yml`) merged with project (`.projio/config.yml`), project wins
-- `src/projio/sync.py` — `projio sync`: auto-discover code/lib libraries → codio, detect code/utils → config
+- `src/projio/sync.py` — `projio sync`: auto-discover code/lib libraries → codio, detect code/utils → config, sync Lua filter + CSL files, generate pandoc-defaults.yaml
 - `src/projio/render.py` — `.projio/render.yml` loader: single source of truth for PDF engine, CSL, bibliography, bib_sources, Lua filter, conda env. Generates `.projio/render/pandoc-defaults.yaml`
 - `src/projio/data/filters/include.lua` — Bundled Lua transclusion filter for Pandoc (handles `{% include-markdown %}` and `--8<--` markers). Copied to `.projio/filters/` during `projio sync`
 - `src/projio/data/csl/` — Bundled CSL citation styles (apa, ieee, chicago-author-date, vancouver). Copied to `.projio/render/csl/` during `projio sync`
@@ -64,7 +64,7 @@ The full paper production pipeline: **figio** (figures) + **biblio** (citations)
 The MCP server (`src/projio/mcp/server.py`) is the primary agent interface. It registers tools from each subsystem module:
 
 - `mcp/rag.py` — `rag_query`, `rag_query_multi`, `corpus_list`, `indexio_build`, `indexio_sources_list`, `indexio_sources_sync` (via indexio)
-- `mcp/biblio.py` — `citekey_resolve`, `paper_context`, `paper_absent_refs`, `library_get`, `biblio_ingest`, `biblio_library_set`, `biblio_merge`, `biblio_pdf_fetch`, `biblio_pdf_fetch_oa`, `biblio_docling`, `biblio_docling_batch`, `biblio_docling_status`, `biblio_grobid`, `biblio_grobid_check`, `biblio_graph_expand`, `biblio_rag_sync`
+- `mcp/biblio.py` — `citekey_resolve`, `paper_context`, `paper_absent_refs`, `library_get`, `biblio_ingest`, `biblio_library_set`, `biblio_merge`, `biblio_compile`, `biblio_pdf_fetch`, `biblio_pdf_fetch_oa`, `biblio_docling`, `biblio_docling_batch`, `biblio_docling_status`, `biblio_grobid`, `biblio_grobid_check`, `biblio_graph_expand`, `biblio_rag_sync`
 - `mcp/notio.py` — `note_list`, `note_latest`, `note_search`, `notio_reindex`
 - `mcp/manuscripto.py` — `manuscript_init`, `manuscript_list`, `manuscript_status`, `manuscript_build`, `manuscript_validate`, `manuscript_assemble`, `manuscript_figure_insert`, `manuscript_section_context`, `manuscript_overview`, `manuscript_cite_check`, `manuscript_figure_build_all`, `master_list`, `master_build`, `master_generate`
 - `mcp/codio.py` — `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`, `codio_rag_sync`, `codio_add` (with `role` param: core/shared/external)
@@ -72,7 +72,6 @@ The MCP server (`src/projio/mcp/server.py`) is the primary agent interface. It r
 - `mcp/datalad.py` — `datalad_save`, `datalad_status`, `datalad_push`, `datalad_pull`, `datalad_siblings`
 - `mcp/site.py` — `site_detect`, `site_build`, `site_deploy`, `site_serve`, `site_stop`, `site_list`
 - `mcp/context.py` — `project_context`, `runtime_conventions`, `agent_instructions`, `module_context`, `skill_read`, `projio_init`, `ecosystem_status`, `permissions_sync`
-- `mcp/context.py` — `project_context`, `runtime_conventions`
 
 Server is run via `python -m projio.mcp.server` with `PROJIO_ROOT` env var pointing to the target project.
 
