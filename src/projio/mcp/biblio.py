@@ -155,7 +155,9 @@ def _load_biblio_cfg():
 
 
 def biblio_merge(dry_run: bool = False) -> JsonDict:
-    """Merge source .bib files into the main bibliography (bib/main.bib).
+    """Merge source .bib files into .projio/biblio/merged.bib (intermediate).
+
+    Run biblio_compile() after this to produce the final compiled.bib.
 
     Args:
         dry_run: If true, report what would be merged without writing.
@@ -165,15 +167,171 @@ def biblio_merge(dry_run: bool = False) -> JsonDict:
     try:
         cfg = _load_biblio_cfg()
         from biblio.bibtex import merge_srcbib
-        n_sources, n_entries = merge_srcbib(cfg.bibtex_merge, dry_run=dry_run)
-        return json_dict({
+        n_sources, n_entries, quality_warnings = merge_srcbib(cfg.bibtex_merge, dry_run=dry_run)
+        result = {
             "n_sources": n_sources,
             "n_entries": n_entries,
             "out_bib": str(cfg.bibtex_merge.out_bib),
             "dry_run": dry_run,
-        })
+        }
+        if quality_warnings:
+            result["quality_warnings"] = len(quality_warnings)
+            result["low_quality_entries"] = quality_warnings[:10]
+            if len(quality_warnings) > 10:
+                result["low_quality_log"] = str(cfg.bibtex_merge.duplicates_log.parent / "low_quality_entries.txt")
+        return json_dict(result)
     except Exception as exc:
         return json_dict({"error": str(exc)})
+
+
+def biblio_compile(
+    sources: list[str] | None = None,
+    output: str = "",
+) -> JsonDict:
+    """Compile .bib intermediates into .projio/render/compiled.bib.
+
+    Merges merged.bib + modkey.bib (and any other bib_sources) into the
+    single bibliography used by pandoc and mkdocs. Missing sources are
+    skipped gracefully.
+
+    Sources and output default to render.yml's ``bib_sources`` and
+    ``bibliography`` fields.
+
+    Args:
+        sources: List of .bib file paths relative to project root.
+                 Default: reads bib_sources from .projio/render.yml.
+        output: Output path relative to project root.
+                Default: reads bibliography from .projio/render.yml.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_compile")
+    root = get_project_root()
+    try:
+        from biblio.mcp import biblio_compile as _biblio_compile
+        return json_dict(_biblio_compile(
+            root=root,
+            sources=sources or None,
+            output=output or None,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_pdf_fetch(dry_run: bool = False, force: bool = False) -> JsonDict:
+    """Copy/symlink PDFs referenced by ``file`` fields in bib/srcbib/*.bib into bib/articles/.
+
+    Parses Zotero-exported BibTeX ``file`` fields, copies or symlinks the
+    referenced PDFs into the canonical ``bib/articles/<citekey>/`` layout,
+    and tracks MD5 hashes to skip unchanged files.
+
+    Args:
+        dry_run: Preview the operation without writing any files.
+        force: Overwrite/recopy even if the PDF is unchanged.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_pdf_fetch")
+    try:
+        cfg = _load_biblio_cfg()
+        from biblio.pdf_fetch import fetch_pdfs
+        counts = fetch_pdfs(cfg.pdf_fetch, dry_run=dry_run, force=force)
+        result = {
+            "sources": counts["sources"],
+            "linked": counts["linked"],
+            "skipped": counts["skipped"],
+            "missing": counts["missing"],
+            "dry_run": dry_run,
+        }
+        if counts["missing"] > 0:
+            result["missing_log"] = str(cfg.pdf_fetch.missing_log)
+        return json_dict(result)
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_pdf_fetch_oa(
+    force: bool = False,
+    citekeys: list[str] | None = None,
+    background: bool = False,
+) -> JsonDict:
+    """Download PDFs via open-access cascade (pool → OpenAlex → Unpaywall → EZProxy).
+
+    Attempts to fetch PDFs for all papers (or a filtered subset) using a
+    configurable source cascade. Configure the cascade order, Unpaywall email,
+    and EZProxy settings in ``bib/config/biblio.yml`` under ``pdf_fetch:``.
+
+    Set ``background=True`` to run as a background job — returns immediately
+    with a ``job_id`` for progress polling via ``biblio_pdf_fetch_oa_status``.
+
+    Args:
+        force: Download even if the PDF already exists locally.
+        citekeys: Only fetch these citekeys (default: all papers).
+        background: Run in background and return job_id for polling.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_pdf_fetch_oa")
+    try:
+        if background:
+            from biblio.jobs import launch_pdf_fetch_oa_background
+            root = get_project_root()
+            ck_filter = set(citekeys) if citekeys else None
+            job_id, total = launch_pdf_fetch_oa_background(
+                root, force=force, citekey_filter=ck_filter,
+            )
+            return json_dict({
+                "background": True,
+                "job_id": job_id,
+                "status": "running",
+                "total_papers": total,
+                "hint": "Use biblio_pdf_fetch_oa_status(job_id) to check progress.",
+            })
+
+        cfg = _load_biblio_cfg()
+        from biblio.pdf_fetch_oa import fetch_pdfs_oa, ALL_STATUSES
+        ck_filter = set(citekeys) if citekeys else None
+        results = fetch_pdfs_oa(cfg, force=force, citekey_filter=ck_filter)
+        counts = {s: sum(1 for r in results if r.status == s) for s in ALL_STATUSES}
+        result = {
+            "total": len(results),
+            **counts,
+            "cascade_sources": list(cfg.pdf_fetch_cascade.sources),
+        }
+        errors = [{"citekey": r.citekey, "error": r.error} for r in results if r.error]
+        if errors:
+            result["errors"] = errors
+        return json_dict(result)
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_pdf_fetch_oa_status(job_id: str) -> JsonDict:
+    """Check the status of a background biblio_pdf_fetch_oa job.
+
+    Args:
+        job_id: Job ID returned by biblio_pdf_fetch_oa(..., background=True).
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_pdf_fetch_oa_status")
+    try:
+        from biblio.jobs import get_job_status
+        root = get_project_root()
+        info = get_job_status(root, job_id)
+        if info is None:
+            return json_dict({"error": f"No job found with id: {job_id}"})
+        result: JsonDict = {
+            "job_id": info.job_id,
+            "status": info.status,
+            "started": info.started,
+            "finished": info.finished,
+        }
+        if info.result is not None:
+            result["result"] = info.result
+        if info.error is not None:
+            result["error"] = info.error
+        if info.progress is not None:
+            result["progress"] = info.progress
+        return json_dict(result)
+    except Exception as exc:
+        return json_dict({"error": str(exc), "job_id": job_id})
 
 
 def biblio_docling(citekey: str, force: bool = False, background: bool = False) -> JsonDict:
@@ -402,6 +560,23 @@ def biblio_rag_sync(force_init: bool = False) -> JsonDict:
             "removed": list(result.removed),
             "follow_up_cmd": result.follow_up_cmd,
         })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_library_quality() -> JsonDict:
+    """Scan the merged bibliography for entry quality issues.
+
+    Returns per-tier counts (good/sparse/stub/noise) and lists of problematic
+    entries with specific issues. Noise entries are garbage (e.g. title="Abstract"),
+    stubs have too few fields to be useful.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_library_quality")
+    root = get_project_root()
+    try:
+        from biblio.mcp import library_quality
+        return json_dict(library_quality(root=root))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 

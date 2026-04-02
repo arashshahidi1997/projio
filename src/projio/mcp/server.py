@@ -108,8 +108,43 @@ def biblio_library_set_tool(citekeys: list[str], status: str = "", tags: list[st
 
 @server.tool("biblio_merge")
 def biblio_merge_tool(dry_run: bool = False):
-    """Merge source .bib files into the main bibliography (bib/main.bib)."""
+    """Merge source .bib files into .projio/biblio/merged.bib (intermediate).
+    Run biblio_compile() after this to produce the final compiled.bib."""
     return biblio.biblio_merge(dry_run=dry_run)
+
+
+@server.tool("biblio_compile")
+def biblio_compile_tool(
+    sources: list[str] | None = None,
+    output: str = "",
+):
+    """Compile .bib intermediates into .projio/render/compiled.bib.
+    Merges merged.bib + modkey.bib into the single bib for pandoc/mkdocs.
+    Sources/output default to render.yml bib_sources/bibliography."""
+    return biblio.biblio_compile(sources=sources, output=output)
+
+
+@server.tool("biblio_pdf_fetch")
+def biblio_pdf_fetch_tool(dry_run: bool = False, force: bool = False):
+    """Copy/symlink PDFs from Zotero file fields in bib/srcbib/*.bib into bib/articles/.
+    Tracks MD5 hashes to skip unchanged files. Use dry_run to preview."""
+    return biblio.biblio_pdf_fetch(dry_run=dry_run, force=force)
+
+
+@server.tool("biblio_pdf_fetch_oa")
+def biblio_pdf_fetch_oa_tool(force: bool = False, citekeys: list[str] = [], background: bool = False):
+    """Download PDFs via open-access cascade (pool → OpenAlex → Unpaywall → EZProxy).
+    Configure cascade order and credentials in bib/config/biblio.yml under pdf_fetch:.
+    Pass citekeys to fetch specific papers, or leave empty for all.
+    Set background=True for large libraries — returns job_id for polling via biblio_pdf_fetch_oa_status."""
+    return biblio.biblio_pdf_fetch_oa(force=force, citekeys=citekeys or None, background=background)
+
+
+@server.tool("biblio_pdf_fetch_oa_status")
+def biblio_pdf_fetch_oa_status_tool(job_id: str):
+    """Check progress of a background biblio_pdf_fetch_oa job.
+    Returns status, progress (done/total/eta_s), and per-source counts when complete."""
+    return biblio.biblio_pdf_fetch_oa_status(job_id=job_id)
 
 
 @server.tool("biblio_docling")
@@ -151,6 +186,13 @@ def biblio_grobid_check_tool():
 def biblio_rag_sync_tool(force_init: bool = False):
     """Register biblio docling sources into the indexio config. Run indexio_build after."""
     return biblio.biblio_rag_sync(force_init=force_init)
+
+
+@server.tool("biblio_library_quality")
+def biblio_library_quality_tool():
+    """Scan bibliography for low-quality entries: noise (garbage), stubs (too few fields),
+    sparse (missing DOI/authors). Returns per-tier counts and issue lists."""
+    return biblio.biblio_library_quality()
 
 
 @server.tool("biblio_graph_expand")
@@ -275,6 +317,30 @@ def manuscript_assemble_tool(name: str):
 def manuscript_figure_insert_tool(name: str, section: str, figure_id: str, position: str = "end"):
     """Insert a figio figure reference into a manuscript section."""
     return manuscripto.manuscript_figure_insert(name=name, section=section, figure_id=figure_id, position=position)
+
+
+@server.tool("manuscript_section_context")
+def manuscript_section_context_tool(name: str, section: str):
+    """One-call context for drafting a section: content, RAG hits, figures, citations, related notes."""
+    return manuscripto.manuscript_section_context(name=name, section=section)
+
+
+@server.tool("manuscript_overview")
+def manuscript_overview_tool(name: str):
+    """Rich manuscript dashboard: per-section stats, missing/stale citations and figures, bibliography info."""
+    return manuscripto.manuscript_overview(name=name)
+
+
+@server.tool("manuscript_cite_check")
+def manuscript_cite_check_tool(name: str):
+    """Citation validation: cross-check sections vs .bib vs biblio fulltext status."""
+    return manuscripto.manuscript_cite_check(name=name)
+
+
+@server.tool("manuscript_figure_build_all")
+def manuscript_figure_build_all_tool(name: str):
+    """Batch-build all manuscript figures via figio."""
+    return manuscripto.manuscript_figure_build_all(name=name)
 
 
 # --- Master document tools ---
