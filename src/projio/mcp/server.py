@@ -277,6 +277,26 @@ def manuscript_figure_insert_tool(name: str, section: str, figure_id: str, posit
     return manuscripto.manuscript_figure_insert(name=name, section=section, figure_id=figure_id, position=position)
 
 
+# --- Master document tools ---
+
+@server.tool("master_list")
+def master_list_tool():
+    """List all master documents (docs/*/master.md) with section counts."""
+    return manuscripto.master_list()
+
+
+@server.tool("master_build")
+def master_build_tool(name: str, format: str = "pdf"):
+    """Build a master document to PDF/LaTeX using Lua transclusion filter + citeproc."""
+    return manuscripto.master_build(name=name, format=format)
+
+
+@server.tool("master_generate")
+def master_generate_tool(name: str, sections: list[dict]):
+    """Generate/regenerate master.md with dual markers (wikilink + include-markdown) from section list."""
+    return manuscripto.master_generate(name=name, sections=sections)
+
+
 # --- Codio tools ---
 
 @server.tool("codio_list")

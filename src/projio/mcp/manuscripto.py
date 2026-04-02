@@ -283,3 +283,74 @@ def manuscript_figure_insert(name: str, section: str, figure_id: str, position: 
         })
     except Exception as exc:
         return json_dict({"error": str(exc)})
+
+
+# --- Master document tools ---
+
+def _master_available() -> bool:
+    try:
+        import notio.manuscript.master  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def master_list() -> JsonDict:
+    """List all master documents (docs/*/master.md) in the project."""
+    if not _master_available():
+        return _unavailable("master_list")
+    root = get_project_root()
+    try:
+        from notio.manuscript.master import find_master_files
+        masters = find_master_files(root)
+        return json_dict({"masters": masters, "count": len(masters)})
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def master_build(name: str, format: str = "pdf") -> JsonDict:
+    """Build a master document to PDF/LaTeX/MD using the Lua transclusion filter.
+
+    Args:
+        name: Master document name (subdirectory under docs/).
+        format: Output format (pdf, latex, md, docx, html).
+    """
+    if not _master_available():
+        return _unavailable("master_build")
+    root = get_project_root()
+    try:
+        from notio.manuscript.master import build_master
+        output = build_master(root, name, format=format)
+        return json_dict({
+            "name": name,
+            "format": format,
+            "output": str(output.relative_to(root)),
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def master_generate(name: str, sections: list[dict]) -> JsonDict:
+    """Generate or regenerate a master.md with dual markers from a section list.
+
+    Args:
+        name: Document name (subdirectory under docs/).
+        sections: List of section dicts with 'path' key (relative .md path) and optional 'title'.
+    """
+    if not _master_available():
+        return _unavailable("master_generate")
+    root = get_project_root()
+    try:
+        from notio.manuscript.master import generate_master_md
+
+        content = generate_master_md(sections, name)
+        master_path = root / "docs" / name / "master.md"
+        master_path.parent.mkdir(parents=True, exist_ok=True)
+        master_path.write_text(content, encoding="utf-8")
+        return json_dict({
+            "name": name,
+            "path": str(master_path.relative_to(root)),
+            "sections": len(sections),
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
