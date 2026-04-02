@@ -72,10 +72,11 @@ sections:
     order: 6
     heading_level: 0
 
-# Bibliography
+# Bibliography — inherits from .projio/render.yml by default
+# Override per-manuscript if needed; compiled.bib is the project-wide default
 bibliography:
-  bib_file: refs.bib               # relative to manuscript.yml parent
-  csl: nature.csl                   # CSL style file (optional, pandoc default if omitted)
+  bib_file: .projio/render/compiled.bib   # project compiled bib (default from render.yml)
+  csl: .projio/render/csl/apa.csl         # CSL style file (default from render.yml)
 
 # Figures (figio integration)
 figures:
@@ -132,10 +133,12 @@ Frontmatter fields used by the manuscript system:
 ```
 src/notio/manuscript/
 ├── __init__.py          # Public API exports
-├── schema.py            # ManuscriptSpec dataclass + YAML loading
+├── schema.py            # ManuscriptSpec dataclass + YAML loading + render.yml merging
 ├── assembly.py          # Section ordering, frontmatter stripping, concatenation
 ├── render.py            # Pandoc subprocess invocation
-└── figures.py           # Figure reference resolution, figio bridge
+├── figures.py           # Figure reference resolution, figio bridge
+├── validate.py          # Section/citation/figure/pandoc validation
+└── master.py            # Dual-marker master documents (Lua transclusion for plans/specs)
 ```
 
 ### schema.py
@@ -356,9 +359,137 @@ _build/{name}.{pdf,docx,html}
 - Integration test for full pipeline (requires pandoc fixture)
 - All tests under `packages/notio/tests/test_manuscript.py`
 
+## Agentic Tools
+
+Manuscript MCP tools are split into priority tiers. P0 tools ship first and
+cover the core agent workflow; later tiers add validation, diffing, and
+journal-awareness.
+
+### Ontology
+
+```
+ManuscriptSpec ──┬── SectionEntry* ──── section .md file (content)
+                 │
+                 ├── BibConfig ──────── .bib file (biblio)
+                 │
+                 ├── FiguresConfig ──── FigureMapping* ──── FigureSpec YAML (figio)
+                 │
+                 └── RenderConfig ───── pandoc settings
+```
+
+Interactions:
+
+- **RAG** (indexio) — `rag_query` for literature/code context per section
+- **biblio** — citation resolution, fulltext status, `.bib` parsing
+- **figio** — figure build status, spec mtime comparison
+- **notio** — `note_search` for related ideas/notes
+
+### Lifecycle
+
+```
+scaffold → draft → populate → validate → render → review → submit
+   │         │        │          │          │         │
+   init    section  cite/fig   cite_check  build   diff/journal
+           context  insert     overview
+```
+
+### P0 — Core agent tools
+
+#### `manuscript_section_context(name, section)`
+
+One-call context gathering for drafting a section.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | str | Manuscript name |
+| `section` | str | Section key (e.g. `introduction`) |
+
+Returns:
+
+| Field | Type | Source |
+|-------|------|--------|
+| `current_content` | str | Section file text (stripped frontmatter) |
+| `rag_hits` | list[dict] | Top RAG results for section title (indexio `rag_query`) |
+| `figures` | list[dict] | Figure mappings for this section + build status (figio) |
+| `citations_used` | list[str] | `[@citekey]` patterns found in section text |
+| `related_notes` | list[dict] | Notes matching section title (notio `note_search`) |
+| `word_count` | int | Current word count of section body |
+
+#### `manuscript_overview(name)`
+
+Rich manuscript dashboard — superset of `manuscript_status`.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | str | Manuscript name |
+
+Returns:
+
+| Field | Type | Source |
+|-------|------|--------|
+| `sections` | list[dict] | Per-section: key, title, word_count, citation_count, figure_ref_count, status |
+| `total_words` | int | Sum of all section word counts |
+| `total_citations` | int | Unique citekeys across all sections |
+| `total_figures` | int | Number of figure mappings |
+| `missing_citations` | list[str] | Citekeys in text but not in .bib |
+| `missing_figures` | list[str] | Figure IDs in mappings without built outputs |
+| `stale_figures` | list[str] | Figure specs newer than built outputs (mtime comparison) |
+| `bibliography` | dict | path, entry_count, papers_with_fulltext |
+
+### P1 — Validation tools
+
+#### `manuscript_cite_check(name)`
+
+Citation-focused cross-subsystem validation.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | str | Manuscript name |
+
+Returns:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `found` | list[dict] | `{citekey, sections, has_fulltext}` for each resolved citation |
+| `missing` | list[dict] | `{citekey, sections}` for unresolved citations |
+| `suggestions` | list[str] | Actionable hints (e.g. "run biblio_docling on X") |
+
+Cross-checks: section text → .bib file → biblio docling extraction status.
+
+#### `manuscript_figure_build_all(name)`
+
+Batch figure build via figio.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | str | Manuscript name |
+
+Returns: `list[{figure_id, status: "built"|"failed"|"skipped", path?, error?}]`
+
+Iterates figure mappings with `spec` paths and invokes figio build on each.
+
+### P2 — Diff and suggestion tools
+
+#### `manuscript_diff(name)`
+
+Compare current assembled text against last `_build/assembled.md`.
+
+Returns: sections changed, word count delta, new/removed citations.
+
+#### `manuscript_cite_suggest(name, section, claim?)`
+
+Search RAG biblio corpus for papers relevant to a section or claim. Returns
+ranked citekeys with snippets.
+
+### P3 — Journal awareness
+
+#### `manuscript_journal_check(name, journal?)`
+
+Check word count limits, figure count limits, required sections, and CSL match
+against journal target profiles. Could reuse figio's TargetProfile concept.
+
 ## Future Considerations
 
-- **Diff/track changes:** Compare assembled versions across git commits
 - **Pandoc filters:** Support for custom Lua/Python pandoc filters in render config
 - **LaTeX templates:** First-class support for journal-specific LaTeX templates
 - **Collaborative editing:** Section locking/status for multi-author workflows
