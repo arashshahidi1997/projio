@@ -1,0 +1,20 @@
+# pipeio pipeline registry
+generated_at: '2026-04-01T20:30:48.024910+00:00'
+flows:
+  text_analysis:
+    name: text_analysis
+    code_path: code/pipelines/text_analysis
+    config_path: code/pipelines/text_analysis/config.yml
+    doc_path: null
+    mods:
+      all:
+        name: all
+        rules:
+        - all
+        doc_path: null
+      wordcount:
+        name: wordcount
+        rules:
+        - wordcount
+        doc_path: null
+    app_type: snakemake

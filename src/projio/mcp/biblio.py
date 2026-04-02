@@ -259,9 +259,51 @@ def biblio_docling_status(job_id: str) -> JsonDict:
             result["result"] = info.result
         if info.error is not None:
             result["error"] = info.error
+        if info.progress is not None:
+            result["progress"] = info.progress
         return json_dict(result)
     except Exception as exc:
         return json_dict({"error": str(exc), "job_id": job_id})
+
+
+def biblio_docling_batch(
+    concurrency: int = 1,
+    force: bool = False,
+    filter_glob: str | None = None,
+) -> JsonDict:
+    """Run Docling on all pending papers in the background.
+
+    Scans citekeys.md for entries that have PDFs but no docling output yet,
+    then processes them with configurable concurrency. Returns a job_id for
+    progress polling via biblio_docling_status(job_id).
+
+    Args:
+        concurrency: Max parallel docling jobs (default 1). Keep low on shared
+                     HPC nodes — each docling run uses ~2.7 GB RAM and 300%+ CPU.
+        force: Re-run even if outputs already exist.
+        filter_glob: Optional fnmatch pattern to filter citekeys (e.g. ``smith*``).
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_docling_batch")
+    try:
+        from biblio.jobs import launch_docling_batch_background
+        root = get_project_root()
+        job_id, total = launch_docling_batch_background(
+            root,
+            concurrency=concurrency,
+            force=force,
+            filter_glob=filter_glob or None,
+        )
+        return json_dict({
+            "background": True,
+            "job_id": job_id,
+            "status": "running",
+            "total_pending": total,
+            "concurrency": concurrency,
+            "hint": "Use biblio_docling_status(job_id) to check progress.",
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
 
 
 def biblio_grobid(citekey: str, force: bool = False) -> JsonDict:

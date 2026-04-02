@@ -25,6 +25,13 @@ helpers:
       alias_strategy: basename
       storage_url: ria+file:///storage/share/git/ria-store
       shared: group
+
+# claude code permissions (synced to .claude/settings.json)
+# claude:
+#   extra_permissions:
+#     - "Read(/storage/share/codelib/**)"
+#   extra_mcp_wildcards:
+#     - "mcp__sirocampus__*"
 """
 
 

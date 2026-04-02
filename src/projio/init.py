@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 
-from .config import load_effective_config, load_project_config
+from .config import get_nested, load_effective_config, load_project_config
 
 KIND_CHOICES = ("generic", "tool", "study")
 SITE_FRAMEWORK_CHOICES = ("mkdocs", "sphinx", "vite")
@@ -46,6 +46,9 @@ pipeio:
   enabled: true
   registry_path: .projio/pipeio/registry.yml
   pipelines_dir: code/pipelines
+
+code:
+  project_utils: ""
 
 site:
   framework: {site_framework}
@@ -930,82 +933,153 @@ def _scaffold_claude(root: Path, component_dir: Path) -> None:
         print(f"  [skip] CLAUDE.md already exists")
 
 
-def update_claude_permissions(root: str | Path, *, dry_run: bool = False) -> None:
-    """Scope Edit/Write in .claude/settings.json to the project root.
+def _mcp_server_wildcards(root: Path) -> list[str]:
+    """Derive ``mcp__<server>__*`` wildcards from ``.mcp.json``."""
+    mcp_json = root / ".mcp.json"
+    if not mcp_json.exists():
+        return []
+    try:
+        data = json.loads(mcp_json.read_text(encoding="utf-8"))
+        servers = data.get("mcpServers", {})
+        return [f"mcp__{name}__*" for name in servers]
+    except (json.JSONDecodeError, OSError):
+        return []
 
-    Rewrites bare ``Edit`` / ``Write`` entries in ``allowedTools`` and
-    ``permissions.allow`` to carry the project-root path, e.g.
-    ``Edit(/storage2/arash/projects/foo/**)``.
 
-    Also ensures ``mcp__projio__*`` and ``mcp__worklog__*`` wildcards are
-    present so MCP tools are pre-approved.
+def _codio_read_paths(root: Path) -> list[str]:
+    """Derive ``Read()`` permission paths from codio repos and catalog entries."""
+    paths: list[str] = []
+    try:
+        from codio import load_config, load_repos
+        config = load_config(project_root=root)
+
+        # From repos.yml: managed/attached repos with local_path
+        repos = load_repos(config.repos_path)
+        for _repo_id, entry in repos.items():
+            if entry.storage in ("managed", "attached") and entry.local_path:
+                local = Path(entry.local_path)
+                abs_path = local if local.is_absolute() else root / local
+                paths.append(f"Read({abs_path}/**)")
+
+        # From catalog: entries with explicit path field
+        from codio import load_catalog
+        catalog = load_catalog(config.catalog_path)
+        for _name, entry in catalog.items():
+            if entry.path:
+                local = Path(entry.path)
+                abs_path = local if local.is_absolute() else root / local
+                paths.append(f"Read({abs_path}/**)")
+    except (ImportError, FileNotFoundError):
+        pass
+    return list(dict.fromkeys(paths))  # deduplicate, preserve order
+
+
+def sync_claude_permissions(
+    root: str | Path,
+    *,
+    dry_run: bool = False,
+) -> dict:
+    """Sync ``.claude/settings.json`` permissions from project config, codio deps, and ``.mcp.json``.
+
+    Computes the full desired permission set by combining:
+    1. Existing entries (never removed)
+    2. Baseline path-scoped Edit/Write
+    3. ``mcp__<server>__*`` wildcards from ``.mcp.json``
+    4. ``Read()`` paths from codio managed/attached repos and catalog entries
+    5. Explicit extras from ``claude.extra_permissions`` / ``claude.extra_mcp_wildcards`` in config
+
+    Returns a summary dict: ``{"changed": bool, "added": [...], "path": str}``.
     """
     root = Path(root).expanduser().resolve()
     settings_path = root / ".claude" / "settings.json"
 
     if not settings_path.exists():
-        print(f"  [skip] {settings_path} does not exist — run 'projio add claude' first")
-        return
+        msg = f"{settings_path} does not exist — run 'projio add claude' first"
+        if not dry_run:
+            print(f"  [skip] {msg}")
+        return {"changed": False, "added": [], "path": str(settings_path), "error": msg}
 
     settings = json.loads(settings_path.read_text(encoding="utf-8"))
     root_glob = f"{root}/**"
-    changed = False
 
-    # --- allowedTools ---
-    tools: list[str] = settings.get("allowedTools", [])
-    new_tools: list[str] = []
-    for entry in tools:
-        if entry in ("Edit", "Write"):
-            scoped = f"{entry}({root_glob})"
-            if scoped not in new_tools:
-                new_tools.append(scoped)
-                changed = True
-        else:
-            new_tools.append(entry)
+    # --- Collect desired entries ---
+    # MCP server wildcards from .mcp.json
+    mcp_wildcards = _mcp_server_wildcards(root)
 
-    # Ensure MCP wildcard permissions are present
-    for mcp_pattern in ("mcp__projio__*", "mcp__worklog__*"):
-        if mcp_pattern not in new_tools:
-            new_tools.append(mcp_pattern)
-            changed = True
+    # Codio read paths
+    codio_paths = _codio_read_paths(root)
 
-    if new_tools != tools:
-        settings["allowedTools"] = new_tools
+    # Config extras
+    try:
+        cfg = load_effective_config(root)
+    except FileNotFoundError:
+        cfg = {}
+    extra_perms = get_nested(cfg, "claude", "extra_permissions", default=[]) or []
+    extra_mcp = get_nested(cfg, "claude", "extra_mcp_wildcards", default=[]) or []
 
-    # --- permissions.allow ---
-    perms_allow: list[str] = settings.get("permissions", {}).get("allow", [])
-    new_allow: list[str] = []
-    perms_changed = False
-    for entry in perms_allow:
-        if entry in ("Edit", "Write"):
-            scoped = f"{entry}({root_glob})"
-            if scoped not in new_allow:
-                new_allow.append(scoped)
-                perms_changed = True
-        else:
-            new_allow.append(entry)
+    # Build the set of entries to inject
+    desired: list[str] = []
+    desired.extend(mcp_wildcards)
+    desired.extend(codio_paths)
+    desired.extend(extra_perms)
+    desired.extend(extra_mcp)
 
-    # Ensure MCP wildcard permissions are present in permissions.allow
-    for mcp_pattern in ("mcp__projio__*", "mcp__worklog__*"):
-        if mcp_pattern not in new_allow:
-            new_allow.append(mcp_pattern)
-            perms_changed = True
+    # --- Merge into both allowedTools and permissions.allow ---
+    added: list[str] = []
 
-    if perms_changed:
-        settings.setdefault("permissions", {})["allow"] = new_allow
-        changed = True
+    def _merge_list(existing: list[str]) -> list[str]:
+        """Scope bare Edit/Write, then add missing desired entries."""
+        result: list[str] = []
+        for entry in existing:
+            if entry in ("Edit", "Write"):
+                scoped = f"{entry}({root_glob})"
+                if scoped not in result:
+                    result.append(scoped)
+            else:
+                result.append(entry)
+        for entry in desired:
+            if entry not in result:
+                result.append(entry)
+                if entry not in added:
+                    added.append(entry)
+        return result
+
+    old_tools = settings.get("allowedTools", [])
+    new_tools = _merge_list(old_tools)
+
+    old_allow = settings.get("permissions", {}).get("allow", [])
+    new_allow = _merge_list(old_allow)
+
+    changed = new_tools != old_tools or new_allow != old_allow
 
     if not changed:
-        print(f"  [ok] permissions already scoped in {settings_path.relative_to(root)}")
-        return
+        if not dry_run:
+            print(f"  [ok] permissions already synced in {settings_path.relative_to(root)}")
+        return {"changed": False, "added": [], "path": str(settings_path)}
+
+    settings["allowedTools"] = new_tools
+    settings.setdefault("permissions", {})["allow"] = new_allow
 
     if dry_run:
         print(f"  [dry-run] would update {settings_path.relative_to(root)}:")
+        print(f"  would add: {added}")
         print(json.dumps(settings, indent=2))
-        return
+        return {"changed": True, "added": added, "path": str(settings_path), "dry_run": True}
 
     settings_path.write_text(json.dumps(settings, indent=2) + "\n")
-    print(f"  [OK] updated permissions in {settings_path.relative_to(root)}")
+    print(f"  [OK] synced permissions in {settings_path.relative_to(root)}")
+    if added:
+        print(f"  added: {added}")
+    return {"changed": True, "added": added, "path": str(settings_path)}
+
+
+def update_claude_permissions(root: str | Path, *, dry_run: bool = False) -> None:
+    """Scope Edit/Write in .claude/settings.json to the project root.
+
+    Delegates to :func:`sync_claude_permissions` which handles path scoping,
+    MCP wildcard injection, codio read paths, and config extras.
+    """
+    sync_claude_permissions(root, dry_run=dry_run)
 
 
 def _generate_claude_md(root: Path) -> str:
@@ -1100,51 +1174,66 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| List all libraries | `codio_list()` | Parse registry files directly |")
         rows.append("| Check registry vocabulary | `codio_vocab()` | Read schema docs |")
         rows.append("| Validate registry | `codio_validate()` | Run consistency checks manually |")
-        rows.append("| Register a library | `codio_add(name, kind)` | Edit YAML registry files |")
+        rows.append("| Register a library (with role) | `codio_add(name, kind, role)` | Edit YAML registry files |")
         rows.append("| Sync codio sources to index | `codio_rag_sync()` | Run `codio rag sync` in terminal |")
 
     if has_pipeio:
-        rows.append("| List pipeline flows | `pipeio_flow_list(pipe)` | Parse registry YAML directly |")
-        rows.append("| Flow status | `pipeio_flow_status(pipe, flow)` | Inspect flow dirs manually |")
-        rows.append("| Scan for unregistered notebooks | `pipeio_nb_scan(register?)` | Walk filesystem manually |")
-        rows.append("| Notebook status (filtered) | `pipeio_nb_status(pipe?, flow?, name?)` | Parse notebook.yml manually |")
-        rows.append("| Audit notebook quality | `pipeio_nb_audit()` | Manual inspection |")
-        rows.append("| Read notebook content + metadata | `pipeio_nb_read(pipe, flow, name)` | Read .py + parse YAML manually |")
-        rows.append("| Check .py↔.ipynb sync state | `pipeio_nb_diff(pipe, flow, name)` | Compare mtimes manually |")
-        rows.append("| Scaffold a notebook | `pipeio_nb_create(pipe, flow, name)` | Create .py files manually |")
-        rows.append("| Update notebook metadata | `pipeio_nb_update(pipe, flow, name)` | Edit notebook.yml directly |")
-        rows.append("| Sync notebook (bidirectional) | `pipeio_nb_sync(pipe, flow, name, direction?)` | Run jupytext manually |")
-        rows.append("| Publish notebook to docs | `pipeio_nb_publish(pipe, flow, name)` | Copy files manually |")
-        rows.append("| Analyze notebook structure | `pipeio_nb_analyze(pipe, flow, name)` | Parse .py files manually |")
-        rows.append("| Execute notebook | `pipeio_nb_exec(pipe, flow, name, params)` | Run papermill manually |")
-        rows.append("| Full notebook pipeline | `pipeio_nb_pipeline(pipe, flow, name)` | Chain sync/publish/collect manually |")
-        rows.append("| Build Jupyter Lab manifest | `pipeio_nb_lab(pipe?, flow?, sync?)` | Create symlinks manually |")
-        rows.append("| Scaffold a mod (with I/O wiring) | `pipeio_mod_create(pipe, flow, mod, inputs, outputs, params_spec)` | Create script/doc files manually |")
-        rows.append("| Mod context (rules, scripts, doc, config) | `pipeio_mod_context(pipe, flow, mod)` | Multiple reads manually |")
-        rows.append("| List mods | `pipeio_mod_list(pipe, flow)` | Parse registry manually |")
-        rows.append("| List Snakemake rules | `pipeio_rule_list(pipe, flow)` | Parse Snakefiles manually |")
-        rows.append("| Generate rule stub | `pipeio_rule_stub(pipe, flow, rule_name)` | Write rule text manually |")
-        rows.append("| Insert rule into Snakefile | `pipeio_rule_insert(pipe, flow, rule_name)` | Edit Snakefiles manually |")
-        rows.append("| Patch an existing rule | `pipeio_rule_update(pipe, flow, rule_name, add_inputs)` | Edit Snakefiles manually |")
-        rows.append("| Resolve output paths | `pipeio_target_paths(pipe, flow, group, member, entities)` | Construct BIDS paths manually |")
-        rows.append("| Export DAG as dot/svg/mermaid | `pipeio_dag_export(pipe, flow, graph_type, output_format)` | Run snakemake --rulegraph manually |")
-        rows.append("| Generate snakemake report | `pipeio_report(pipe, flow, target)` | Run snakemake --report manually |")
-        rows.append("| Session completion | `pipeio_completion(pipe, flow)` | Glob output dirs manually |")
-        rows.append("| Cross-flow chains | `pipeio_cross_flow(pipe)` | Compare configs manually |")
-        rows.append("| Scaffold new flow config | `pipeio_config_init(pipe, flow, input_dir, output_dir)` | Create config.yml manually |")
-        rows.append("| Read flow config (+ resolved patterns) | `pipeio_config_read(pipe, flow)` | Parse config.yml directly |")
-        rows.append("| Patch flow config | `pipeio_config_patch(pipe, flow)` | Edit config.yml directly |")
-        rows.append("| Parse Snakemake logs | `pipeio_log_parse(pipe, flow)` | Read log files manually |")
-        rows.append("| Launch Snakemake run | `pipeio_run(pipe, flow, wildcards={\"subject\": \"01\"})` | Run snakemake in terminal |")
-        rows.append("| Check run progress | `pipeio_run_status(run_id)` | Check screen sessions manually |")
-        rows.append("| Run dashboard | `pipeio_run_dashboard()` | Aggregate run info manually |")
-        rows.append("| Kill a run | `pipeio_run_kill(run_id)` | Kill screen sessions manually |")
+        # Flow & registry
+        rows.append("| List flows | `pipeio_flow_list(prefix?)` | Parse registry YAML directly |")
+        rows.append("| Flow status | `pipeio_flow_status(flow)` | Inspect flow dirs manually |")
         rows.append("| Scan for pipelines | `pipeio_registry_scan()` | Walk filesystem manually |")
         rows.append("| Validate registry | `pipeio_registry_validate()` | Check consistency manually |")
+        # Mod management
+        rows.append("| List mods | `pipeio_mod_list(flow)` | Parse registry manually |")
+        rows.append("| Mod context (rules, scripts, doc, config) | `pipeio_mod_context(flow, mod)` | Multiple reads manually |")
+        rows.append("| Scaffold mod (script + docs) | `pipeio_mod_create(flow, mod, inputs, outputs)` | Create files manually |")
+        rows.append("| Add script to existing mod | `pipeio_script_create(flow, mod, script_name)` | Create script manually |")
+        rows.append("| Audit mod health | `pipeio_mod_audit(flow, mod?)` | Manual inspection |")
+        rows.append("| Refresh mod doc from code | `pipeio_mod_doc_refresh(flow, mod, facet, apply?)` | Rewrite spec.md manually |")
+        # Rule authoring
+        rows.append("| List rules | `pipeio_rule_list(flow)` | Parse Snakefiles manually |")
+        rows.append("| Generate rule stub | `pipeio_rule_stub(flow, rule_name)` | Write rule text manually |")
+        rows.append("| Insert rule into Snakefile | `pipeio_rule_insert(flow, rule_name)` | Edit Snakefiles manually |")
+        rows.append("| Patch existing rule | `pipeio_rule_update(flow, rule_name, add_inputs)` | Edit Snakefiles manually |")
+        # Config authoring
+        rows.append("| Scaffold flow config | `pipeio_config_init(flow, input_dir, output_dir)` | Create config.yml manually |")
+        rows.append("| Read flow config | `pipeio_config_read(flow)` | Parse config.yml directly |")
+        rows.append("| Patch flow config | `pipeio_config_patch(flow, registry_entry, apply?)` | Edit config.yml directly |")
+        # Notebook lifecycle
+        rows.append("| Scaffold notebook (kind-aware) | `pipeio_nb_create(flow, name, kind, mod?)` | Create .py files manually |")
+        rows.append("| Notebook status | `pipeio_nb_status(flow?, name?)` | Parse notebook.yml manually |")
+        rows.append("| Audit notebook quality | `pipeio_nb_audit()` | Manual inspection |")
+        rows.append("| Read notebook + metadata | `pipeio_nb_read(flow, name)` | Read .py + parse YAML manually |")
+        rows.append("| Analyze notebook structure | `pipeio_nb_analyze(flow, name)` | Parse .py files manually |")
+        rows.append("| Check sync state | `pipeio_nb_diff(flow, name)` | Compare mtimes manually |")
+        rows.append("| Update notebook metadata | `pipeio_nb_update(flow, name)` | Edit notebook.yml directly |")
+        rows.append("| Sync notebook | `pipeio_nb_sync(flow, name, direction?)` | Run jupytext manually |")
+        rows.append("| Sync all in flow | `pipeio_nb_sync_flow(flow)` | Sync each manually |")
+        rows.append("| Scan for unregistered | `pipeio_nb_scan(register?)` | Walk filesystem manually |")
+        rows.append("| Publish notebook | `pipeio_nb_publish(flow, name)` | Copy files manually |")
+        rows.append("| Execute notebook | `pipeio_nb_exec(flow, name, params)` | Run papermill manually |")
+        rows.append("| Full notebook pipeline | `pipeio_nb_pipeline(flow, name)` | Chain sync/publish/collect |")
+        rows.append("| Build Jupyter Lab manifest | `pipeio_nb_lab(flow?, sync?)` | Create symlinks manually |")
+        rows.append("| Promote notebook to mod | `pipeio_nb_promote(flow, name, mod)` | Manual extraction |")
+        # Contracts & validation
         rows.append("| Validate I/O contracts | `pipeio_contracts_validate()` | Check configs manually |")
+        rows.append("| Cross-flow manifest chains | `pipeio_cross_flow(flow?)` | Compare configs manually |")
+        rows.append("| Session completion | `pipeio_completion(flow)` | Glob output dirs manually |")
+        # Paths & DAG
+        rows.append("| Resolve output paths | `pipeio_target_paths(flow, group, member)` | Construct BIDS paths manually |")
+        rows.append("| Export DAG | `pipeio_dag_export(flow, graph_type)` | Run snakemake --rulegraph |")
+        rows.append("| Generate report | `pipeio_report(flow)` | Run snakemake --report |")
+        rows.append("| Parse logs | `pipeio_log_parse(flow)` | Read log files manually |")
+        # Documentation
         rows.append("| Collect pipeline docs | `pipeio_docs_collect()` | Copy doc files manually |")
         rows.append("| Generate docs nav | `pipeio_docs_nav()` | Build nav YAML manually |")
         rows.append("| Patch mkdocs nav | `pipeio_mkdocs_nav_patch()` | Edit mkdocs.yml manually |")
+        rows.append("| Generate modkey bibliography | `pipeio_modkey_bib()` | Write BibTeX manually |")
+        # Execution
+        rows.append("| Launch Snakemake run | `pipeio_run(flow, wildcards?)` | Run snakemake in terminal |")
+        rows.append("| Check run progress | `pipeio_run_status(run_id?)` | Check screen sessions |")
+        rows.append("| Run dashboard | `pipeio_run_dashboard()` | Aggregate run info manually |")
+        rows.append("| Kill a run | `pipeio_run_kill(run_id)` | Kill screen sessions |")
 
     # Site tools (always available)
     rows.append("| Build doc site | `site_build()` | Run `make docs` or `mkdocs build` |")
@@ -1183,66 +1272,71 @@ and `runtime_conventions()` to see available Makefile targets.
 
     if has_pipeio:
         sections.append("""\
-## Notebook workflow
+## pipeio entity management
 
-### Two notebook lifecycles
+pipeio manages pipeline entities through MCP tools. Read `skill_read("pipeio-guide")` for the full ontology reference.
 
-Notebooks serve two distinct purposes, tracked by the `kind` field in `notebook.yml`:
+### Capability matrix
 
-**Exploratory** (`kind: investigate` or `explore`):
-- Prototype analysis, test parameters, validate approaches
-- Linked to a mod via `mod` field — the mod this notebook feeds into
-- End state: code absorbed into mod scripts → `pipeio_nb_update(status='archived')`
-- Not published (internal working artifact)
+| Entity | Create | Read | Update | Audit |
+|--------|--------|------|--------|-------|
+| **Flow** | `flow_new` (CLI, idempotent) | `flow_list`, `flow_status` | agent edits | `registry_validate` |
+| **Mod** | `mod_create` (script + docs) | `mod_list`, `mod_context` | agent edits | `mod_audit` |
+| **Rule** | `rule_stub`, `rule_insert` | `rule_list` | `rule_update` | `mod_audit` |
+| **Config** | `config_init` | `config_read` | `config_patch` | `contracts_validate` |
+| **Script** | `mod_create`, `script_create` | `mod_context` | agent edits | `mod_audit` |
+| **Notebook** | `nb_create` (kind-aware) | `nb_read`, `nb_status`, `nb_analyze` | `nb_update` (metadata) | `nb_audit` |
+| **Mod docs** | `mod_create` (theory + spec) | `mod_context` | `mod_doc_refresh` | `mod_audit` |
+| **Promote** | `nb_promote` | — | — | — |
+| **Manifest** | config sets path | `cross_flow` | agent edits | `contracts_validate` |
+| **Site docs** | `docs_collect` | `docs_nav` | re-collect | — |
+| **Core library** | `codio_add(role="core")` | `codio_get`, `codio_list` | agent edits | — |
+| **Project utils** | `projio sync` (auto-detect) | `project_context` | agent edits | — |
 
-**Demo** (`kind: demo` or `validate`):
-- Showcase mod outputs in narrative form, generate QC reports
-- Linked to a mod via `mod` field — the mod this notebook demonstrates
-- End state: executed + published to site as HTML → `pipeio_nb_update(status='promoted')`
-- Must have `publish_html: true` in notebook.yml
+**Scaffolding tools produce correct starting points.** `nb_create` generates kind-aware templates (investigate vs demo), `mod_create` and `script_create` discover the project's compute library via codio (role=core) and include imports. **Structured write helpers** (`config_patch`, `rule_insert`, `rule_update`) validate input and produce diffs. **Free-form code editing** is agent territory.
 
-### Lifecycle transitions
+### Code tiers
 
-**Archiving an exploratory notebook** (code absorbed into mod):
+Projects organize code in three tiers (see `docs/specs/pipeio/code-tiers.md`):
+
+| Tier | Location | codio role | Agent policy |
+|------|----------|------------|-------------|
+| Core library | `code/lib/{name}/` | `core` | Agents can add code here |
+| Project utils | `code/utils/` | — | Project-specific glue |
+| Flow scripts | `code/pipelines/{flow}/scripts/` | — | One script per rule |
+
+`projio sync` auto-discovers `code/lib/*/` and registers in codio with `role=core`. `project_context()` returns the active code tier configuration.
+
+### Notebook workspaces
+
+Notebooks route to workspaces by `kind`:
+- `investigate`/`explore` → `notebooks/explore/.src/` (never published)
+- `demo`/`validate` → `notebooks/demo/.src/` (published to site)
+
+### Notebook lifecycle
+
 ```
-pipeio_nb_update(pipe, flow, name, status='archived')
-```
-Verify the mod has corresponding rules/scripts first via `pipeio_mod_context`.
-
-**Promoting a demo notebook** (ready for site publication):
-```
-pipeio_nb_update(pipe, flow, name, status='promoted')
-pipeio_nb_pipeline(pipe, flow, name)  # sync → publish → docs
+pipeio_nb_create(flow, name, kind="investigate", mod="filter")  # scaffold
+pipeio_nb_update(flow, name, status="archived")                 # lifecycle transition
+pipeio_nb_promote(flow, name, mod="filter")                     # extract to mod
+pipeio_nb_pipeline(flow, name)                                  # sync → publish → collect
 ```
 
-### Audit checks
+### Mod documentation facets
 
-`pipeio_nb_audit()` detects lifecycle mismatches:
-- `demo_not_publishable` — demo notebook without `publish_html: true`
-- `explore_absorbed_not_archived` — exploratory notebook still active but its mod already has scripts
-- `demo_executed_not_promoted` — demo notebook executed but not promoted
-- `promoted_not_publishable` — promoted status but publish_html is off
-- `archived_still_publishable` — archived notebook still set to publish
+Each mod has `docs/{mod}/theory.md` (rationale + citations) and `spec.md` (I/O contracts). `mod_doc_refresh(flow, mod, facet="spec", apply=True)` regenerates spec.md from current mod_context.
 
 ### Agentic workflow
 
-1. **Discover:** `pipeio_nb_scan()` → find unregistered notebooks, `register=True` to auto-add
-2. **Triage:** `pipeio_nb_status(pipe, flow)` → filtered sync state; or `pipeio_nb_audit()` → holistic quality report
-3. **Understand:** `pipeio_nb_read(pipe, flow, name)` → full .py content + metadata + analysis in one call
-4. **Check sync:** `pipeio_nb_diff(pipe, flow, name)` → which file is newer, recommended direction
-5. **Fix config:** `pipeio_nb_update(...)` → set status, description, kind, mod, kernel
-6. **Sync:** `pipeio_nb_sync(..., direction='py2nb')` after editing .py; `direction='nb2py'` to pull human edits
-7. **Batch sync:** `pipeio_nb_sync_flow(pipe, flow)` → sync all stale notebooks in a flow
+1. **Discover:** `pipeio_nb_scan()` → find unregistered notebooks
+2. **Triage:** `pipeio_nb_status(flow)` or `pipeio_nb_audit()` → quality report
+3. **Understand:** `pipeio_nb_read(flow, name)` → content + metadata + analysis
+4. **Check sync:** `pipeio_nb_diff(flow, name)` → which file is newer
+5. **Fix config:** `pipeio_nb_update(...)` → set status, kind, mod, kernel
+6. **Sync:** `pipeio_nb_sync(flow, name, direction='py2nb')` after editing .py
+7. **Audit mods:** `pipeio_mod_audit(flow)` → contract drift, missing docs/scripts
 
-**Notebook addressing:** All nb tools use `(pipe, flow, name)` — never raw file paths.
-
-**Bidirectional sync:**
-- Agent edits `.py` → `nb_sync(direction='py2nb')` → human opens in Jupyter Lab
-- Human edits `.ipynb` → `nb_diff` shows `ipynb_newer` → `nb_sync(direction='nb2py')` → agent reads updated .py
-
-**Kernel config:** `notebook.yml` has `kernel` at flow level and per-entry. Embedded in .ipynb via `--set-kernel` on sync, passed to papermill via `-k` on exec.
-
-**Script reading:** Use `pipeio_mod_context(pipe, flow, mod)` to read Snakemake rule scripts — it returns full script content alongside rules, docs, and config.
+**Addressing:** All tools use `(flow, name)` — no `pipe` parameter. Never use raw file paths.
 """)
 
     # Cross-project dispatch guidance (worklog MCP is available everywhere)

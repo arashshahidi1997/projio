@@ -1,0 +1,13 @@
+# config for text_analysis
+input_dir: "raw"
+output_dir: "derivatives/text_analysis"
+input_manifest: ""
+output_manifest: "derivatives/text_analysis/manifest.yml"
+
+registry:
+  wordcount:
+    bids:
+      root: "wordcount"
+    members:
+      json: {suffix: "wordcount", extension: ".json"}
+      summary: {suffix: "wordcount", extension: ".summary.txt"}

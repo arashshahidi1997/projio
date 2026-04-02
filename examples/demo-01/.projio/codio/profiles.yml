@@ -1,0 +1,8 @@
+# Codio project profiles — project-specific library interpretation
+profiles:
+  textlib:
+    priority: tier1
+    runtime_import: internal
+    decision_default: existing
+    capabilities: [word_frequency, text_analysis, zipf]
+    status: active

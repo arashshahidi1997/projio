@@ -198,6 +198,7 @@ def codio_add(
     name: str,
     kind: str,
     path: str = "",
+    role: str = "",
     language: str = "",
     repo_url: str = "",
     pip_name: str = "",
@@ -218,6 +219,8 @@ def codio_add(
         name: Library slug (e.g. "yasa", "mne").
         kind: Library kind — one of: internal, external_mirror, utility.
         path: Local filesystem path to the library source tree (for mirrors).
+        role: Project role — one of: core (actively developed, promote target),
+              shared (lab library, used as-is), external (PyPI package, never modified).
         language: Dominant programming language (e.g. "python").
         repo_url: Upstream repository URL.
         pip_name: PyPI / conda package name.
@@ -241,6 +244,7 @@ def codio_add(
         catalog_entry = LibraryCatalogEntry(
             name=name,
             kind=kind,
+            role=role,
             path=path,
             language=language,
             repo_url=repo_url,

@@ -177,6 +177,15 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Show what would change without writing.",
     )
 
+    p_claude_sync = claude_sub.add_parser(
+        "permissions-sync",
+        help="Sync .claude/settings.json permissions from project config, codio registry, and .mcp.json.",
+    )
+    p_claude_sync.add_argument(
+        "--dry-run", action="store_true",
+        help="Show what would change without writing.",
+    )
+
     p_skill = sub.add_parser("skill", help="Manage project skills.")
     p_skill.add_argument("-C", "--root", default=".", help="Project root (default: .).")
     skill_sub = p_skill.add_subparsers(dest="skill_command", required=True)
@@ -185,6 +194,10 @@ def _build_parser() -> argparse.ArgumentParser:
     p_skill_new.add_argument("name", help="Skill name (slug, e.g. my-analysis).")
 
     p_skill_list = skill_sub.add_parser("list", help="List available skills.")
+
+    p_sync = sub.add_parser("sync", help="Sync workspace: auto-discover code/lib libraries, register in codio.")
+    p_sync.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    p_sync.add_argument("--dry-run", action="store_true", help="Show what would change without writing.")
 
     p_mcp = sub.add_parser("mcp", help="Start the FastMCP server (stdio).")
     p_mcp.add_argument("-C", "--root", default=".", help="Project root (default: .).")
@@ -339,9 +352,14 @@ def main(argv: Iterable[str] | None = None) -> None:
         return
 
     if args.command == "claude":
-        from .init import update_claude_permissions
         if args.claude_command == "update-permissions":
+            from .init import update_claude_permissions
             update_claude_permissions(args.root, dry_run=args.dry_run)
+        elif args.claude_command == "permissions-sync":
+            from .init import sync_claude_permissions
+            result = sync_claude_permissions(args.root, dry_run=args.dry_run)
+            if not result.get("changed") and not result.get("error"):
+                pass  # sync_claude_permissions already prints status
         return
 
     if args.command == "skill":
@@ -350,6 +368,11 @@ def main(argv: Iterable[str] | None = None) -> None:
             skill_new(args.root, args.name)
         elif args.skill_command == "list":
             skill_list(args.root)
+        return
+
+    if args.command == "sync":
+        from .sync import sync_workspace
+        sync_workspace(args.root, dry_run=args.dry_run)
         return
 
     if args.command == "mcp":

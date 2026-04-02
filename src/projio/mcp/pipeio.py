@@ -103,27 +103,26 @@ def _unavailable(tool: str) -> JsonDict:
     return {"error": f"{tool} requires the pipeio package. Install with: pip install pipeio"}
 
 
-def pipeio_flow_list(pipe: str | None = None) -> JsonDict:
-    """List pipeline flows, optionally filtered by pipe.
+def pipeio_flow_list(prefix: str | None = None) -> JsonDict:
+    """List registered flows, optionally filtered by name prefix.
 
     Args:
-        pipe: Filter by pipeline name (e.g. 'preprocess', 'brainstate').
+        prefix: Filter by flow name prefix (e.g. 'preprocess', 'brainstate').
     """
     if not _pipeio_available():
         return _unavailable("pipeio_flow_list")
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_flow_list  # type: ignore[import]
-        return json_dict(mcp_flow_list(root, pipe=pipe))
+        return json_dict(mcp_flow_list(root, prefix=prefix))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
-def pipeio_flow_status(pipe: str, flow: str) -> JsonDict:
-    """Show status of a specific pipeline flow.
+def pipeio_flow_status(flow: str) -> JsonDict:
+    """Show status of a specific flow.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
     """
     if not _pipeio_available():
@@ -131,16 +130,14 @@ def pipeio_flow_status(pipe: str, flow: str) -> JsonDict:
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_flow_status  # type: ignore[import]
-        return json_dict(mcp_flow_status(root, pipe=pipe, flow=flow))
+        return json_dict(mcp_flow_status(root, flow=flow))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
 def pipeio_flow_fork(
-    pipe: str,
     flow: str,
     new_flow: str,
-    new_pipe: str = "",
 ) -> JsonDict:
     """Fork a flow: copy its code directory and register as a new flow.
 
@@ -148,10 +145,8 @@ def pipeio_flow_fork(
     notebooks, scripts) under a new name. The original is untouched.
 
     Args:
-        pipe: Source pipeline name.
         flow: Source flow name.
         new_flow: Name for the forked flow.
-        new_pipe: Target pipe (default: same as source).
     """
     if not _pipeio_available():
         return _unavailable("pipeio_flow_fork")
@@ -159,22 +154,20 @@ def pipeio_flow_fork(
     try:
         from pipeio.mcp import mcp_flow_fork  # type: ignore[import]
         return json_dict(mcp_flow_fork(
-            root, pipe=pipe, flow=flow,
-            new_flow=new_flow, new_pipe=new_pipe or None,
+            root, flow=flow, new_flow=new_flow,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
-def pipeio_flow_deregister(pipe: str, flow: str) -> JsonDict:
-    """Remove a flow from the pipeline registry.
+def pipeio_flow_deregister(flow: str) -> JsonDict:
+    """Remove a flow from the registry.
 
     Only removes the registry entry — does NOT delete code, config, docs,
     or notebook files from the filesystem. Use pipeio_registry_scan() to
     re-register if needed.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
     """
     if not _pipeio_available():
@@ -182,23 +175,44 @@ def pipeio_flow_deregister(pipe: str, flow: str) -> JsonDict:
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_flow_deregister  # type: ignore[import]
-        return json_dict(mcp_flow_deregister(root, pipe=pipe, flow=flow))
+        return json_dict(mcp_flow_deregister(root, flow=flow))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_flow_new(flow: str) -> JsonDict:
+    """Scaffold a new pipeline flow with standard directory structure.
+
+    Creates the full flow scaffold under ``code/pipelines/<flow>/``:
+    Snakefile, config.yml, publish.yml, Makefile, scripts/, rules/,
+    docs/index.md, and notebook workspaces (explore + demo).
+
+    Idempotent: only writes missing files, so it can augment an
+    existing flow without overwriting.
+
+    Args:
+        flow: Flow name (lowercase slug with underscores).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_flow_new")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_flow_new  # type: ignore[import]
+        return json_dict(mcp_flow_new(root, flow=flow))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
 def pipeio_nb_status(
-    pipe: str = "",
     flow: str = "",
     name: str = "",
 ) -> JsonDict:
     """Show notebook sync and publication status.
 
-    Optionally filter by pipe, flow, or notebook name to avoid scanning
+    Optionally filter by flow or notebook name to avoid scanning
     the entire project.
 
     Args:
-        pipe: Filter to a specific pipeline (optional).
         flow: Filter to a specific flow (optional).
         name: Filter to a specific notebook name (optional).
     """
@@ -209,7 +223,6 @@ def pipeio_nb_status(
         from pipeio.mcp import mcp_nb_status  # type: ignore[import]
         return json_dict(mcp_nb_status(
             root,
-            pipe=pipe or None,
             flow=flow or None,
             name=name or None,
         ))
@@ -218,7 +231,6 @@ def pipeio_nb_status(
 
 
 def pipeio_nb_update(
-    pipe: str,
     flow: str,
     name: str,
     status: str = "",
@@ -230,7 +242,6 @@ def pipeio_nb_update(
     """Update notebook metadata in notebook.yml.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
         name: Notebook name (stem, without extension).
         status: New status (draft/active/stale/promoted/archived).
@@ -245,7 +256,7 @@ def pipeio_nb_update(
     try:
         from pipeio.mcp import mcp_nb_update  # type: ignore[import]
         return json_dict(mcp_nb_update(
-            root, pipe=pipe, flow=flow, name=name,
+            root, flow=flow, name=name,
             status=status or None,
             description=description or None,
             kind=kind or None,
@@ -256,25 +267,24 @@ def pipeio_nb_update(
         return json_dict({"error": str(exc)})
 
 
-def pipeio_mod_list(pipe: str, flow: str = "") -> JsonDict:
-    """List mods for a specific pipeline flow.
+def pipeio_mod_list(flow: str = "") -> JsonDict:
+    """List mods for a specific flow.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
     """
     if not _pipeio_available():
         return _unavailable("pipeio_mod_list")
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_mod_list  # type: ignore[import]
-        return json_dict(mcp_mod_list(root, pipe=pipe, flow=flow or None))
+        return json_dict(mcp_mod_list(root, flow=flow or None))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
 def pipeio_mod_resolve(modkeys: list[str]) -> JsonDict:
-    """Resolve modkeys (pipe-X_flow-Y_mod-Z) into metadata and doc locations.
+    """Resolve modkeys (flow-X_mod-Y) into metadata and doc locations.
 
     Args:
         modkeys: List of modkey strings to resolve.
@@ -289,14 +299,13 @@ def pipeio_mod_resolve(modkeys: list[str]) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
-def pipeio_mod_context(pipe: str, flow: str = "", mod: str = "") -> JsonDict:
+def pipeio_mod_context(flow: str = "", mod: str = "") -> JsonDict:
     """Bundled read context for a mod: rules, scripts, doc, config params.
 
     Returns everything needed to understand and work on a mod in one call.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
         mod: Module name.
     """
     if not _pipeio_available():
@@ -304,7 +313,7 @@ def pipeio_mod_context(pipe: str, flow: str = "", mod: str = "") -> JsonDict:
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_mod_context  # type: ignore[import]
-        return json_dict(mcp_mod_context(root, pipe=pipe, flow=flow or None, mod=mod))
+        return json_dict(mcp_mod_context(root, flow=flow or None, mod=mod))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -331,8 +340,8 @@ def pipeio_modkey_bib(
 ) -> JsonDict:
     """Generate a BibTeX file with @misc entries for all registered pipeline mods.
 
-    Each mod gets a citekey ``pipe-X_flow-Y_mod-Z`` for use in manuscripts
-    (e.g. ``[@pipe-preprocess_flow-ieeg_mod-badlabel]``).
+    Each mod gets a citekey ``flow-X_mod-Y`` for use in manuscripts
+    (e.g. ``[@flow-ieeg_mod-badlabel]``).
 
     Args:
         output_path: Where to write the .bib file (relative to project root).
@@ -394,7 +403,6 @@ def pipeio_contracts_validate() -> JsonDict:
 
 
 def pipeio_nb_create(
-    pipe: str,
     flow: str,
     name: str,
     kind: str = "investigate",
@@ -406,7 +414,6 @@ def pipeio_nb_create(
     it in notebook.yml.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
         name: Notebook name (e.g. 'investigate_noise').
         kind: Prefix convention (investigate, explore, demo).
@@ -418,7 +425,7 @@ def pipeio_nb_create(
     try:
         from pipeio.mcp import mcp_nb_create  # type: ignore[import]
         return json_dict(mcp_nb_create(
-            root, pipe=pipe, flow=flow, name=name,
+            root, flow=flow, name=name,
             kind=kind, description=description,
         ))
     except Exception as exc:
@@ -426,7 +433,6 @@ def pipeio_nb_create(
 
 
 def pipeio_nb_sync(
-    pipe: str,
     flow: str,
     name: str,
     formats: list[str] | None = None,
@@ -444,7 +450,6 @@ def pipeio_nb_sync(
     Skips files that are already up-to-date (mtime check) unless force=True.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
         name: Notebook basename (without extension).
         formats: Which formats to produce (default: ['ipynb', 'myst']).
@@ -459,7 +464,7 @@ def pipeio_nb_sync(
         from pipeio.mcp import mcp_nb_sync  # type: ignore[import]
         python_bin = _resolve_project_python()
         return json_dict(mcp_nb_sync(
-            root, pipe=pipe, flow=flow, name=name, formats=formats,
+            root, flow=flow, name=name, formats=formats,
             python_bin=python_bin, direction=direction, force=force,
         ))
     except Exception as exc:
@@ -467,7 +472,6 @@ def pipeio_nb_sync(
 
 
 def pipeio_nb_sync_flow(
-    pipe: str,
     flow: str,
     direction: str = "py2nb",
     force: bool = False,
@@ -475,7 +479,6 @@ def pipeio_nb_sync_flow(
     """Batch-sync all notebooks in a flow.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
         direction: 'py2nb' or 'nb2py'.
         force: If True, sync even if up-to-date.
@@ -487,7 +490,7 @@ def pipeio_nb_sync_flow(
         from pipeio.mcp import mcp_nb_sync_flow  # type: ignore[import]
         python_bin = _resolve_project_python()
         return json_dict(mcp_nb_sync_flow(
-            root, pipe=pipe, flow=flow,
+            root, flow=flow,
             direction=direction, force=force,
             python_bin=python_bin,
         ))
@@ -495,15 +498,14 @@ def pipeio_nb_sync_flow(
         return json_dict({"error": str(exc)})
 
 
-def pipeio_nb_publish(pipe: str, flow: str, name: str, format: str = "") -> JsonDict:
-    """Publish a notebook to docs/pipelines/<pipe>/<flow>/notebooks/.
+def pipeio_nb_publish(flow: str, name: str, format: str = "") -> JsonDict:
+    """Publish a notebook to docs/pipelines/<flow>/notebooks/.
 
     Publishes MyST markdown and/or HTML based on notebook.yml settings.
     Pass format='html' to force HTML output (for demo notebooks),
     or format='myst' for markdown only.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
         name: Notebook basename (without extension).
         format: Force format ('myst', 'html', or '' for auto from notebook.yml).
@@ -514,13 +516,13 @@ def pipeio_nb_publish(pipe: str, flow: str, name: str, format: str = "") -> Json
     try:
         from pipeio.mcp import mcp_nb_publish  # type: ignore[import]
         return json_dict(mcp_nb_publish(
-            root, pipe=pipe, flow=flow, name=name, format=format,
+            root, flow=flow, name=name, format=format,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
-def pipeio_nb_analyze(pipe: str, flow: str, name: str) -> JsonDict:
+def pipeio_nb_analyze(flow: str, name: str) -> JsonDict:
     """Analyze a notebook's static structure.
 
     Parses the percent-format .py notebook and returns structured metadata:
@@ -528,7 +530,6 @@ def pipeio_nb_analyze(pipe: str, flow: str, name: str) -> JsonDict:
     and cogpy function calls.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
         name: Notebook basename (without extension).
     """
@@ -537,12 +538,12 @@ def pipeio_nb_analyze(pipe: str, flow: str, name: str) -> JsonDict:
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_nb_analyze  # type: ignore[import]
-        return json_dict(mcp_nb_analyze(root, pipe=pipe, flow=flow, name=name))
+        return json_dict(mcp_nb_analyze(root, flow=flow, name=name))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
-def pipeio_nb_diff(pipe: str, flow: str, name: str) -> JsonDict:
+def pipeio_nb_diff(flow: str, name: str) -> JsonDict:
     """Show sync state between .py and paired .ipynb for a notebook.
 
     Returns which file is newer, whether they're in sync, and the
@@ -551,7 +552,6 @@ def pipeio_nb_diff(pipe: str, flow: str, name: str) -> JsonDict:
     pulled into the .py source.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
         name: Notebook basename (without extension).
     """
@@ -560,24 +560,22 @@ def pipeio_nb_diff(pipe: str, flow: str, name: str) -> JsonDict:
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_nb_diff  # type: ignore[import]
-        return json_dict(mcp_nb_diff(root, pipe=pipe, flow=flow, name=name))
+        return json_dict(mcp_nb_diff(root, flow=flow, name=name))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
 def pipeio_nb_lab(
-    pipe: str = "",
     flow: str = "",
     sync: bool = False,
 ) -> JsonDict:
     """Build/refresh the Jupyter Lab symlink manifest.
 
-    Creates .projio/pipeio/lab/<pipe>/<flow>/<name>.ipynb symlinks
+    Creates .projio/pipeio/lab/<flow>/<name>.ipynb symlinks
     pointing to real notebook files. Optionally syncs py→ipynb first.
     Returns manifest state: linked notebooks, stale cleaned, lab_dir.
 
     Args:
-        pipe: Filter to a specific pipeline (optional).
         flow: Filter to a specific flow (optional).
         sync: If True, sync py→ipynb before linking (default False).
     """
@@ -588,7 +586,7 @@ def pipeio_nb_lab(
         from pipeio.mcp import mcp_nb_lab  # type: ignore[import]
         python_bin = _resolve_project_python()
         return json_dict(mcp_nb_lab(
-            root, pipe=pipe or None, flow=flow or None,
+            root, flow=flow or None,
             sync=sync, python_bin=python_bin,
         ))
     except Exception as exc:
@@ -615,7 +613,7 @@ def pipeio_nb_scan(register: bool = False) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
-def pipeio_nb_read(pipe: str, flow: str, name: str) -> JsonDict:
+def pipeio_nb_read(flow: str, name: str) -> JsonDict:
     """Read a notebook's .py content with metadata, sync state, and analysis.
 
     Returns the full .py source alongside status, kernel, mod, description,
@@ -623,7 +621,6 @@ def pipeio_nb_read(pipe: str, flow: str, name: str) -> JsonDict:
     in a single call.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
         name: Notebook basename (without extension).
     """
@@ -632,7 +629,7 @@ def pipeio_nb_read(pipe: str, flow: str, name: str) -> JsonDict:
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_nb_read  # type: ignore[import]
-        return json_dict(mcp_nb_read(root, pipe=pipe, flow=flow, name=name))
+        return json_dict(mcp_nb_read(root, flow=flow, name=name))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -654,7 +651,6 @@ def pipeio_nb_audit() -> JsonDict:
 
 
 def pipeio_nb_pipeline(
-    pipe: str,
     flow: str,
     name: str,
     formats: list[str] | None = None,
@@ -666,7 +662,6 @@ def pipeio_nb_pipeline(
     a site build at the end.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
         name: Notebook basename (without extension).
         formats: Jupytext formats to produce (default: ['ipynb', 'myst']).
@@ -678,13 +673,13 @@ def pipeio_nb_pipeline(
     steps: dict[str, JsonDict] = {}
 
     # Step 1: nb_sync
-    result = pipeio_nb_sync(pipe=pipe, flow=flow, name=name, formats=formats)
+    result = pipeio_nb_sync(flow=flow, name=name, formats=formats)
     steps["nb_sync"] = result
     if "error" in result:
         return json_dict({"steps": steps, "completed": False, "failed_at": "nb_sync"})
 
     # Step 2: nb_publish
-    result = pipeio_nb_publish(pipe=pipe, flow=flow, name=name)
+    result = pipeio_nb_publish(flow=flow, name=name)
     steps["nb_publish"] = result
     if "error" in result:
         return json_dict({"steps": steps, "completed": False, "failed_at": "nb_publish"})
@@ -798,7 +793,7 @@ def pipeio_mkdocs_nav_patch() -> JsonDict:
     })
 
 
-def pipeio_rule_list(pipe: str, flow: str = "") -> JsonDict:
+def pipeio_rule_list(flow: str = "") -> JsonDict:
     """List rules for a flow with input/output signatures and mod membership.
 
     Parses the flow's Snakefile (and any .smk includes) and returns
@@ -806,23 +801,21 @@ def pipeio_rule_list(pipe: str, flow: str = "") -> JsonDict:
     script path, and which mod the rule belongs to.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
     """
     if not _pipeio_available():
         return _unavailable("pipeio_rule_list")
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_rule_list  # type: ignore[import]
-        return json_dict(mcp_rule_list(root, pipe=pipe, flow=flow or None))
+        return json_dict(mcp_rule_list(root, flow=flow or None))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
 def pipeio_rule_stub(
-    pipe: str,
-    flow: str,
-    rule_name: str,
+    flow: str = "",
+    rule_name: str = "",
     inputs: dict | None = None,
     outputs: dict | None = None,
     params: dict | None = None,
@@ -834,8 +827,7 @@ def pipeio_rule_stub(
     the Snakefile.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name.
+        flow: Flow name (optional).
         rule_name: Name for the new rule.
         inputs: ``{name: bids_pattern}`` or ``{name: {source_rule, member}}``.
         outputs: ``{name: bids_kwargs_dict}`` or ``{name: bids_pattern_str}``.
@@ -849,7 +841,6 @@ def pipeio_rule_stub(
         from pipeio.mcp import mcp_rule_stub  # type: ignore[import]
         return json_dict(mcp_rule_stub(
             root,
-            pipe=pipe,
             flow=flow or None,
             rule_name=rule_name,
             inputs=inputs,
@@ -862,7 +853,6 @@ def pipeio_rule_stub(
 
 
 def pipeio_rule_insert(
-    pipe: str,
     flow: str = "",
     rule_name: str = "",
     rule_text: str = "",
@@ -879,8 +869,7 @@ def pipeio_rule_insert(
     ``script`` to generate the rule (same spec as rule_stub).
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
         rule_name: Name for the rule.
         rule_text: Pre-formatted rule text (optional — generated if omitted).
         target_file: Which .smk/Snakefile to insert into (auto-selected if omitted).
@@ -897,7 +886,6 @@ def pipeio_rule_insert(
         from pipeio.mcp import mcp_rule_insert  # type: ignore[import]
         return json_dict(mcp_rule_insert(
             root,
-            pipe=pipe,
             flow=flow or None,
             rule_name=rule_name,
             rule_text=rule_text or None,
@@ -913,7 +901,6 @@ def pipeio_rule_insert(
 
 
 def pipeio_rule_update(
-    pipe: str,
     flow: str = "",
     rule_name: str = "",
     add_inputs: dict | None = None,
@@ -928,8 +915,7 @@ def pipeio_rule_update(
     Returns a unified diff preview by default; set ``apply=True`` to write.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
         rule_name: Name of the existing rule to patch.
         add_inputs: ``{name: spec}`` entries to add to input.
         add_outputs: ``{name: spec}`` entries to add to output.
@@ -944,7 +930,6 @@ def pipeio_rule_update(
         from pipeio.mcp import mcp_rule_update  # type: ignore[import]
         return json_dict(mcp_rule_update(
             root,
-            pipe=pipe,
             flow=flow or None,
             rule_name=rule_name,
             add_inputs=add_inputs,
@@ -957,25 +942,23 @@ def pipeio_rule_update(
         return json_dict({"error": str(exc)})
 
 
-def pipeio_config_read(pipe: str, flow: str = "") -> JsonDict:
+def pipeio_config_read(flow: str = "") -> JsonDict:
     """Read and parse a flow's config.yml with bids() signature resolution.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
     """
     if not _pipeio_available():
         return _unavailable("pipeio_config_read")
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_config_read  # type: ignore[import]
-        return json_dict(mcp_config_read(root, pipe=pipe, flow=flow or None))
+        return json_dict(mcp_config_read(root, flow=flow or None))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
 def pipeio_config_patch(
-    pipe: str,
     flow: str = "",
     registry_entry: dict | None = None,
     params_entry: dict | None = None,
@@ -988,8 +971,7 @@ def pipeio_config_patch(
     Pass ``apply=True`` to write the patched file.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
         registry_entry: ``{group_name: group_dict}`` to add/replace in ``registry:``.
         params_entry: ``{section: {key: value}}`` to update in top-level params.
         apply: Write the patch to disk (default False — diff preview only).
@@ -1001,7 +983,6 @@ def pipeio_config_patch(
         from pipeio.mcp import mcp_config_patch  # type: ignore[import]
         return json_dict(mcp_config_patch(
             root,
-            pipe=pipe,
             flow=flow or None,
             registry_entry=registry_entry,
             params_entry=params_entry,
@@ -1012,7 +993,6 @@ def pipeio_config_patch(
 
 
 def pipeio_config_init(
-    pipe: str,
     flow: str = "",
     input_dir: str = "",
     output_dir: str = "",
@@ -1026,8 +1006,7 @@ def pipeio_config_init(
     Use ``config_patch`` to modify an existing config.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
         input_dir: Path to input data (relative to project root).
         output_dir: Path to output derivatives (relative to project root).
         pybids_inputs: Workflow-engine input spec (passed through to config).
@@ -1041,7 +1020,6 @@ def pipeio_config_init(
         from pipeio.mcp import mcp_config_init  # type: ignore[import]
         return json_dict(mcp_config_init(
             root,
-            pipe=pipe,
             flow=flow or None,
             input_dir=input_dir,
             output_dir=output_dir,
@@ -1066,7 +1044,6 @@ def pipeio_registry_validate() -> JsonDict:
 
 
 def pipeio_mod_create(
-    pipe: str,
     flow: str,
     mod: str,
     description: str = "",
@@ -1076,14 +1053,13 @@ def pipeio_mod_create(
     params_spec: dict | None = None,
     use_pipeline_context: bool = False,
 ) -> JsonDict:
-    """Scaffold a new pipeline mod (script skeleton + doc stub).
+    """Scaffold a new mod (script skeleton + doc stub).
 
     When ``inputs``/``outputs``/``params_spec`` are provided, generates a
     script with Snakemake I/O unpacking and parameter binding so only the
     processing logic needs to be filled in.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
         mod: Mod name (lowercase, underscore-separated).
         description: One-line purpose for the mod.
@@ -1099,7 +1075,7 @@ def pipeio_mod_create(
     try:
         from pipeio.mcp import mcp_mod_create  # type: ignore[import]
         return json_dict(mcp_mod_create(
-            root, pipe=pipe, flow=flow, mod=mod,
+            root, flow=flow, mod=mod,
             description=description, from_notebook=from_notebook,
             inputs=inputs, outputs=outputs,
             params_spec=params_spec,
@@ -1110,7 +1086,6 @@ def pipeio_mod_create(
 
 
 def pipeio_nb_exec(
-    pipe: str,
     flow: str,
     name: str,
     params: dict | None = None,
@@ -1119,7 +1094,6 @@ def pipeio_nb_exec(
     """Execute a notebook via papermill with optional parameter overrides.
 
     Args:
-        pipe: Pipeline name.
         flow: Flow name.
         name: Notebook basename (without extension).
         params: RunCard parameter overrides (optional).
@@ -1132,15 +1106,140 @@ def pipeio_nb_exec(
         from pipeio.mcp import mcp_nb_exec  # type: ignore[import]
         python_bin = _resolve_project_python()
         return json_dict(mcp_nb_exec(
-            root, pipe=pipe, flow=flow, name=name,
+            root, flow=flow, name=name,
             params=params, timeout=timeout, python_bin=python_bin,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
+def pipeio_mod_audit(
+    flow: str = "",
+    mod: str = "",
+) -> JsonDict:
+    """Audit a mod's health: contract drift, doc/script existence, naming.
+
+    Returns structured findings without modifying anything. Checks:
+    script existence, contract drift, doc coverage, naming conventions,
+    and registry consistency.
+
+    Args:
+        flow: Flow name.
+        mod: Mod name (audits all mods if empty).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_mod_audit")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_mod_audit  # type: ignore[import]
+        return json_dict(mcp_mod_audit(root, flow=flow or None, mod=mod))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_mod_doc_refresh(
+    flow: str,
+    mod: str,
+    facet: str = "spec",
+    apply: bool = False,
+) -> JsonDict:
+    """Regenerate a mod doc facet from current mod context.
+
+    Generates an updated spec.md or theory.md skeleton from the mod's
+    current rules, scripts, config params, and bids signatures.
+
+    Args:
+        flow: Flow name.
+        mod: Mod name.
+        facet: Which facet to refresh ('spec' or 'theory').
+        apply: Write the refreshed doc to disk (default False — preview only).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_mod_doc_refresh")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_mod_doc_refresh  # type: ignore[import]
+        return json_dict(mcp_mod_doc_refresh(
+            root, flow=flow, mod=mod, facet=facet, apply=apply,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_script_create(
+    flow: str,
+    mod: str,
+    script_name: str,
+    description: str = "",
+    inputs: dict | None = None,
+    outputs: dict | None = None,
+    params_spec: dict | None = None,
+) -> JsonDict:
+    """Create an additional script for an existing mod.
+
+    Generates a Snakemake-compatible script template with I/O unpacking.
+    Discovers the project's compute library via codio for imports.
+
+    Args:
+        flow: Flow name.
+        mod: Mod name.
+        script_name: Script filename (without .py).
+        description: One-line purpose.
+        inputs: {var_name: description} for snakemake.input.
+        outputs: {var_name: description} for snakemake.output.
+        params_spec: {var_name: description} for snakemake.params.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_script_create")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_script_create  # type: ignore[import]
+        return json_dict(mcp_script_create(
+            root, flow=flow, mod=mod, script_name=script_name,
+            description=description, inputs=inputs, outputs=outputs,
+            params_spec=params_spec,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_nb_promote(
+    flow: str,
+    name: str,
+    mod: str,
+    rule_name: str = "",
+    description: str = "",
+    apply: bool = False,
+) -> JsonDict:
+    """Promote a notebook to a pipeline mod.
+
+    Orchestrates: analyze notebook → generate script → rule stub → docs.
+    By default only creates the script. Returns rule stub and next steps
+    for review. Set apply=True to also create doc stubs.
+
+    Args:
+        flow: Flow name.
+        name: Notebook basename (without extension).
+        mod: Target mod name.
+        rule_name: Rule name (default: same as mod).
+        description: One-line purpose for the mod.
+        apply: If True, also create doc stubs on disk.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_promote")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_promote  # type: ignore[import]
+        return json_dict(mcp_nb_promote(
+            root, flow=flow, name=name, mod=mod,
+            rule_name=rule_name, description=description,
+            apply=apply,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_dag_export(
-    pipe: str,
     flow: str = "",
     graph_type: str = "rulegraph",
     output_format: str = "dot",
@@ -1148,8 +1247,7 @@ def pipeio_dag_export(
     """Export rule/job DAG via snakemake's native graph output.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
         graph_type: rulegraph (compact), dag (full jobs), or d3dag (JSON).
         output_format: dot, mermaid, svg (requires graphviz), or json (d3dag only).
     """
@@ -1159,7 +1257,7 @@ def pipeio_dag_export(
     try:
         from pipeio.mcp import mcp_dag_export  # type: ignore[import]
         return json_dict(mcp_dag_export(
-            root, pipe=pipe, flow=flow or None,
+            root, flow=flow or None,
             graph_type=graph_type, output_format=output_format,
             snakemake_cmd=_resolve_snakemake_cmd(),
         ))
@@ -1168,7 +1266,6 @@ def pipeio_dag_export(
 
 
 def pipeio_report(
-    pipe: str,
     flow: str = "",
     output_path: str = "",
     target: str = "",
@@ -1176,8 +1273,7 @@ def pipeio_report(
     """Generate a snakemake HTML report for a flow.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
         output_path: Where to write the report (relative to root). Auto-generated if empty.
         target: Target rule to run before report (e.g. "report" for partial output flows).
     """
@@ -1187,7 +1283,7 @@ def pipeio_report(
     try:
         from pipeio.mcp import mcp_report  # type: ignore[import]
         return json_dict(mcp_report(
-            root, pipe=pipe, flow=flow or None,
+            root, flow=flow or None,
             output_path=output_path, target=target,
             snakemake_cmd=_resolve_snakemake_cmd(),
         ))
@@ -1196,7 +1292,6 @@ def pipeio_report(
 
 
 def pipeio_target_paths(
-    pipe: str,
     flow: str = "",
     group: str = "",
     member: str = "",
@@ -1211,8 +1306,7 @@ def pipeio_target_paths(
     - expand=True: glob for all matching paths on disk, filtered by entities.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
         group: Registry group name (e.g. "preproc").
         member: Registry member name (e.g. "cleaned").
         entities: Wildcard entities (e.g. {"sub": "01", "ses": "04"}).
@@ -1224,7 +1318,7 @@ def pipeio_target_paths(
     try:
         from pipeio.mcp import mcp_target_paths  # type: ignore[import]
         return json_dict(mcp_target_paths(
-            root, pipe=pipe, flow=flow or None,
+            root, flow=flow or None,
             group=group, member=member,
             entities=entities, expand=expand,
         ))
@@ -1233,15 +1327,13 @@ def pipeio_target_paths(
 
 
 def pipeio_completion(
-    pipe: str,
     flow: str = "",
     mod: str = "",
 ) -> JsonDict:
     """Check session completion by comparing expected outputs against filesystem.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
         mod: Filter to a specific mod (optional).
     """
     if not _pipeio_available():
@@ -1250,20 +1342,18 @@ def pipeio_completion(
     try:
         from pipeio.mcp import mcp_completion  # type: ignore[import]
         return json_dict(mcp_completion(
-            root, pipe=pipe, flow=flow or None, mod=mod or None,
+            root, flow=flow or None, mod=mod or None,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
 def pipeio_cross_flow(
-    pipe: str = "",
     flow: str = "",
 ) -> JsonDict:
     """Map output_registry → input_registry chains across flows.
 
     Args:
-        pipe: Filter by pipeline name (optional).
         flow: Filter by flow name (optional).
     """
     if not _pipeio_available():
@@ -1272,14 +1362,13 @@ def pipeio_cross_flow(
     try:
         from pipeio.mcp import mcp_cross_flow  # type: ignore[import]
         return json_dict(mcp_cross_flow(
-            root, pipe=pipe or None, flow=flow or None,
+            root, flow=flow or None,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
 def pipeio_log_parse(
-    pipe: str,
     flow: str = "",
     run_id: str = "",
     log_path: str = "",
@@ -1287,8 +1376,7 @@ def pipeio_log_parse(
     """Extract structured data from Snakemake log files.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
         run_id: Specific run ID (optional).
         log_path: Direct path to a Snakemake log file (optional).
     """
@@ -1298,7 +1386,7 @@ def pipeio_log_parse(
     try:
         from pipeio.mcp import mcp_log_parse  # type: ignore[import]
         return json_dict(mcp_log_parse(
-            root, pipe=pipe, flow=flow or None,
+            root, flow=flow or None,
             run_id=run_id or None, log_path=log_path or None,
         ))
     except Exception as exc:
@@ -1306,7 +1394,6 @@ def pipeio_log_parse(
 
 
 def pipeio_run(
-    pipe: str,
     flow: str = "",
     targets: list[str] | None = None,
     cores: int = 1,
@@ -1318,8 +1405,7 @@ def pipeio_run(
     """Launch Snakemake in a detached screen session.
 
     Args:
-        pipe: Pipeline name.
-        flow: Flow name (optional for single-flow pipes).
+        flow: Flow name (optional).
         targets: Snakemake target rules (optional).
         cores: Number of cores (default 1).
         dryrun: If True, do a dry run.
@@ -1337,7 +1423,7 @@ def pipeio_run(
     try:
         from pipeio.mcp import mcp_run  # type: ignore[import]
         return json_dict(mcp_run(
-            root, pipe=pipe, flow=flow or None,
+            root, flow=flow or None,
             targets=targets, cores=cores, dryrun=dryrun,
             extra_args=run_extra or None,
             snakemake_cmd=_resolve_snakemake_cmd(),
@@ -1349,14 +1435,12 @@ def pipeio_run(
 
 def pipeio_run_status(
     run_id: str = "",
-    pipe: str = "",
     flow: str = "",
 ) -> JsonDict:
     """Query progress of running or recent Snakemake runs.
 
     Args:
         run_id: Specific run ID to query (optional).
-        pipe: Filter by pipeline (optional).
         flow: Filter by flow (optional).
     """
     if not _pipeio_available():
@@ -1365,7 +1449,7 @@ def pipeio_run_status(
     try:
         from pipeio.mcp import mcp_run_status  # type: ignore[import]
         return json_dict(mcp_run_status(
-            root, run_id=run_id or None, pipe=pipe or None, flow=flow or None,
+            root, run_id=run_id or None, flow=flow or None,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})

@@ -17,43 +17,48 @@ or publish results.
 Run all validators in parallel:
 
 ```
-pipeio_registry_validate()
-codio_validate()
+pipeio_registry_validate()       # registry consistency
+pipeio_contracts_validate()      # I/O contracts, manifest chains
+pipeio_mod_audit(flow)           # per-mod: scripts, docs, naming, contract drift
+pipeio_nb_audit()                # notebook lifecycle issues
+codio_validate()                 # code library registry
 ```
 
-Check notebook sync state:
-```
-pipeio_nb_status()
-```
-
-Fix any errors before proceeding. Warnings are informational.
+Fix errors before proceeding. Warnings are informational.
 
 ### 2. Execute at scale
 
-Run the pipeline over the target dataset scope:
-```bash
-snakemake --configfile <config> -j <cores> --rerun-incomplete
+Dry run first:
+```
+pipeio_run(flow, dryrun=True)
+```
+
+Then execute:
+```
+pipeio_run(flow, cores=4)
+pipeio_run_status()              # monitor progress
 ```
 
 ### 3. Sync and publish notebooks
 
-If notebooks need syncing (reported by `pipeio_nb_status`):
-```bash
-pipeio nb sync    # requires pipeio[notebook]
-pipeio nb publish
+```
+pipeio_nb_sync_flow(flow)        # sync all stale notebooks
+pipeio_nb_pipeline(flow, name)   # sync → publish → collect → nav (per demo notebook)
 ```
 
-### 4. Build and deploy documentation
+### 4. Collect and publish docs
 
 ```
-site_detect()        # verify site framework
-site_serve()         # preview locally
+pipeio_docs_collect()            # collect flow docs + notebooks + publish.yml artifacts
+pipeio_docs_nav()                # generate nav fragment
+pipeio_mkdocs_nav_patch()        # apply nav to mkdocs.yml
 ```
 
-Or from the command line:
-```bash
-make docs            # build
-make docs-serve      # serve locally
+Preview and deploy:
+```
+site_detect()                    # verify site framework
+site_serve()                     # preview locally
+site_deploy()                    # deploy
 ```
 
 ### 5. Record completion
@@ -66,22 +71,20 @@ note_update(task_path, fields={"status": "deployed"})
 
 After new docs and notebooks are published:
 ```
-indexio_build()
+indexio_sources_sync(build=True)
 ```
 
-This ensures the new pipeline documentation and notebook outputs are
-searchable in future sessions.
+This ensures new pipeline documentation is searchable in future sessions.
 
 ## Output
 
-1. **Validated** registry and code intelligence
+1. **Validated** registry, contracts, mods, notebooks
 2. **Executed** pipeline (or dry-run confirmed)
-3. **Published** notebooks and documentation
+3. **Published** notebooks and documentation (with DAG, reports, scripts via publish.yml)
 4. **Updated** search indexes
 5. **Closed** task note
 
 ## If problems are found at scale
 
-Return to step 1 of `explore-idea.md` with a new idea note that
-references this pipeline run. Do not patch the pipeline without
-recording the reasoning.
+Return to `explore-idea.md` with a new idea note referencing this pipeline run.
+Do not patch the pipeline without recording the reasoning.

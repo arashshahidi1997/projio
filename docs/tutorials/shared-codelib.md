@@ -76,13 +76,33 @@ This does three things per URL:
 
 ## Step 3: Triage the catalog
 
-Edit `profiles.yml` to set priority, runtime_import, and decision_default per library:
+Edit `profiles.yml` to set priority, runtime_import, and decision_default per library. The catalog `role` field controls agent write access:
 
-| Tier | Priority | Clone? | Use case |
+| Role | Priority | Clone? | Use case |
 |------|----------|--------|----------|
-| 1 | `tier1` | Yes | Core domain libs — borrow algorithms, wrap APIs |
-| 2 | `tier2` | No | Large frameworks — use via pip, don't clone |
-| 3 | `tier3` | No | Reference only — MATLAB, notebooks, cookbooks |
+| `core` | `tier1` | Yes | Project's own compute library — agents can add code |
+| `shared` | `tier1-2` | Yes | Lab/org library — used as-is, agents should not modify |
+| `external` | `tier2-3` | Optional | PyPI/conda package — never modified locally |
+
+Set the role in `catalog.yml`:
+
+```yaml
+libraries:
+  cogpy:
+    kind: internal
+    role: core              # actively developed, promote target
+    path: code/lib/cogpy
+  labbox:
+    kind: internal
+    role: shared            # lab library, used as-is
+    path: code/lib/labbox
+  mne:
+    kind: external_mirror
+    role: external          # PyPI package, reference only
+```
+
+!!! tip "Auto-discovery"
+    `projio sync` scans `code/lib/*/` and auto-registers libraries with `role: core`, `kind: internal`. No manual catalog editing needed for project-local libraries.
 
 Key profile fields:
 
@@ -175,6 +195,38 @@ Same as the first project — add the codelib source glob to `.projio/indexio/co
 - **Branch detection:** Clones use the remote's default branch. The actual branch is detected post-clone via `git symbolic-ref` and recorded in `repos.yml`.
 - **indexio absolute globs:** Supported — paths outside the project root are stored as absolute in chunk metadata.
 - **MCP server caching:** After reinstalling codio, restart the MCP server (VS Code: reload window or `/mcp`).
+
+## Code tiers: core library + project utils
+
+Beyond external mirrors, codio integrates with pipeio's code tier model. Projects typically have three code tiers:
+
+| Tier | Location | codio `role` | Purpose |
+|------|----------|-------------|---------|
+| Core library | `code/lib/{name}/` | `core` | Dataset-agnostic, reusable functions |
+| Project utils | `code/utils/` | — | Pipeline-aware glue (PipelineContext, bootstrap) |
+| Flow scripts | `code/pipelines/{flow}/scripts/` | — | Snakemake wiring |
+
+### Setting up project_utils
+
+In `.projio/config.yml`:
+
+```yaml
+code:
+  project_utils: code/utils
+```
+
+Or let `projio sync` auto-detect it — if `code/utils/` exists, it sets `code.project_utils` automatically.
+
+### How scaffolding uses tiers
+
+When pipeio creates notebooks (`nb_create`) or scripts (`script_create`, `mod_create`), it:
+
+1. Queries codio for libraries with `role=core` → adds `import cogpy` to the template
+2. Reads `code.project_utils` from config → adds `from utils.io import PipelineContext`
+
+This means new notebooks and scripts start with the correct imports for the project's code hierarchy.
+
+See `docs/specs/pipeio/code-tiers.md` for the full specification.
 
 ## What's next
 

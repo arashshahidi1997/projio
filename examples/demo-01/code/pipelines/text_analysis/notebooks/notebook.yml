@@ -1,0 +1,19 @@
+kernel: ""
+publish:
+  docs_dir: ""
+  prefix: "nb-"
+entries:
+  - path: "notebooks/explore/.src/investigate_zipf.py"
+    kind: "investigate"
+    description: "Investigate Zipf's law in wordcount outputs"
+    status: "draft"
+    mod: "wordcount"
+    pair_ipynb: true
+    pair_myst: true
+  - path: "notebooks/demo/.src/demo_wordcount.py"
+    kind: "demo"
+    description: "Demonstrate word frequency pipeline results"
+    status: "draft"
+    mod: "wordcount"
+    pair_ipynb: true
+    pair_myst: true

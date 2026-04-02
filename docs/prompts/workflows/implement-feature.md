@@ -61,11 +61,16 @@ Run tests and fix failures before proceeding.
 
 ### 5. Notebook demo (scientific validation)
 
-Create a notebook that:
-- Imports the new API
-- Runs on a small representative dataset (1–2 sessions)
-- Produces 2–3 **decision plots** that would reveal bugs
-- Includes enough narrative for a reviewer to assess correctness
+If working within a pipeline flow, scaffold via pipeio:
+```
+pipeio_nb_create(flow, name="investigate_<feature>", kind="investigate", mod="<mod>")
+```
+
+The notebook should:
+- Import the new API (from compute library discovered via codio)
+- Run on a small representative dataset (1–2 sessions)
+- Produce 2–3 **decision plots** that would reveal bugs
+- Include enough narrative for a reviewer to assess correctness
 
 **Gate:** Do NOT proceed to pipeline integration until:
 - [ ] All tests pass

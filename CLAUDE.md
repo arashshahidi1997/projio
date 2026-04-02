@@ -51,6 +51,7 @@ The full paper production pipeline: **figio** (figures) + **biblio** (citations)
 - `src/projio/cli.py` — CLI entry point (`projio` command), subcommand dispatch
 - `src/projio/init.py` — Workspace scaffolding (three kinds: `generic`, `tool`, `study`)
 - `src/projio/config.py` — Two-tier config: user (`~/.config/projio/config.yml`) merged with project (`.projio/config.yml`), project wins
+- `src/projio/sync.py` — `projio sync`: auto-discover code/lib libraries → codio, detect code/utils → config
 - `src/projio/site.py` — MkDocs build/serve/publish wrappers
 - `src/projio/helpers/` — DataLad sibling management (GitHub/GitLab/RIA), auth diagnostics, credential inspection. All sibling commands are **preview-first** (show command, require `--yes` to execute)
 - `src/projio/mcp/` — FastMCP server exposing unified tools across all subsystems
@@ -63,8 +64,8 @@ The MCP server (`src/projio/mcp/server.py`) is the primary agent interface. It r
 - `mcp/biblio.py` — `citekey_resolve`, `paper_context`, `paper_absent_refs`, `library_get`, `biblio_rag_sync`
 - `mcp/notio.py` — `note_list`, `note_latest`, `note_search`, `notio_reindex`
 - `mcp/manuscripto.py` — `manuscript_init`, `manuscript_list`, `manuscript_status`, `manuscript_build`, `manuscript_validate`, `manuscript_assemble`, `manuscript_figure_insert`
-- `mcp/codio.py` — `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`, `codio_rag_sync`, `codio_add`
-- `mcp/pipeio.py` — `pipeio_flow_list`, `pipeio_flow_status`, `pipeio_nb_status`, `pipeio_nb_create`, `pipeio_nb_update`, `pipeio_nb_sync`, `pipeio_nb_diff`, `pipeio_nb_scan`, `pipeio_nb_read`, `pipeio_nb_audit`, `pipeio_nb_lab`, `pipeio_nb_publish`, `pipeio_nb_analyze`, `pipeio_nb_exec`, `pipeio_nb_pipeline`, `pipeio_mod_list`, `pipeio_mod_resolve`, `pipeio_mod_context`, `pipeio_mod_create`, `pipeio_rule_list`, `pipeio_rule_stub`, `pipeio_rule_insert`, `pipeio_rule_update`, `pipeio_config_read`, `pipeio_config_patch`, `pipeio_config_init`, `pipeio_target_paths`, `pipeio_completion`, `pipeio_cross_flow`, `pipeio_dag_export`, `pipeio_log_parse`, `pipeio_run`, `pipeio_run_status`, `pipeio_run_dashboard`, `pipeio_run_kill`, `pipeio_registry_scan`, `pipeio_registry_validate`, `pipeio_contracts_validate`, `pipeio_docs_collect`, `pipeio_docs_nav`, `pipeio_mkdocs_nav_patch`, `pipeio_modkey_bib`
+- `mcp/codio.py` — `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`, `codio_rag_sync`, `codio_add` (with `role` param: core/shared/external)
+- `mcp/pipeio.py` — 50 tools across flow/mod/rule/config/notebook/docs/execution. Key additions: `pipeio_mod_audit`, `pipeio_mod_doc_refresh`, `pipeio_script_create`, `pipeio_nb_promote`. No `pipe` parameter — flows addressed by name only. See `skill_read("pipeio-guide")` for full reference.
 - `mcp/datalad.py` — `datalad_save`, `datalad_status`, `datalad_push`, `datalad_pull`, `datalad_siblings`
 - `mcp/site.py` — `site_detect`, `site_build`, `site_deploy`, `site_serve`, `site_stop`, `site_list`
 - `mcp/context.py` — `project_context`, `runtime_conventions`
@@ -90,11 +91,16 @@ The generated `.projio/projio.mk` substitutes these into `PROJIO ?=` and `DATALA
 
 Projio scaffolds `.claude/settings.json` with pre-approved tool permissions (including `mcp__projio__*` and `mcp__worklog__*`) and `.mcp.json` for the MCP server. Both files are gitignored via the `# >>> projio >>>` block. Use `projio git untrack` to stop tracking them if they were committed before being gitignored.
 
-### Codio Library System Layers
+### Code Tiers and Codio
 
-Codio implements a multi-layer code intelligence system:
-1. **Physical layer** — local code resources (mirrors, packages) in `code/lib/`
-2. **Catalog** — machine-readable registry (name, language, repo URL, license, source paths)
-3. **Project profile** — per-project interpretation (priority, runtime policy, capabilities)
-4. **Curated notes** — human-written usage guidance, patterns, caveats
-5. **Query layer** — MCP tools for discovery and inspection
+Projects organize code in three tiers with a promotion model (notebooks → scripts → utils → core library). Codio manages the library catalog with a `role` field that governs agent write access:
+
+| Tier | Location | codio `role` | Description |
+|------|----------|-------------|-------------|
+| Core library | `code/lib/{name}/` | `core` | Dataset-agnostic, reusable. Agents may add code. |
+| Project utils | `code/utils/` | — | Pipeline-aware glue (PipelineContext, bootstrap). Configured via `code.project_utils` in `.projio/config.yml`. |
+| Flow scripts | `code/pipelines/{flow}/scripts/` | — | Snakemake wiring, one per rule. |
+
+`projio sync` auto-discovers `code/lib/*/` and registers in codio with `role=core`, `kind=internal`. It also detects `code/utils/` and sets `code.project_utils` in config. The `project_context()` MCP tool returns the active code tier configuration.
+
+Codio's five-layer architecture: physical code → catalog (with `role: core|shared|external`) → project profile → curated notes → MCP query tools. See `docs/specs/pipeio/code-tiers.md` for the full spec.

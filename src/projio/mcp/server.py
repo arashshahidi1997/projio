@@ -125,6 +125,16 @@ def biblio_docling_status_tool(job_id: str):
     return biblio.biblio_docling_status(job_id=job_id)
 
 
+@server.tool("biblio_docling_batch")
+def biblio_docling_batch_tool(concurrency: int = 1, force: bool = False, filter_glob: str = ""):
+    """Run Docling on all pending papers (PDFs without docling output) in background.
+    Returns a job_id — poll with biblio_docling_status(job_id). Keep concurrency low on shared HPC."""
+    return biblio.biblio_docling_batch(
+        concurrency=concurrency, force=force,
+        filter_glob=filter_glob or None,
+    )
+
+
 @server.tool("biblio_grobid")
 def biblio_grobid_tool(citekey: str, force: bool = False):
     """Run GROBID on a paper's PDF to extract structured header and references."""
@@ -364,40 +374,48 @@ def codio_func_doc_tool(package: str, module: str, function: str = "", env: str 
 # --- Pipeio tools ---
 
 @server.tool("pipeio_flow_list")
-def pipeio_flow_list_tool(pipe: str = ""):
-    """List pipeline flows, optionally filtered by pipe name."""
-    return pipeio.pipeio_flow_list(pipe=pipe or None)
+def pipeio_flow_list_tool(prefix: str = ""):
+    """List pipeline flows, optionally filtered by name prefix."""
+    return pipeio.pipeio_flow_list(prefix=prefix or None)
 
 
 @server.tool("pipeio_flow_status")
-def pipeio_flow_status_tool(pipe: str, flow: str):
-    """Show status of a specific pipeline flow (config, outputs, notebooks)."""
-    return pipeio.pipeio_flow_status(pipe=pipe, flow=flow)
+def pipeio_flow_status_tool(flow: str):
+    """Show status of a specific flow (config, outputs, notebooks)."""
+    return pipeio.pipeio_flow_status(flow=flow)
 
 
 @server.tool("pipeio_flow_fork")
-def pipeio_flow_fork_tool(pipe: str, flow: str, new_flow: str, new_pipe: str = ""):
+def pipeio_flow_fork_tool(flow: str, new_flow: str):
     """Fork a flow: copy code directory and register as a new flow.
     Original is untouched."""
-    return pipeio.pipeio_flow_fork(pipe=pipe, flow=flow, new_flow=new_flow, new_pipe=new_pipe)
+    return pipeio.pipeio_flow_fork(flow=flow, new_flow=new_flow)
 
 
 @server.tool("pipeio_flow_deregister")
-def pipeio_flow_deregister_tool(pipe: str, flow: str):
-    """Remove a flow from the pipeline registry. Files on disk are untouched.
+def pipeio_flow_deregister_tool(flow: str):
+    """Remove a flow from the registry. Files on disk are untouched.
     Use pipeio_registry_scan() to re-register if needed."""
-    return pipeio.pipeio_flow_deregister(pipe=pipe, flow=flow)
+    return pipeio.pipeio_flow_deregister(flow=flow)
+
+
+@server.tool("pipeio_flow_new")
+def pipeio_flow_new_tool(flow: str):
+    """Scaffold a new pipeline flow with standard directory structure.
+    Creates Snakefile, config.yml, publish.yml, Makefile, scripts/, rules/,
+    docs/index.md, and notebook workspaces (explore + demo).
+    Idempotent: only writes missing files."""
+    return pipeio.pipeio_flow_new(flow=flow)
 
 
 @server.tool("pipeio_nb_status")
-def pipeio_nb_status_tool(pipe: str = "", flow: str = "", name: str = ""):
-    """Show notebook sync and publication status. Optionally filter by pipe, flow, or name."""
-    return pipeio.pipeio_nb_status(pipe=pipe, flow=flow, name=name)
+def pipeio_nb_status_tool(flow: str = "", name: str = ""):
+    """Show notebook sync and publication status. Optionally filter by flow or name."""
+    return pipeio.pipeio_nb_status(flow=flow, name=name)
 
 
 @server.tool("pipeio_nb_update")
 def pipeio_nb_update_tool(
-    pipe: str,
     flow: str,
     name: str,
     status: str = "",
@@ -410,18 +428,18 @@ def pipeio_nb_update_tool(
 
     status: draft/active/stale/promoted/archived.
     kind: investigate/explore/demo/validate.
-    mod: associated pipeline mod. kernel: Jupyter kernel name."""
+    mod: associated mod. kernel: Jupyter kernel name."""
     return pipeio.pipeio_nb_update(
-        pipe=pipe, flow=flow, name=name,
+        flow=flow, name=name,
         status=status, description=description, kind=kind,
         mod=mod, kernel=kernel,
     )
 
 
 @server.tool("pipeio_mod_list")
-def pipeio_mod_list_tool(pipe: str, flow: str = ""):
-    """List mods (logical modules) for a pipeline flow."""
-    return pipeio.pipeio_mod_list(pipe=pipe, flow=flow)
+def pipeio_mod_list_tool(flow: str = ""):
+    """List mods (logical modules) for a flow."""
+    return pipeio.pipeio_mod_list(flow=flow)
 
 
 @server.tool("pipeio_mod_resolve")
@@ -431,11 +449,11 @@ def pipeio_mod_resolve_tool(modkeys: list[str]):
 
 
 @server.tool("pipeio_mod_context")
-def pipeio_mod_context_tool(pipe: str, flow: str = "", mod: str = ""):
+def pipeio_mod_context_tool(flow: str = "", mod: str = ""):
     """Bundled read context for a mod: rules, scripts, doc, config params, bids signatures.
 
     Returns everything needed to understand and work on a mod in one MCP call."""
-    return pipeio.pipeio_mod_context(pipe=pipe, flow=flow, mod=mod)
+    return pipeio.pipeio_mod_context(flow=flow, mod=mod)
 
 
 @server.tool("pipeio_registry_scan")
@@ -470,22 +488,20 @@ def pipeio_contracts_validate_tool():
 
 @server.tool("pipeio_nb_create")
 def pipeio_nb_create_tool(
-    pipe: str,
     flow: str,
     name: str,
     kind: str = "investigate",
     description: str = "",
 ):
-    """Scaffold a new notebook for a pipeline flow with bootstrap cells."""
+    """Scaffold a new notebook for a flow with bootstrap cells."""
     return pipeio.pipeio_nb_create(
-        pipe=pipe, flow=flow, name=name,
+        flow=flow, name=name,
         kind=kind, description=description,
     )
 
 
 @server.tool("pipeio_nb_sync")
 def pipeio_nb_sync_tool(
-    pipe: str,
     flow: str,
     name: str,
     formats: list[str] = [],
@@ -496,7 +512,7 @@ def pipeio_nb_sync_tool(
     .ipynb/.md from .py; direction='nb2py' updates .py from the .ipynb
     (use after human edits). Skips up-to-date files unless force=True."""
     return pipeio.pipeio_nb_sync(
-        pipe=pipe, flow=flow, name=name,
+        flow=flow, name=name,
         formats=formats or None,
         direction=direction, force=force,
     )
@@ -504,41 +520,41 @@ def pipeio_nb_sync_tool(
 
 @server.tool("pipeio_nb_sync_flow")
 def pipeio_nb_sync_flow_tool(
-    pipe: str, flow: str, direction: str = "py2nb", force: bool = False,
+    flow: str, direction: str = "py2nb", force: bool = False,
 ):
     """Batch-sync all notebooks in a flow. Syncs every notebook in notebook.yml."""
     return pipeio.pipeio_nb_sync_flow(
-        pipe=pipe, flow=flow, direction=direction, force=force,
+        flow=flow, direction=direction, force=force,
     )
 
 
 @server.tool("pipeio_nb_publish")
-def pipeio_nb_publish_tool(pipe: str, flow: str, name: str, format: str = ""):
-    """Publish a notebook to docs/pipelines/<pipe>/<flow>/notebooks/.
+def pipeio_nb_publish_tool(flow: str, name: str, format: str = ""):
+    """Publish a notebook to docs/pipelines/<flow>/notebooks/.
     Publishes myst and/or html based on notebook.yml. Pass format='html' to force HTML."""
-    return pipeio.pipeio_nb_publish(pipe=pipe, flow=flow, name=name, format=format)
+    return pipeio.pipeio_nb_publish(flow=flow, name=name, format=format)
 
 
 @server.tool("pipeio_nb_analyze")
-def pipeio_nb_analyze_tool(pipe: str, flow: str, name: str):
+def pipeio_nb_analyze_tool(flow: str, name: str):
     """Analyze a notebook's static structure: imports, RunCard fields, PipelineContext
     usage, section headers, and cogpy function calls."""
-    return pipeio.pipeio_nb_analyze(pipe=pipe, flow=flow, name=name)
+    return pipeio.pipeio_nb_analyze(flow=flow, name=name)
 
 
 @server.tool("pipeio_nb_diff")
-def pipeio_nb_diff_tool(pipe: str, flow: str, name: str):
+def pipeio_nb_diff_tool(flow: str, name: str):
     """Show sync state between .py and .ipynb: which is newer, whether in sync,
     and the recommended sync direction. Call before nb_sync to decide direction."""
-    return pipeio.pipeio_nb_diff(pipe=pipe, flow=flow, name=name)
+    return pipeio.pipeio_nb_diff(flow=flow, name=name)
 
 
 @server.tool("pipeio_nb_lab")
-def pipeio_nb_lab_tool(pipe: str = "", flow: str = "", sync: bool = False):
+def pipeio_nb_lab_tool(flow: str = "", sync: bool = False):
     """Build/refresh Jupyter Lab symlink manifest in .projio/pipeio/lab/.
-    Creates symlinks to active .ipynb notebooks. Pass sync=True to sync py→ipynb first.
+    Creates symlinks to active .ipynb notebooks. Pass sync=True to sync py->ipynb first.
     Returns manifest state (linked notebooks, lab_dir)."""
-    return pipeio.pipeio_nb_lab(pipe=pipe, flow=flow, sync=sync)
+    return pipeio.pipeio_nb_lab(flow=flow, sync=sync)
 
 
 @server.tool("pipeio_nb_scan")
@@ -549,10 +565,10 @@ def pipeio_nb_scan_tool(register: bool = False):
 
 
 @server.tool("pipeio_nb_read")
-def pipeio_nb_read_tool(pipe: str, flow: str, name: str):
+def pipeio_nb_read_tool(flow: str, name: str):
     """Read a notebook's .py content with metadata, sync state, and structural
     analysis (sections, imports, RunCard, cogpy calls) in a single call."""
-    return pipeio.pipeio_nb_read(pipe=pipe, flow=flow, name=name)
+    return pipeio.pipeio_nb_read(flow=flow, name=name)
 
 
 @server.tool("pipeio_nb_audit")
@@ -564,16 +580,15 @@ def pipeio_nb_audit_tool():
 
 @server.tool("pipeio_nb_pipeline")
 def pipeio_nb_pipeline_tool(
-    pipe: str,
     flow: str,
     name: str,
     formats: list[str] = [],
     build_site: bool = False,
 ):
-    """Composite notebook publish: sync → publish → docs_collect → docs_nav in one call.
+    """Composite notebook publish: sync -> publish -> docs_collect -> docs_nav in one call.
     Optionally triggers site_build at the end."""
     return pipeio.pipeio_nb_pipeline(
-        pipe=pipe, flow=flow, name=name,
+        flow=flow, name=name,
         formats=formats or None,
         build_site=build_site,
     )
@@ -586,18 +601,17 @@ def pipeio_mkdocs_nav_patch_tool():
 
 
 @server.tool("pipeio_rule_list")
-def pipeio_rule_list_tool(pipe: str, flow: str = ""):
+def pipeio_rule_list_tool(flow: str = ""):
     """List Snakemake rules for a flow with input/output signatures and mod membership.
 
     Parses the Snakefile (and .smk includes) and returns structured metadata
     per rule: name, input/output/params dicts of {name: raw_expression},
     script path, and which mod the rule belongs to."""
-    return pipeio.pipeio_rule_list(pipe=pipe, flow=flow)
+    return pipeio.pipeio_rule_list(flow=flow)
 
 
 @server.tool("pipeio_rule_stub")
 def pipeio_rule_stub_tool(
-    pipe: str,
     flow: str,
     rule_name: str,
     inputs: dict = {},
@@ -612,7 +626,6 @@ def pipeio_rule_stub_tool(
     outputs: {name: bids_kwargs_dict} or {name: bids_pattern_str}.
     params: {name: config_dot_path} e.g. {"ttl_freq": "ttl_removal.ttl_freq"}."""
     return pipeio.pipeio_rule_stub(
-        pipe=pipe,
         flow=flow,
         rule_name=rule_name,
         inputs=inputs or None,
@@ -624,7 +637,6 @@ def pipeio_rule_stub_tool(
 
 @server.tool("pipeio_rule_insert")
 def pipeio_rule_insert_tool(
-    pipe: str,
     flow: str = "",
     rule_name: str = "",
     rule_text: str = "",
@@ -641,7 +653,6 @@ def pipeio_rule_insert_tool(
     Auto-selects the target file by mod prefix if not specified.
     after_rule: insert after this rule (appends at end if omitted)."""
     return pipeio.pipeio_rule_insert(
-        pipe=pipe,
         flow=flow,
         rule_name=rule_name,
         rule_text=rule_text,
@@ -656,7 +667,6 @@ def pipeio_rule_insert_tool(
 
 @server.tool("pipeio_rule_update")
 def pipeio_rule_update_tool(
-    pipe: str,
     flow: str = "",
     rule_name: str = "",
     add_inputs: dict = {},
@@ -671,7 +681,6 @@ def pipeio_rule_update_tool(
     Returns a unified diff preview; set apply=True to write the patched file.
     add_inputs/add_outputs: {name: spec}. add_params: {name: config_dot_path}."""
     return pipeio.pipeio_rule_update(
-        pipe=pipe,
         flow=flow,
         rule_name=rule_name,
         add_inputs=add_inputs or None,
@@ -683,17 +692,16 @@ def pipeio_rule_update_tool(
 
 
 @server.tool("pipeio_config_read")
-def pipeio_config_read_tool(pipe: str, flow: str = ""):
+def pipeio_config_read_tool(flow: str = ""):
     """Read and parse a flow's config.yml with YAML anchor resolution and bids() signature mapping.
 
     Returns pybids_inputs, registry groups (with resolved members), _member_sets anchors,
     params, and a bids_signatures dict showing the effective bids() call per group+member."""
-    return pipeio.pipeio_config_read(pipe=pipe, flow=flow)
+    return pipeio.pipeio_config_read(flow=flow)
 
 
 @server.tool("pipeio_config_patch")
 def pipeio_config_patch_tool(
-    pipe: str,
     flow: str = "",
     registry_entry: dict = {},
     params_entry: dict = {},
@@ -706,7 +714,6 @@ def pipeio_config_patch_tool(
     registry_entry: {group_name: group_dict} to add/replace in registry:.
     params_entry: {section: {key: value}} to update in top-level params."""
     return pipeio.pipeio_config_patch(
-        pipe=pipe,
         flow=flow,
         registry_entry=registry_entry or None,
         params_entry=params_entry or None,
@@ -716,7 +723,6 @@ def pipeio_config_patch_tool(
 
 @server.tool("pipeio_config_init")
 def pipeio_config_init_tool(
-    pipe: str,
     flow: str = "",
     input_dir: str = "",
     output_dir: str = "",
@@ -727,10 +733,8 @@ def pipeio_config_init_tool(
     """Scaffold a new flow's config.yml with pybids_inputs and registry structure.
 
     Creates a well-structured config.yml for a flow that doesn't have one yet.
-    Use config_patch to modify an existing config. Validates registry_groups schema.
-    output_registry auto-set to {output_dir}/pipe-{pipe}_flow-{flow}_registry.yml."""
+    Use config_patch to modify an existing config. Validates registry_groups schema."""
     return pipeio.pipeio_config_init(
-        pipe=pipe,
         flow=flow,
         input_dir=input_dir,
         output_dir=output_dir,
@@ -748,7 +752,6 @@ def pipeio_registry_validate_tool():
 
 @server.tool("pipeio_mod_create")
 def pipeio_mod_create_tool(
-    pipe: str,
     flow: str,
     mod: str,
     description: str = "",
@@ -758,14 +761,14 @@ def pipeio_mod_create_tool(
     params_spec: dict = {},
     use_pipeline_context: bool = False,
 ):
-    """Scaffold a new pipeline mod: scripts/<mod>.py skeleton + docs/mod-<mod>.md stub.
+    """Scaffold a new mod: scripts/<mod>.py skeleton + docs/mod-<mod>.md stub.
 
     When inputs/outputs/params_spec provided, generates Snakemake I/O unpacking
     and parameter binding so only processing logic needs filling in.
     inputs/outputs/params_spec: {var_name: description} for snakemake.input/output/params.
     use_pipeline_context: generate PipelineContext setup boilerplate."""
     return pipeio.pipeio_mod_create(
-        pipe=pipe, flow=flow, mod=mod,
+        flow=flow, mod=mod,
         description=description, from_notebook=from_notebook or None,
         inputs=inputs or None, outputs=outputs or None,
         params_spec=params_spec or None,
@@ -775,23 +778,81 @@ def pipeio_mod_create_tool(
 
 @server.tool("pipeio_nb_exec")
 def pipeio_nb_exec_tool(
-    pipe: str,
     flow: str,
     name: str,
     params: dict = {},
     timeout: int = 600,
 ):
     """Execute a notebook via papermill with optional RunCard parameter overrides.
-    Syncs py → ipynb first, returns status/errors/output path/elapsed time."""
+    Syncs py -> ipynb first, returns status/errors/output path/elapsed time."""
     return pipeio.pipeio_nb_exec(
-        pipe=pipe, flow=flow, name=name,
+        flow=flow, name=name,
         params=params or None, timeout=timeout,
+    )
+
+
+@server.tool("pipeio_mod_audit")
+def pipeio_mod_audit_tool(flow: str = "", mod: str = ""):
+    """Audit a mod's health: contract drift, doc/script existence, naming conventions.
+    Returns structured findings without modifying anything. Leave mod empty to audit all mods."""
+    return pipeio.pipeio_mod_audit(flow=flow, mod=mod)
+
+
+@server.tool("pipeio_nb_promote")
+def pipeio_nb_promote_tool(
+    flow: str,
+    name: str,
+    mod: str,
+    rule_name: str = "",
+    description: str = "",
+    apply: bool = False,
+):
+    """Promote a notebook to a pipeline mod: analyze → script → rule stub → docs.
+    Creates the script file. Returns rule stub and next steps for review.
+    Set apply=True to also create mod doc stubs (theory.md + spec.md)."""
+    return pipeio.pipeio_nb_promote(
+        flow=flow, name=name, mod=mod,
+        rule_name=rule_name, description=description,
+        apply=apply,
+    )
+
+
+@server.tool("pipeio_mod_doc_refresh")
+def pipeio_mod_doc_refresh_tool(
+    flow: str,
+    mod: str,
+    facet: str = "spec",
+    apply: bool = False,
+):
+    """Regenerate a mod doc facet (spec.md or theory.md) from current mod context.
+    Returns content preview; set apply=True to write to disk."""
+    return pipeio.pipeio_mod_doc_refresh(
+        flow=flow, mod=mod, facet=facet, apply=apply,
+    )
+
+
+@server.tool("pipeio_script_create")
+def pipeio_script_create_tool(
+    flow: str,
+    mod: str,
+    script_name: str,
+    description: str = "",
+    inputs: dict = {},
+    outputs: dict = {},
+    params_spec: dict = {},
+):
+    """Create an additional script for an existing mod with Snakemake I/O template.
+    Discovers project compute library via codio for imports."""
+    return pipeio.pipeio_script_create(
+        flow=flow, mod=mod, script_name=script_name,
+        description=description,
+        inputs=inputs or None, outputs=outputs or None,
+        params_spec=params_spec or None,
     )
 
 
 @server.tool("pipeio_dag_export")
 def pipeio_dag_export_tool(
-    pipe: str,
     flow: str = "",
     graph_type: str = "rulegraph",
     output_format: str = "dot",
@@ -800,14 +861,13 @@ def pipeio_dag_export_tool(
     graph_type: rulegraph (compact), dag (full jobs), d3dag (JSON).
     output_format: dot, mermaid, svg (needs graphviz), json (d3dag only)."""
     return pipeio.pipeio_dag_export(
-        pipe=pipe, flow=flow,
+        flow=flow,
         graph_type=graph_type, output_format=output_format,
     )
 
 
 @server.tool("pipeio_report")
 def pipeio_report_tool(
-    pipe: str,
     flow: str = "",
     output_path: str = "",
     target: str = "",
@@ -815,14 +875,13 @@ def pipeio_report_tool(
     """Generate snakemake HTML report with runtime stats, provenance, and annotated outputs.
     target: rule to run first (e.g. "report" for flows with partial outputs)."""
     return pipeio.pipeio_report(
-        pipe=pipe, flow=flow,
+        flow=flow,
         output_path=output_path, target=target,
     )
 
 
 @server.tool("pipeio_target_paths")
 def pipeio_target_paths_tool(
-    pipe: str,
     flow: str = "",
     group: str = "",
     member: str = "",
@@ -830,39 +889,38 @@ def pipeio_target_paths_tool(
     expand: bool = False,
 ):
     """Resolve output paths for a flow's registry entries.
-    Three modes: (1) no group → list groups/members/patterns,
-    (2) group+member+entities → resolve single path,
-    (3) expand=True → glob all matching paths filtered by entities."""
+    Three modes: (1) no group -> list groups/members/patterns,
+    (2) group+member+entities -> resolve single path,
+    (3) expand=True -> glob all matching paths filtered by entities."""
     return pipeio.pipeio_target_paths(
-        pipe=pipe, flow=flow, group=group, member=member,
+        flow=flow, group=group, member=member,
         entities=entities, expand=expand,
     )
 
 
 @server.tool("pipeio_completion")
-def pipeio_completion_tool(pipe: str, flow: str = "", mod: str = ""):
+def pipeio_completion_tool(flow: str = "", mod: str = ""):
     """Check per-session completion: compare expected outputs (from registry) against filesystem.
     Reports complete/partial/missing sessions per registry group."""
-    return pipeio.pipeio_completion(pipe=pipe, flow=flow, mod=mod)
+    return pipeio.pipeio_completion(flow=flow, mod=mod)
 
 
 @server.tool("pipeio_cross_flow")
-def pipeio_cross_flow_tool(pipe: str = "", flow: str = ""):
-    """Map output_registry → input_registry chains across flows.
+def pipeio_cross_flow_tool(flow: str = ""):
+    """Map output_registry -> input_registry chains across flows.
     Shows which flows consume which outputs, detects stale references."""
-    return pipeio.pipeio_cross_flow(pipe=pipe, flow=flow)
+    return pipeio.pipeio_cross_flow(flow=flow)
 
 
 @server.tool("pipeio_log_parse")
-def pipeio_log_parse_tool(pipe: str, flow: str = "", run_id: str = "", log_path: str = ""):
+def pipeio_log_parse_tool(flow: str = "", run_id: str = "", log_path: str = ""):
     """Extract structured data from Snakemake logs: completed rules with timing,
     failed rules with error summaries, resource warnings, missing inputs."""
-    return pipeio.pipeio_log_parse(pipe=pipe, flow=flow, run_id=run_id, log_path=log_path)
+    return pipeio.pipeio_log_parse(flow=flow, run_id=run_id, log_path=log_path)
 
 
 @server.tool("pipeio_run")
 def pipeio_run_tool(
-    pipe: str,
     flow: str = "",
     targets: list[str] = [],
     cores: int = 1,
@@ -874,9 +932,9 @@ def pipeio_run_tool(
     """Launch Snakemake in a detached screen session. State tracked in .pipeio/runs.json.
     Returns run_id and screen session name for later status queries.
     use_conda: pass --use-conda to snakemake (use conda envs defined in rules).
-    wildcards: entity filters for scoping (e.g. {"subject": "01", "session": "04"}) → --filter-{key} {value}."""
+    wildcards: entity filters for scoping (e.g. {"subject": "01", "session": "04"})."""
     return pipeio.pipeio_run(
-        pipe=pipe, flow=flow,
+        flow=flow,
         targets=targets or None, cores=cores, dryrun=dryrun,
         use_conda=use_conda,
         extra_args=extra_args or None,
@@ -885,10 +943,10 @@ def pipeio_run_tool(
 
 
 @server.tool("pipeio_run_status")
-def pipeio_run_status_tool(run_id: str = "", pipe: str = "", flow: str = ""):
+def pipeio_run_status_tool(run_id: str = "", flow: str = ""):
     """Query progress of running or recent Snakemake runs.
     Checks screen sessions alive, parses log tails for completion percentage."""
-    return pipeio.pipeio_run_status(run_id=run_id, pipe=pipe, flow=flow)
+    return pipeio.pipeio_run_status(run_id=run_id, flow=flow)
 
 
 @server.tool("pipeio_run_dashboard")
@@ -917,6 +975,21 @@ def runtime_conventions_tool():
     return context.runtime_conventions()
 
 
+@server.tool("projio_init")
+def projio_init_tool(root: str = "", kind: str = "generic", profile: str = ""):
+    """Scaffold a .projio workspace inside a project directory.
+    Creates config, directory structure, and optional subsystem scaffolding.
+    kind: generic, tool, study. profile: research (notio+biblio+indexio) or full (all)."""
+    return context.projio_init(root=root, kind=kind, profile=profile)
+
+
+@server.tool("ecosystem_status")
+def ecosystem_status_tool():
+    """One-shot health check across all projio subsystems: biblio, codio, notio,
+    pipeio, indexio. Returns per-subsystem status and overall healthy flag."""
+    return context.ecosystem_status()
+
+
 @server.tool("agent_instructions")
 def agent_instructions_tool():
     """Agent execution context: tool routing, workflow conventions, enabled packages.
@@ -935,6 +1008,24 @@ def skill_read_tool(name: str):
     """Read a skill's full content by name. Returns metadata and markdown body.
     Use agent_instructions() first to see available skills, then skill_read() to get one."""
     return context.skill_read(name=name)
+
+
+@server.tool("permissions_sync")
+def permissions_sync_tool(dry_run: bool = False):
+    """Sync .claude/settings.json permissions from project config, codio deps, and .mcp.json.
+
+    Automatically adds:
+    - mcp__<server>__* wildcards for all configured MCP servers in .mcp.json
+    - Read() permissions for codio managed/attached repository paths
+    - Any extra permissions from claude.extra_permissions in projio config
+    - Any extra MCP wildcards from claude.extra_mcp_wildcards in projio config
+
+    Existing user-added permissions are never removed (additive merge only).
+    """
+    import os
+    from projio.init import sync_claude_permissions
+    root = os.environ.get("PROJIO_ROOT", ".")
+    return sync_claude_permissions(root, dry_run=dry_run)
 
 
 # --- Site tools ---

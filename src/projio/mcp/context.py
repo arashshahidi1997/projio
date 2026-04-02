@@ -287,6 +287,191 @@ def _discover_workflow_prompts(root: Path) -> list[dict[str, Any]]:
     return prompts
 
 
+def projio_init(
+    root: str = "",
+    kind: str = "generic",
+    profile: str = "",
+) -> JsonDict:
+    """Scaffold a .projio workspace inside a project directory.
+
+    Creates .projio/config.yml, projio.mk, directory structure, and
+    optional subsystem scaffolding (biblio, codio, pipeio, etc.).
+
+    Idempotent: only writes missing files.
+
+    Args:
+        root: Project directory. Empty = current project root.
+        kind: Project kind — one of 'generic', 'tool', 'study'.
+        profile: Optional subsystem profile — 'research' (notio+biblio+indexio)
+            or 'full' (all subsystems). Empty = no profile.
+    """
+    from pathlib import Path as _Path
+    try:
+        from projio.init import scaffold, KIND_CHOICES, PROFILES
+
+        if kind not in KIND_CHOICES:
+            return json_dict({"error": f"Unknown kind: {kind!r}. Choose from: {KIND_CHOICES}"})
+        if profile and profile not in PROFILES:
+            return json_dict({"error": f"Unknown profile: {profile!r}. Choose from: {list(PROFILES)}"})
+
+        target = _Path(root).expanduser().resolve() if root else get_project_root()
+        scaffold(target, kind=kind, profile=profile or None)
+
+        return json_dict({
+            "root": str(target),
+            "kind": kind,
+            "profile": profile or None,
+            "config_path": str(target / ".projio" / "config.yml"),
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def ecosystem_status() -> JsonDict:
+    """One-shot health check across all projio subsystems.
+
+    Checks: biblio (main.bib exists, citekey count), codio (catalog entry count,
+    validation), notio (note count), pipeio (registry validity, contracts validity,
+    flow/mod counts), and indexio (corpus count). Returns structured results per
+    subsystem with an overall healthy flag.
+    """
+    import yaml as _yaml
+    root = get_project_root()
+
+    try:
+        from projio.init import load_projio_config
+        cfg = load_projio_config(root)
+    except FileNotFoundError:
+        return json_dict({"error": "No .projio/config.yml found"})
+
+    subsystems: dict[str, Any] = {}
+    overall_healthy = True
+
+    # --- biblio ---
+    biblio_cfg = cfg.get("biblio", {}) or {}
+    if biblio_cfg.get("enabled", False):
+        bib_status: dict[str, Any] = {"enabled": True}
+        main_bib = root / "bib" / "main.bib"
+        bib_status["main_bib_exists"] = main_bib.exists()
+        if main_bib.exists():
+            try:
+                from biblio.mcp import resolve_citekeys  # type: ignore[import]
+                # Just count entries in main.bib
+                import re
+                text = main_bib.read_text(encoding="utf-8")
+                entries = re.findall(r"@\w+\{(\w+)", text)
+                bib_status["citekey_count"] = len(entries)
+            except Exception:
+                bib_status["citekey_count"] = "unknown"
+        subsystems["biblio"] = bib_status
+    else:
+        subsystems["biblio"] = {"enabled": False}
+
+    # --- codio ---
+    codio_cfg = cfg.get("codio", {}) or {}
+    if codio_cfg.get("enabled", False):
+        codio_status: dict[str, Any] = {"enabled": True}
+        try:
+            from codio import load_config as codio_load_config, Registry as CodioRegistry  # type: ignore[import]
+            c_cfg = codio_load_config(root)
+            c_reg = CodioRegistry(config=c_cfg)
+            libs = c_reg.list()
+            codio_status["library_count"] = len(libs)
+            validation = c_reg.validate()
+            codio_status["valid"] = validation.valid
+            if validation.errors:
+                codio_status["errors"] = validation.errors
+                overall_healthy = False
+            if validation.warnings:
+                codio_status["warnings"] = validation.warnings
+        except ImportError:
+            codio_status["available"] = False
+        except Exception as exc:
+            codio_status["error"] = str(exc)
+        subsystems["codio"] = codio_status
+    else:
+        subsystems["codio"] = {"enabled": False}
+
+    # --- notio ---
+    notio_cfg = cfg.get("notio", {}) or {}
+    if notio_cfg.get("enabled", False):
+        notio_status: dict[str, Any] = {"enabled": True}
+        notes_dir = root / (notio_cfg.get("notes_dir", "notes") or "notes")
+        note_count = 0
+        if notes_dir.exists():
+            note_count = sum(1 for _ in notes_dir.rglob("*.md"))
+        # Also count docs/log notes
+        docs_log = root / "docs" / "log"
+        if docs_log.exists():
+            note_count += sum(1 for _ in docs_log.rglob("*.md") if _.name != "index.md")
+        notio_status["note_count"] = note_count
+        subsystems["notio"] = notio_status
+    else:
+        subsystems["notio"] = {"enabled": False}
+
+    # --- pipeio ---
+    pipeio_cfg = cfg.get("pipeio", {}) or {}
+    if pipeio_cfg.get("enabled", False):
+        pipeio_status: dict[str, Any] = {"enabled": True}
+        registry_path = pipeio_cfg.get("registry_path", "")
+        if registry_path:
+            reg_file = root / registry_path
+            if reg_file.exists():
+                try:
+                    reg_data = _yaml.safe_load(reg_file.read_text(encoding="utf-8")) or {}
+                    flows = reg_data.get("flows", {})
+                    pipeio_status["flow_count"] = len(flows)
+                    total_mods = sum(
+                        len(f.get("mods", {})) for f in flows.values() if isinstance(f, dict)
+                    )
+                    pipeio_status["mod_count"] = total_mods
+                except Exception as exc:
+                    pipeio_status["registry_error"] = str(exc)
+
+        try:
+            from pipeio.mcp import mcp_registry_validate, mcp_contracts_validate  # type: ignore[import]
+            rv = mcp_registry_validate(root)
+            pipeio_status["registry_valid"] = rv.get("valid", False)
+            if not rv.get("valid", True):
+                overall_healthy = False
+                pipeio_status["registry_errors"] = rv.get("errors", [])
+            cv = mcp_contracts_validate(root)
+            pipeio_status["contracts_valid"] = cv.get("valid", False)
+            if not cv.get("valid", True):
+                overall_healthy = False
+        except ImportError:
+            pipeio_status["available"] = False
+        except Exception as exc:
+            pipeio_status["validation_error"] = str(exc)
+
+        subsystems["pipeio"] = pipeio_status
+    else:
+        subsystems["pipeio"] = {"enabled": False}
+
+    # --- indexio ---
+    indexio_cfg = cfg.get("indexio", {}) or {}
+    indexio_status: dict[str, Any] = {}
+    persist_dir = indexio_cfg.get("persist_dir", "")
+    if persist_dir:
+        persist_path = root / persist_dir
+        indexio_status["index_exists"] = persist_path.exists()
+    try:
+        from projio.mcp.rag import corpus_list
+        cl = corpus_list()
+        if isinstance(cl, dict) and "corpora" in cl:
+            indexio_status["corpus_count"] = len(cl["corpora"])
+    except Exception:
+        pass
+    subsystems["indexio"] = indexio_status
+
+    return json_dict({
+        "project_name": cfg.get("project_name", root.name),
+        "root": str(root),
+        "healthy": overall_healthy,
+        "subsystems": subsystems,
+    })
+
+
 def project_context() -> JsonDict:
     """Structured snapshot of the project: config, README excerpt, key paths.
 
@@ -307,6 +492,48 @@ def project_context() -> JsonDict:
             readme_excerpt = text[:2000]
             break
 
+    # Code tier info
+    code_tiers: dict[str, Any] = {}
+    code_cfg = cfg.get("code", {}) or {}
+    project_utils = code_cfg.get("project_utils", "")
+    if project_utils:
+        code_tiers["project_utils"] = project_utils
+
+    # Discover core libraries from codio if available
+    try:
+        from codio import load_config as codio_load_config
+        from codio import Registry as CodioRegistry
+        codio_cfg = codio_load_config(root)
+        codio_reg = CodioRegistry(config=codio_cfg)
+        core_libs = []
+        for lib in codio_reg.list():
+            role = getattr(lib, "role", "") or ""
+            if role == "core" or (not role and lib.kind == "internal"):
+                core_libs.append({
+                    "name": lib.name,
+                    "import": getattr(lib, "runtime_import", lib.name) or lib.name,
+                    "path": lib.path,
+                    "role": role or "core",
+                })
+        if core_libs:
+            code_tiers["core_libraries"] = core_libs
+    except Exception:
+        pass
+
+    # Flow count from pipeio registry
+    pipeio_cfg = cfg.get("pipeio", {}) or {}
+    registry_path = pipeio_cfg.get("registry_path", "")
+    if registry_path:
+        reg_file = root / registry_path
+        if reg_file.exists():
+            try:
+                import yaml
+                reg_data = yaml.safe_load(reg_file.read_text(encoding="utf-8")) or {}
+                flows = reg_data.get("flows", {})
+                code_tiers["flow_count"] = len(flows)
+            except Exception:
+                pass
+
     payload: dict[str, Any] = {
         "project_name": cfg.get("project_name", root.name),
         "description": cfg.get("description", ""),
@@ -314,6 +541,8 @@ def project_context() -> JsonDict:
         "config": cfg,
         "readme_excerpt": readme_excerpt,
     }
+    if code_tiers:
+        payload["code_tiers"] = code_tiers
     return json_dict(payload)
 
 

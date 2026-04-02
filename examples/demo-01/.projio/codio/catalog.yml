@@ -1,0 +1,9 @@
+# Codio library catalog — project-agnostic identity metadata
+libraries:
+  textlib:
+    kind: internal
+    language: python
+    license: MIT
+    summary: Tiny text analysis library for word frequency counting and Zipf rank computation
+    added_by: manual
+    added_date: "2026-04-01"

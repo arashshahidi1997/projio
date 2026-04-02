@@ -90,3 +90,25 @@ Session: `fd48d498` | Task: `task-arash-20260331-145359-712330.md`
 - `figures.py` — `resolve_figure_paths()`, `insert_figure_references()`...
 
 Session: `f9189029` | Task: `task-arash-20260331-175617-644481.md`
+
+## 2026-03-31 18:16 | projio | sonnet | 1 steps
+
+---
+
+Session: `df0484c9` | Task: `task-arash-20260328-011427-733990.md`
+
+## 2026-03-31 18:43 | projio | opus | 1 steps
+
+8. **Permissions** — No changes needed; existing `mcp__projio__*` wildcard already covers `mcp__projio__manuscript_*`.
+
+Session: `7d5c004a` | Task: `task-arash-20260331-175739-980549.md`
+
+## 2026-04-01 04:07 | projio | sonnet | 1 steps
+
+**Task 3 — Agent safety** (`docs/explanation/agent-safety.md`):
+- Expanded the granular read-only allowlist from 23 to 60 tools covering all new subsystems
+- Updated write tools list in the description paragraph
+- Corrected "no deletion" claim — clarified `pipeio_flow_deregister` and `pipeio_run_kill` behavior
+- Updated `projio add claude` → `projio claude update-permissions`
+
+Session: `4ff59117` | Task: `issue-arash-20260331-172245-820267.md`

@@ -1,0 +1,22 @@
+# Snakefile for text_analysis
+from pathlib import Path
+
+configfile: "config.yml"
+
+SUBJECTS = glob_wildcards("raw/{sub}/{sub}_task-read_text.txt").sub
+
+rule all:
+    input:
+        expand(
+            "derivatives/text_analysis/wordcount/{sub}/{sub}_task-read_wordcount.json",
+            sub=SUBJECTS,
+        ),
+
+rule wordcount:
+    input:
+        "raw/{sub}/{sub}_task-read_text.txt",
+    output:
+        json="derivatives/text_analysis/wordcount/{sub}/{sub}_task-read_wordcount.json",
+        summary="derivatives/text_analysis/wordcount/{sub}/{sub}_task-read_wordcount.summary.txt",
+    script:
+        "scripts/wordcount.py"
