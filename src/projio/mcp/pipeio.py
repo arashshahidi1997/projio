@@ -345,7 +345,7 @@ def pipeio_modkey_bib(
 
     Args:
         output_path: Where to write the .bib file (relative to project root).
-                     Default: docs/pipelines/modkey.bib.
+                     Default: .projio/pipeio/modkey.bib.
         project_name: Author/project name for bib entries. Default: project dir name.
     """
     if not _pipeio_available():
