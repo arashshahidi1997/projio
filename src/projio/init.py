@@ -29,7 +29,7 @@ indexio:
 
 biblio:
   enabled: true
-  config: bib/config/biblio.yml
+  config: .projio/biblio/biblio.yml
 
 notio:
   enabled: true
@@ -105,7 +105,7 @@ indexio:
 
 biblio:
   enabled: false
-  config: bib/config/biblio.yml
+  config: .projio/biblio/biblio.yml
 
 notio:
   enabled: false
@@ -163,8 +163,12 @@ PYTHON  ?= python
 DATALAD ?= datalad
 MKDOCS  ?= $(PYTHON) -m mkdocs
 PROJIO  ?= $(PYTHON) -m projio
+NOTIO   ?= $(PYTHON) -m notio
+PANDOC  ?= pandoc
 PUBLISH ?= $(PYTHON) -m twine upload
 MSG     ?= Update
+
+PANDOC_FILTER ?= .projio/filters/include.lua
 
 .PHONY: save push url
 .PHONY: projio-init projio-config-user projio-config-show projio-status projio-auth
@@ -227,6 +231,94 @@ mcp-config:
 \t$(PROJIO) mcp-config -C . --yes
 """
 
+def _detect_manuscripts(root: Path) -> list[str]:
+    """Return manuscript names found under docs/manuscript/*/manuscript.yml."""
+    manuscript_dir = root / "docs" / "manuscript"
+    if not manuscript_dir.is_dir():
+        return []
+    names = []
+    for child in sorted(manuscript_dir.iterdir()):
+        if child.is_dir() and (child / "manuscript.yml").is_file():
+            names.append(child.name)
+    return names
+
+
+def _detect_masters(root: Path) -> list[str]:
+    """Return master document names found under docs/*/master.md."""
+    docs_dir = root / "docs"
+    if not docs_dir.is_dir():
+        return []
+    names = []
+    for child in sorted(docs_dir.iterdir()):
+        if child.is_dir() and (child / "master.md").is_file():
+            # Exclude manuscript/ — those use manuscripto, not master build
+            if child.name != "manuscript":
+                names.append(child.name)
+    return names
+
+
+def _manuscript_targets(manuscripts: list[str]) -> str:
+    """Generate Make targets for manuscripto-managed manuscripts."""
+    if not manuscripts:
+        return ""
+    lines = ["\n# --- Manuscript targets (manuscripto) ---"]
+    phony = []
+    for name in manuscripts:
+        ms_dir = f"docs/manuscript/{name}"
+        phony.extend([f"manuscript-{name}-assemble", f"manuscript-{name}-pdf",
+                       f"manuscript-{name}-latex", f"manuscript-{name}-validate"])
+        lines.append(f"""
+manuscript-{name}-assemble: {ms_dir}/manuscript.yml
+\t@echo ">> Assembling manuscript: {name}"
+\t@$(NOTIO) --root . manuscript assemble {name}
+
+manuscript-{name}-pdf: {ms_dir}/manuscript.yml $(PANDOC_FILTER)
+\t@echo ">> Building manuscript PDF: {name}"
+\t@$(NOTIO) --root . manuscript assemble {name}
+\t@mkdir -p _build/pdf
+\t@$(PANDOC) {ms_dir}/_build/assembled.md $(PANDOC_COMMON_ARGS) $(PDF_ENGINE_ARGS) -o _build/pdf/{name}.pdf
+
+manuscript-{name}-latex: {ms_dir}/manuscript.yml $(PANDOC_FILTER)
+\t@echo ">> Building manuscript LaTeX: {name}"
+\t@$(NOTIO) --root . manuscript assemble {name}
+\t@mkdir -p _build/latex
+\t@$(PANDOC) {ms_dir}/_build/assembled.md $(PANDOC_COMMON_ARGS) -t latex -o _build/latex/{name}.tex
+
+manuscript-{name}-validate: {ms_dir}/manuscript.yml
+\t@$(NOTIO) --root . manuscript validate {name}""")
+
+    lines.insert(1, f".PHONY: {' '.join(phony)}")
+    return "\n".join(lines) + "\n"
+
+
+def _master_targets(masters: list[str]) -> str:
+    """Generate Make targets for dual-marker master documents."""
+    if not masters:
+        return ""
+    lines = ["\n# --- Master document targets (Lua transclusion) ---"]
+    phony = []
+    for name in masters:
+        phony.extend([f"{name}-pdf", f"{name}-latex", f"{name}-md"])
+        lines.append(f"""
+{name}-pdf: docs/{name}/master.md $(PANDOC_FILTER)
+\t@echo ">> Building {name} PDF"
+\t@mkdir -p _build/pdf
+\t@$(PANDOC) docs/{name}/master.md $(PANDOC_COMMON_ARGS) $(PDF_ENGINE_ARGS) -o _build/pdf/{name}-master.pdf
+
+{name}-latex: docs/{name}/master.md $(PANDOC_FILTER)
+\t@echo ">> Building {name} LaTeX"
+\t@mkdir -p _build/latex
+\t@$(PANDOC) docs/{name}/master.md $(PANDOC_COMMON_ARGS) -t latex -o _build/latex/{name}-master.tex
+
+{name}-md: docs/{name}/master.md $(PANDOC_FILTER)
+\t@echo ">> Building {name} resolved Markdown"
+\t@mkdir -p _build/md
+\t@$(PANDOC) docs/{name}/master.md --lua-filter=$(PANDOC_FILTER) -t gfm --wrap=none -o _build/md/{name}-master.md""")
+
+    lines.insert(1, f".PHONY: {' '.join(phony)}")
+    return "\n".join(lines) + "\n"
+
+
 def _projio_mk(root: Path) -> str:
     """Generate projio.mk, substituting runtime bins if configured."""
     try:
@@ -254,10 +346,20 @@ def _projio_mk(root: Path) -> str:
             f"PROJIO  ?= {projio_python} -m projio",
             1,
         )
+        mk = mk.replace(
+            "NOTIO   ?= $(PYTHON) -m notio",
+            f"NOTIO   ?= {projio_python} -m notio",
+            1,
+        )
     elif python_bin:
         mk = mk.replace(
             "PROJIO  ?= $(PYTHON) -m projio",
             f"PROJIO  ?= {python_bin} -m projio",
+            1,
+        )
+        mk = mk.replace(
+            "NOTIO   ?= $(PYTHON) -m notio",
+            f"NOTIO   ?= {python_bin} -m notio",
             1,
         )
     publish_script = runtime.get("publish_script")
@@ -267,9 +369,10 @@ def _projio_mk(root: Path) -> str:
             f"PUBLISH ?= {publish_script}",
             1,
         )
+    labpy_python = None
     if datalad_bin:
         mk = mk.replace("DATALAD ?= datalad", f"DATALAD ?= {datalad_bin}", 1)
-        # Derive labpy python for MKDOCS from datalad_bin path
+        # Derive labpy python for MKDOCS/PANDOC from datalad_bin path
         # e.g. .../envs/labpy/bin/datalad → .../envs/labpy/bin/python
         datalad_path = Path(datalad_bin)
         labpy_python = datalad_path.parent / "python"
@@ -279,7 +382,68 @@ def _projio_mk(root: Path) -> str:
                 f"MKDOCS  ?= {labpy_python} -m mkdocs",
                 1,
             )
+        # Pandoc lives alongside datalad in labpy
+        labpy_pandoc = datalad_path.parent / "pandoc"
+        if labpy_pandoc.exists():
+            mk = mk.replace(
+                "PANDOC  ?= pandoc",
+                f"PANDOC  ?= {labpy_pandoc}",
+                1,
+            )
+
+    # Detect manuscripts and masters, append conditional targets
+    manuscripts = _detect_manuscripts(root)
+    masters = _detect_masters(root)
+
+    if manuscripts or masters:
+        # Add PANDOC_COMMON_ARGS block — projects can override in their Makefile
+        render_vars = _render_vars_block(root)
+        if render_vars:
+            mk += render_vars
+    mk += _manuscript_targets(manuscripts)
+    mk += _master_targets(masters)
+
     return mk
+
+
+def _render_vars_block(root: Path) -> str:
+    """Generate PANDOC_*_ARGS variables from .projio/render.yml if present."""
+    import yaml
+
+    render_yml = root / ".projio" / "render.yml"
+    if not render_yml.is_file():
+        # Provide sensible defaults so targets still work
+        return """
+# --- Render variables (override in your Makefile or create .projio/render.yml) ---
+PANDOC_BIB       ?=
+PANDOC_CSL       ?=
+PDF_ENGINE_ARGS  ?=
+PANDOC_CITE_ARGS  = $(if $(PANDOC_BIB),--citeproc --bibliography=$(PANDOC_BIB)) $(if $(PANDOC_CSL),--csl=$(PANDOC_CSL))
+PANDOC_COMMON_ARGS = --lua-filter=$(PANDOC_FILTER) $(PANDOC_CITE_ARGS)
+"""
+
+    data = yaml.safe_load(render_yml.read_text(encoding="utf-8")) or {}
+    bib = data.get("bibliography", "")
+    csl = data.get("csl", "")
+    engine = data.get("pdf_engine", "")
+
+    lines = [
+        "",
+        "# --- Render variables (from .projio/render.yml) ---",
+    ]
+    lines.append(f"PANDOC_BIB       ?= {bib}")
+    lines.append(f"PANDOC_CSL       ?= {csl}")
+    if engine:
+        lines.append(f"PDF_ENGINE_ARGS  ?= --pdf-engine={engine}")
+    else:
+        lines.append("PDF_ENGINE_ARGS  ?=")
+    lines.append(
+        "PANDOC_CITE_ARGS  = $(if $(PANDOC_BIB),--citeproc --bibliography=$(PANDOC_BIB))"
+        " $(if $(PANDOC_CSL),--csl=$(PANDOC_CSL))"
+    )
+    lines.append("PANDOC_COMMON_ARGS = --lua-filter=$(PANDOC_FILTER) $(PANDOC_CITE_ARGS)")
+    lines.append("")
+    return "\n".join(lines) + "\n"
 
 
 _PROJIO_INCLUDE = "-include .projio/projio.mk"
@@ -518,6 +682,7 @@ def _gitignore_entries_for_framework(site_framework: str) -> list[str]:
         ".projio/indexio/index/",
         ".projio.mkdocs.yml",
         "site/",
+        "bib/logs/",
     ]
     if site_framework == "sphinx":
         entries.extend(["docs/_build/", "docs/_build/html/"])
@@ -1006,6 +1171,22 @@ def sync_claude_permissions(
     root_glob = f"{root}/**"
 
     # --- Collect desired entries ---
+    # Baseline permissions that every projio project should have
+    baseline = [
+        "Read",
+        "Glob",
+        "Grep",
+        f"Edit({root_glob})",
+        f"Write({root_glob})",
+        "Bash(ls:*)",
+        "Bash(find:*)",
+        "Bash(git:*)",
+        "Bash(python:*)",
+        "Bash(pip:*)",
+        "Bash(pytest:*)",
+        "Bash(make:*)",
+    ]
+
     # MCP server wildcards from .mcp.json
     mcp_wildcards = _mcp_server_wildcards(root)
 
@@ -1022,6 +1203,7 @@ def sync_claude_permissions(
 
     # Build the set of entries to inject
     desired: list[str] = []
+    desired.extend(baseline)
     desired.extend(mcp_wildcards)
     desired.extend(codio_paths)
     desired.extend(extra_perms)
@@ -1155,9 +1337,14 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Check paper status | `library_get(citekey)` | Read library.yml directly |")
         rows.append("| Update paper status | `biblio_library_set(citekeys)` | Edit library.yml directly |")
         rows.append("| Merge bibliography | `biblio_merge()` | Run `biblio merge` in terminal |")
+        rows.append("| Fetch PDFs from BibTeX | `biblio_pdf_fetch(dry_run, force)` | Copy PDFs manually |")
+        rows.append("| Fetch PDFs via OA cascade | `biblio_pdf_fetch_oa(force, citekeys)` | Run `biblio bibtex fetch-pdfs-oa` |")
         rows.append("| Extract full text | `biblio_docling(citekey)` | Run `biblio docling` in terminal |")
+        rows.append("| Batch extract full text | `biblio_docling_batch(force, background)` | Run docling loop manually |")
+        rows.append("| Check Docling job status | `biblio_docling_status(job_id)` | Poll job manually |")
         rows.append("| Extract references | `biblio_grobid(citekey)` | Run `biblio grobid` in terminal |")
         rows.append("| Check GROBID server | `biblio_grobid_check()` | Curl the GROBID API manually |")
+        rows.append("| Expand reference graph | `biblio_graph_expand(citekeys)` | Run `biblio graph expand` |")
         rows.append("| Sync biblio sources to index | `biblio_rag_sync()` | Run `biblio rag sync` in terminal |")
 
     if has_notio:
@@ -1262,10 +1449,12 @@ and `runtime_conventions()` to see available Makefile targets.
         if has_biblio:
             workflow_parts.append(
                 "2. **Ingest pipeline** — after `biblio_ingest`, run `biblio_merge` → "
-                "`biblio_docling` → `biblio_grobid` → `indexio_build`"
+                "`biblio_pdf_fetch_oa` → `biblio_docling_batch` → `biblio_grobid` → "
+                "`biblio_graph_expand` → `indexio_build`"
                 if has_indexio else
                 "2. **Ingest pipeline** — after `biblio_ingest`, run `biblio_merge` → "
-                "`biblio_docling` → `biblio_grobid`"
+                "`biblio_pdf_fetch_oa` → `biblio_docling_batch` → `biblio_grobid` → "
+                "`biblio_graph_expand`"
             )
         if has_notio:
             workflow_parts.append("3. **Record decisions** — create notes to capture analysis and decisions")
