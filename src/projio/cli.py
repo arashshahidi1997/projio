@@ -195,6 +195,15 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p_skill_list = skill_sub.add_parser("list", help="List available skills.")
 
+    p_render = sub.add_parser("render", help="Render config management.")
+    p_render.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    render_sub = p_render.add_subparsers(dest="render_command", required=True)
+
+    p_render_sync = render_sub.add_parser("sync", help="Generate pandoc-defaults.yaml from .projio/render.yml.")
+    p_render_sync.add_argument("--output", default=None, help="Output path (default: bib/pandoc-defaults.yaml).")
+
+    render_sub.add_parser("show", help="Print resolved render config.")
+
     p_sync = sub.add_parser("sync", help="Sync workspace: auto-discover code/lib libraries, register in codio.")
     p_sync.add_argument("-C", "--root", default=".", help="Project root (default: .).")
     p_sync.add_argument("--dry-run", action="store_true", help="Show what would change without writing.")
@@ -368,6 +377,21 @@ def main(argv: Iterable[str] | None = None) -> None:
             skill_new(args.root, args.name)
         elif args.skill_command == "list":
             skill_list(args.root)
+        return
+
+    if args.command == "render":
+        from pathlib import Path
+        from .render import load_render_config, write_pandoc_defaults
+        root = Path(args.root).expanduser().resolve()
+        if args.render_command == "sync":
+            cfg = load_render_config(root)
+            output = Path(args.output) if args.output else None
+            out_path = write_pandoc_defaults(cfg, root, output=output)
+            print(f"[OK] wrote {out_path.relative_to(root)}")
+        elif args.render_command == "show":
+            import yaml
+            cfg = load_render_config(root)
+            print(yaml.dump(cfg.to_dict(), default_flow_style=False, sort_keys=False).rstrip())
         return
 
     if args.command == "sync":

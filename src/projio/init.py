@@ -725,6 +725,9 @@ def _scaffold_tool(root: Path, *, force: bool) -> None:
 
 def _scaffold_study(root: Path, *, force: bool) -> None:
     _write_if_needed(root / "docs" / "study-overview.md", STUDY_DOC, root, force=force)
+    # Scaffold render.yml for study projects
+    from .render import DEFAULT_RENDER_YML
+    _write_if_needed(root / ".projio" / "render.yml", DEFAULT_RENDER_YML, root, force=force)
 
 
 def scaffold(

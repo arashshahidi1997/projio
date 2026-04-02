@@ -1,6 +1,7 @@
-"""projio sync — auto-discover code libraries and register in codio."""
+"""projio sync — auto-discover code libraries, sync filters, generate pandoc defaults."""
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Any
 
@@ -132,11 +133,66 @@ def _sync_project_utils_config(
     return {"action": "skipped", "field": "code.project_utils", "reason": "no code/utils/ found"}
 
 
+def _get_bundled_filter() -> bytes:
+    """Read the bundled include.lua from package data."""
+    import importlib.resources
+
+    ref = importlib.resources.files("projio") / "data" / "filters" / "include.lua"
+    return ref.read_bytes()
+
+
+def _sync_lua_filter(root: Path, *, dry_run: bool = False) -> dict[str, str]:
+    """Copy include.lua to .projio/filters/ if missing or outdated.
+
+    Compares content hashes to detect changes.
+    """
+    target = root / ".projio" / "filters" / "include.lua"
+    try:
+        bundled = _get_bundled_filter()
+    except Exception as exc:
+        return {"action": "error", "reason": f"cannot read bundled filter: {exc}"}
+
+    bundled_hash = hashlib.sha256(bundled).hexdigest()
+
+    if target.is_file():
+        existing_hash = hashlib.sha256(target.read_bytes()).hexdigest()
+        if existing_hash == bundled_hash:
+            return {"action": "skipped", "reason": "up to date"}
+        if dry_run:
+            return {"action": "would_update", "reason": "content changed"}
+        target.write_bytes(bundled)
+        return {"action": "updated", "path": str(target.relative_to(root))}
+
+    if dry_run:
+        return {"action": "would_copy", "path": ".projio/filters/include.lua"}
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(bundled)
+    return {"action": "copied", "path": str(target.relative_to(root))}
+
+
+def _sync_render_config(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
+    """If .projio/render.yml exists, generate pandoc-defaults.yaml."""
+    render_yml = root / ".projio" / "render.yml"
+    if not render_yml.is_file():
+        return {"action": "skipped", "reason": "no .projio/render.yml"}
+
+    from projio.render import load_render_config, write_pandoc_defaults
+
+    config = load_render_config(root)
+    output = root / "bib" / "pandoc-defaults.yaml"
+    if dry_run:
+        return {"action": "would_generate", "output": str(output.relative_to(root))}
+    out_path = write_pandoc_defaults(config, root, output=output)
+    return {"action": "generated", "output": str(out_path.relative_to(root))}
+
+
 def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]:
     """Run all sync operations on a projio workspace.
 
     1. Discover code/lib/*/ → register in codio with role=core
     2. Detect code/utils/ → set code.project_utils in config
+    3. Copy include.lua to .projio/filters/
+    4. Generate pandoc-defaults.yaml from .projio/render.yml
 
     Args:
         root: Project root directory.
@@ -183,7 +239,27 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
         elif "not found" not in reason:
             print(f"[=] code.project_utils ({reason})")
 
+    # 3. Sync Lua filter
+    filter_action = _sync_lua_filter(root_path, dry_run=dry_run)
+    if filter_action["action"] in ("copied", "would_copy"):
+        print(f"{prefix}[+] include.lua → .projio/filters/")
+    elif filter_action["action"] in ("updated", "would_update"):
+        print(f"{prefix}[~] include.lua updated in .projio/filters/")
+    elif filter_action["action"] == "skipped":
+        print(f"[=] include.lua ({filter_action.get('reason', '')})")
+    elif filter_action["action"] == "error":
+        print(f"[!] Lua filter: {filter_action.get('reason', '')}")
+
+    # 4. Generate pandoc defaults from render.yml
+    render_action = _sync_render_config(root_path, dry_run=dry_run)
+    if render_action["action"] in ("generated", "would_generate"):
+        print(f"{prefix}[+] pandoc-defaults.yaml → {render_action.get('output', '')}")
+    elif render_action["action"] == "skipped":
+        pass  # silent if no render.yml
+
     return {
         "libraries": lib_actions,
         "project_utils": utils_action,
+        "lua_filter": filter_action,
+        "render": render_action,
     }

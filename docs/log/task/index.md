@@ -32,19 +32,25 @@
 - [task-arash-20260326-143012-175237 status:done title:**Feature request: biblio-gui should resolve git-annex symlinks when serving fil](task-arash-20260326-143012-175237.md)
 - [task-arash-20260326-142950-256126 status:done title:biblio-gui should resolve git-annex symlinks when serving files](task-arash-20260326-142950-256126.md)
 
+## status: failed
+
+- [task-arash-20260401-043426-424405 status:failed title:Flatten pipe/flow: update docs paths, collection, modkey, and agent instructions](task-arash-20260401-043426-424405.md)
+- [task-arash-20260401-043425-765707 status:failed title:Flatten pipe/flow: update projio wrappers and MCP server registration](task-arash-20260401-043425-765707.md)
+- [task-arash-20260401-043424-875406 status:failed title:Flatten pipe/flow: update pipeio CLI commands](task-arash-20260401-043424-875406.md)
+- [task-arash-20260401-043424-441698 status:failed title:Flatten pipe/flow: update all pipeio MCP functions](task-arash-20260401-043424-441698.md)
+- [task-arash-20260401-043322-873085 status:failed title:Flatten pipe/flow to flow-only: registry schema and core model](task-arash-20260401-043322-873085.md)
+
 ## status: open
 
+- [task-arash-20260402-122154-118393 status:open title:## Prompt](task-arash-20260402-122154-118393.md)
+- [task-arash-20260402-122133-307410 status:open title:## Prompt](task-arash-20260402-122133-307410.md)
+- [task-arash-20260402-122112-581688 status:open title:## Prompt](task-arash-20260402-122112-581688.md)
 - [task-arash-20260331-175508-399347 status:open title:## Register manuscripto in projio: MCP tools, submodule, optional dependency](task-arash-20260331-175508-399347.md)
 - [task-arash-20260331-175439-058148 status:open title:## Implement manuscripto core: assembly, render, and notio section type](task-arash-20260331-175439-058148.md)
 - [task-arash-20260318-022253-067748 status:open title:Debug worklog-projio agent_instructions integration](task-arash-20260318-022253-067748.md)
 
 ## status: pending
 
-- [task-arash-20260401-043426-424405 status:pending title:Flatten pipe/flow: update docs paths, collection, modkey, and agent instructions](task-arash-20260401-043426-424405.md)
-- [task-arash-20260401-043425-765707 status:pending title:Flatten pipe/flow: update projio wrappers and MCP server registration](task-arash-20260401-043425-765707.md)
-- [task-arash-20260401-043424-875406 status:pending title:Flatten pipe/flow: update pipeio CLI commands](task-arash-20260401-043424-875406.md)
-- [task-arash-20260401-043424-441698 status:pending title:Flatten pipe/flow: update all pipeio MCP functions](task-arash-20260401-043424-441698.md)
-- [task-arash-20260401-043322-873085 status:pending title:Flatten pipe/flow to flow-only: registry schema and core model](task-arash-20260401-043322-873085.md)
 - [task-arash-20260331-231724-488753 status:pending title:Implement pipeio flow rename with modkey.bib citekey update](task-arash-20260331-231724-488753.md)
 - [task-arash-20260329-230343-774295 status:pending title:codio_func_doc — MCP tool to return function signature + docstring from any installed package](task-arash-20260329-230343-774295.md)
 - [task-arash-20260328-092458-062195 status:pending title:Task from 20260327-141523-996883](task-arash-20260328-092458-062195.md)
