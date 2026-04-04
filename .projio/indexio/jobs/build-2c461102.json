@@ -1,0 +1,9 @@
+{
+  "job_id": "build-2c461102",
+  "status": "running",
+  "started_at": "2026-04-03T19:00:10+0200",
+  "elapsed_seconds": 300.1,
+  "current_source": "codio-src-openalex_docs-2",
+  "sources_completed": 7,
+  "sources_total": 11
+}

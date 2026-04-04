@@ -5,7 +5,8 @@
       "Bash(python:*)",
       "Bash(conda run:*)",
       "mcp__projio__*",
-      "mcp__worklog__*"
+      "mcp__worklog__*",
+      "Bash(xargs cat:*)"
     ]
   },
   "allowedTools": [

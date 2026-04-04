@@ -1,0 +1,38 @@
+name: demo
+title: "Word Frequency Distributions in Natural Language"
+authors:
+  - name: "Alice Researcher"
+    affiliation: "Demo University"
+    email: alice@example.com
+
+sections:
+  - key: abstract
+    path: sections/abstract.md
+    order: 1
+  - key: introduction
+    path: sections/introduction.md
+    order: 2
+  - key: methods
+    path: sections/methods.md
+    order: 3
+  - key: results
+    path: sections/results.md
+    order: 4
+  - key: discussion
+    path: sections/discussion.md
+    order: 5
+
+bibliography:
+  bib_file: ''
+  csl: ""
+
+figures:
+  dir: figures/
+  mappings: []
+
+render:
+  output_dir: _build/
+  formats: [pdf]
+  pandoc_args: []
+  template: null
+  variables: {}

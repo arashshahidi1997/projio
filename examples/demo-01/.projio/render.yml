@@ -1,0 +1,8 @@
+pdf_engine: lualatex
+csl: ""
+bibliography: bib/main.bib
+lua_filter: .projio/filters/include.lua
+conda_env: labpy
+resource_path:
+  - .
+  - docs

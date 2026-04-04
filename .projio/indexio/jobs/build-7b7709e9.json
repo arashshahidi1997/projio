@@ -1,0 +1,29 @@
+{
+  "job_id": "build-7b7709e9",
+  "status": "completed",
+  "started_at": "2026-04-03T18:43:15+0200",
+  "finished_at": "2026-04-03T18:44:49+0200",
+  "elapsed_seconds": 94.8,
+  "sources_completed": 2,
+  "sources_total": 2,
+  "result": {
+    "config_path": "/storage2/arash/projects/projio/.projio/indexio/config.yaml",
+    "root": "/storage2/arash/projects/projio",
+    "store": "local",
+    "persist_directory": "/storage2/arash/projects/projio/.cache/indexio/chroma_db",
+    "status_manifest": "/storage2/arash/projects/projio/.cache/indexio/chroma_db/indexio.status.json",
+    "partial": true,
+    "source_stats": {
+      "docs": {
+        "files": 210,
+        "chars": 811811,
+        "chunks": 1133
+      },
+      "codio-catalog": {
+        "files": 1,
+        "chars": 2005,
+        "chunks": 3
+      }
+    }
+  }
+}

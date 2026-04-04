@@ -188,6 +188,13 @@ def biblio_rag_sync_tool(force_init: bool = False):
     return biblio.biblio_rag_sync(force_init=force_init)
 
 
+@server.tool("biblio_pdf_validate")
+def biblio_pdf_validate_tool(fix: bool = False):
+    """Scan bib/articles/ for fake PDFs (HTML paywall pages saved as .pdf).
+    Returns list of invalid files. Set fix=True to delete them for re-fetch."""
+    return biblio.biblio_pdf_validate(fix=fix)
+
+
 @server.tool("biblio_library_quality")
 def biblio_library_quality_tool():
     """Scan bibliography for low-quality entries: noise (garbage), stubs (too few fields),
@@ -210,6 +217,159 @@ def biblio_graph_expand_tool(
         merge=merge,
         force=force,
     )
+
+
+@server.tool("biblio_discover_authors")
+def biblio_discover_authors_tool(
+    query: str = "",
+    author_id: str = "",
+    orcid: str = "",
+):
+    """Search for authors by name, OpenAlex ID, or ORCID.
+    Name search returns ranked candidates with affiliation and h-index.
+    Example: query="György Buzsáki" or query="Anton Sirota"."""
+    return biblio.biblio_discover_authors(
+        query=query, author_id=author_id, orcid=orcid,
+    )
+
+
+@server.tool("biblio_discover_institutions")
+def biblio_discover_institutions_tool(
+    query: str = "",
+    institution_id: str = "",
+):
+    """Search for institutions by name or fetch by OpenAlex ID.
+    Returns candidates with country, type, and publication metrics.
+    Example: query="LMU Munich" or query="NYU"."""
+    return biblio.biblio_discover_institutions(
+        query=query, institution_id=institution_id,
+    )
+
+
+@server.tool("biblio_institution_works")
+def biblio_institution_works_tool(
+    institution_id: str,
+    since_year: int | None = None,
+    min_citations: int | None = None,
+):
+    """Fetch all works affiliated with an institution.
+    Flags papers already in the local library. Use biblio_discover_institutions to find the ID first."""
+    return biblio.biblio_institution_works(
+        institution_id=institution_id,
+        since_year=since_year,
+        min_citations=min_citations,
+    )
+
+
+@server.tool("biblio_institution_authors")
+def biblio_institution_authors_tool(
+    institution_id: str,
+    min_works: int | None = None,
+):
+    """Fetch authors affiliated with an institution (last known).
+    Returns authors ranked by publication count with h-index. Use min_works to filter to active researchers."""
+    return biblio.biblio_institution_authors(
+        institution_id=institution_id,
+        min_works=min_works,
+    )
+
+
+@server.tool("biblio_author_papers")
+def biblio_author_papers_tool(
+    author_id: str = "",
+    orcid: str = "",
+    position: str = "",
+    since_year: int | None = None,
+    min_citations: int | None = None,
+):
+    """Fetch works by an author with optional position filtering.
+    Use position="last" for PI/lab papers, "first" for first-author papers.
+    Provide author_id (from biblio_discover_authors) or orcid."""
+    return biblio.biblio_author_papers(
+        author_id=author_id,
+        orcid=orcid,
+        position=position,
+        since_year=since_year,
+        min_citations=min_citations,
+    )
+
+
+@server.tool("biblio_pool_promote")
+def biblio_pool_promote_tool(
+    citekeys: list[str],
+    target: str = "",
+    dry_run: bool = False,
+):
+    """Promote project-local papers into a shared pool.
+    Copies PDFs, derivatives (docling, grobid, openalex), and BibTeX entries to the pool.
+    Replaces local PDFs with symlinks. Use dry_run=True to preview."""
+    return biblio.biblio_pool_promote(
+        citekeys=citekeys,
+        target=target,
+        dry_run=dry_run,
+    )
+
+
+@server.tool("biblio_zotero_pull")
+def biblio_zotero_pull_tool(
+    collection: str = "",
+    tags: list[str] | None = None,
+    dry_run: bool = False,
+):
+    """Pull items and PDFs from Zotero into the biblio workspace.
+    Incremental sync using Zotero's version tracking. Writes BibTeX to
+    bib/srcbib/zotero.bib and PDFs to bib/articles/. Requires zotero
+    section in biblio.yml with library_id."""
+    return biblio.biblio_zotero_pull(
+        collection=collection,
+        tags=tags,
+        dry_run=dry_run,
+    )
+
+
+@server.tool("biblio_zotero_status")
+def biblio_zotero_status_tool():
+    """Show Zotero sync state — last sync time, item counts, library info.
+    Requires zotero section in biblio.yml."""
+    return biblio.biblio_zotero_status()
+
+
+@server.tool("biblio_zotero_push")
+def biblio_zotero_push_tool(
+    citekeys: list[str] | None = None,
+    push_tags: bool = True,
+    push_notes: bool = False,
+    push_ids: bool = True,
+    force: bool = False,
+    dry_run: bool = False,
+):
+    """Push biblio enrichments back to Zotero — tags, notes, DOI/OpenAlex IDs.
+    Tags use biblio: namespace prefix. Uses optimistic concurrency.
+    Requires zotero section in biblio.yml and prior zotero pull."""
+    return biblio.biblio_zotero_push(
+        citekeys=citekeys,
+        push_tags=push_tags,
+        push_notes=push_notes,
+        push_ids=push_ids,
+        force=force,
+        dry_run=dry_run,
+    )
+
+
+@server.tool("biblio_enrich")
+def biblio_enrich_tool(citekeys: list[str] | None = None, force: bool = False):
+    """Persist OpenAlex topics, keywords, type, and retraction status per citekey.
+    Reads resolved.jsonl and writes per-citekey YAML to bib/derivatives/openalex/.
+    Run after openalex_resolve. Also builds a cross-paper _topic_index.yml."""
+    return biblio.biblio_enrich(citekeys=citekeys, force=force)
+
+
+@server.tool("biblio_enrich_topic_tags")
+def biblio_enrich_topic_tags_tool(citekeys: list[str] | None = None, dry_run: bool = False):
+    """Populate library.yml tags from OpenAlex enrichment data.
+    Maps topics/keywords to oa:-prefixed tags (union merge, never removes existing).
+    Run after biblio_enrich."""
+    return biblio.biblio_enrich_topic_tags(citekeys=citekeys, dry_run=dry_run)
 
 
 # --- Notio tools ---
@@ -341,6 +501,24 @@ def manuscript_cite_check_tool(name: str):
 def manuscript_figure_build_all_tool(name: str):
     """Batch-build all manuscript figures via figio."""
     return manuscripto.manuscript_figure_build_all(name=name)
+
+
+@server.tool("manuscript_diff")
+def manuscript_diff_tool(name: str):
+    """Compare current sections against last build: changed sections, word count delta, citation drift."""
+    return manuscripto.manuscript_diff(name=name)
+
+
+@server.tool("manuscript_cite_suggest")
+def manuscript_cite_suggest_tool(name: str, section: str, claim: str = ""):
+    """Search RAG biblio corpus for papers relevant to a section or claim. Returns ranked citekeys with snippets."""
+    return manuscripto.manuscript_cite_suggest(name=name, section=section, claim=claim)
+
+
+@server.tool("manuscript_journal_check")
+def manuscript_journal_check_tool(name: str, journal: str = ""):
+    """Check manuscript against journal target profile (word/figure limits, required sections, CSL match)."""
+    return manuscripto.manuscript_journal_check(name=name, journal=journal)
 
 
 # --- Master document tools ---

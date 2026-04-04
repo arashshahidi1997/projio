@@ -5,3 +5,123 @@ libraries:
     repo_id: snakemake--snakemake
     added_by: import
     added_date: '2026-03-31'
+  openalex_api_tutorials:
+    kind: external_mirror
+    language: jupyter notebook
+    repo_url: https://github.com/ourresearch/openalex-api-tutorials
+    license: MIT
+    summary: A collection of Jupyter notebooks, each walking you through a common
+      example of bibliometric analysis using scholarly data from the OpenAlex API.
+    repo_id: ourresearch--openalex-api-tutorials
+    added_by: import
+    added_date: '2026-04-03'
+  openalex_elastic_api:
+    kind: external_mirror
+    language: python
+    repo_url: https://github.com/ourresearch/openalex-elastic-api
+    pip_name: openalex-elastic-api
+    license: MIT
+    summary: All the OpenAlex API endpoints that are backed by Elasticsearch
+    repo_id: ourresearch--openalex-elastic-api
+    added_by: import
+    added_date: '2026-04-03'
+  openalex_docs:
+    kind: external_mirror
+    language: jupyter notebook
+    repo_url: https://github.com/ourresearch/openalex-docs
+    license: NOASSERTION
+    summary: The GitBook documentation site for OpenAlex
+    repo_id: ourresearch--openalex-docs
+    added_by: import
+    added_date: '2026-04-03'
+  openalex_documentation_scripts:
+    kind: external_mirror
+    language: python
+    repo_url: https://github.com/ourresearch/openalex-documentation-scripts
+    pip_name: openalex-documentation-scripts
+    summary: scripts linked from OpenAlex documentation
+    repo_id: ourresearch--openalex-documentation-scripts
+    added_by: import
+    added_date: '2026-04-03'
+  openalex_concept_tagging:
+    kind: external_mirror
+    language: jupyter notebook
+    repo_url: https://github.com/ourresearch/openalex-concept-tagging
+    license: MIT
+    summary: Scripts used to make and evaluate OpenAlex's concept tagging model
+    repo_id: ourresearch--openalex-concept-tagging
+    added_by: import
+    added_date: '2026-04-03'
+  pyzotero:
+    kind: external_mirror
+    language: python
+    repo_url: https://github.com/urschrei/pyzotero
+    pip_name: pyzotero
+    license: NOASSERTION
+    summary: 'Pyzotero: a Python client for the Zotero API'
+    repo_id: urschrei--pyzotero
+    added_by: import
+    added_date: '2026-04-03'
+  zotero_schema:
+    kind: external_mirror
+    language: javascript
+    repo_url: https://github.com/zotero/zotero-schema
+    summary: JSON representation of the Zotero data model
+    repo_id: zotero--zotero-schema
+    added_by: import
+    added_date: '2026-04-03'
+  translators:
+    kind: external_mirror
+    language: javascript
+    repo_url: https://github.com/zotero/translators
+    summary: Zotero Translators
+    repo_id: zotero--translators
+    added_by: import
+    added_date: '2026-04-03'
+  grobid:
+    kind: external_mirror
+    language: java
+    repo_url: https://github.com/grobidOrg/grobid
+    license: Apache-2.0
+    summary: A machine learning software for extracting information from scholarly
+      documents
+    repo_id: grobidorg--grobid
+    added_by: import
+    added_date: '2026-04-04'
+  grobid_client_python:
+    kind: external_mirror
+    language: python
+    repo_url: https://github.com/grobidOrg/grobid-client-python
+    pip_name: grobid-client-python
+    license: Apache-2.0
+    summary: Python client for GROBID Web services
+    repo_id: grobidorg--grobid-client-python
+    added_by: import
+    added_date: '2026-04-04'
+  biblio_glutton:
+    kind: external_mirror
+    language: java
+    repo_url: https://github.com/kermitt2/biblio-glutton
+    summary: 'A high performance bibliographic information service: https://biblio-glutton.readthedocs.io'
+    repo_id: kermitt2--biblio-glutton
+    added_by: import
+    added_date: '2026-04-04'
+  oadoi:
+    kind: external_mirror
+    language: python
+    repo_url: https://github.com/ourresearch/oadoi
+    pip_name: oadoi
+    license: MIT
+    summary: The backend code that powers Unpaywall. support@unpaywall.org
+    repo_id: ourresearch--oadoi
+    added_by: import
+    added_date: '2026-04-04'
+  openalex_gui:
+    kind: external_mirror
+    language: vue
+    repo_url: https://github.com/ourresearch/openalex-gui
+    license: MIT
+    summary: Frontend for OpenAlex
+    repo_id: ourresearch--openalex-gui
+    added_by: import
+    added_date: '2026-04-04'

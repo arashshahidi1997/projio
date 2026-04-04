@@ -30,3 +30,42 @@
 [submodule ".projio/codio/mirrors/snakemake--snakemake"]
 	path = .projio/codio/mirrors/snakemake--snakemake
 	url = git@github.com:snakemake/snakemake.git
+[submodule ".projio/codio/mirrors/grobidorg--grobid-client-python"]
+	path = .projio/codio/mirrors/grobidorg--grobid-client-python
+	url = https://github.com/grobidOrg/grobid-client-python
+[submodule ".projio/codio/mirrors/grobidorg--grobid"]
+	path = .projio/codio/mirrors/grobidorg--grobid
+	url = https://github.com/grobidOrg/grobid
+[submodule ".projio/codio/mirrors/kermitt2--biblio-glutton"]
+	path = .projio/codio/mirrors/kermitt2--biblio-glutton
+	url = https://github.com/kermitt2/biblio-glutton
+[submodule ".projio/codio/mirrors/ourresearch--oadoi"]
+	path = .projio/codio/mirrors/ourresearch--oadoi
+	url = https://github.com/ourresearch/oadoi
+[submodule ".projio/codio/mirrors/ourresearch--openalex-api-tutorials"]
+	path = .projio/codio/mirrors/ourresearch--openalex-api-tutorials
+	url = https://github.com/ourresearch/openalex-api-tutorials
+[submodule ".projio/codio/mirrors/ourresearch--openalex-concept-tagging"]
+	path = .projio/codio/mirrors/ourresearch--openalex-concept-tagging
+	url = https://github.com/ourresearch/openalex-concept-tagging
+[submodule ".projio/codio/mirrors/ourresearch--openalex-docs"]
+	path = .projio/codio/mirrors/ourresearch--openalex-docs
+	url = https://github.com/ourresearch/openalex-docs
+[submodule ".projio/codio/mirrors/ourresearch--openalex-documentation-scripts"]
+	path = .projio/codio/mirrors/ourresearch--openalex-documentation-scripts
+	url = https://github.com/ourresearch/openalex-documentation-scripts
+[submodule ".projio/codio/mirrors/ourresearch--openalex-elastic-api"]
+	path = .projio/codio/mirrors/ourresearch--openalex-elastic-api
+	url = https://github.com/ourresearch/openalex-elastic-api
+[submodule ".projio/codio/mirrors/ourresearch--openalex-gui"]
+	path = .projio/codio/mirrors/ourresearch--openalex-gui
+	url = https://github.com/ourresearch/openalex-gui
+[submodule ".projio/codio/mirrors/urschrei--pyzotero"]
+	path = .projio/codio/mirrors/urschrei--pyzotero
+	url = https://github.com/urschrei/pyzotero
+[submodule ".projio/codio/mirrors/zotero--translators"]
+	path = .projio/codio/mirrors/zotero--translators
+	url = https://github.com/zotero/translators
+[submodule ".projio/codio/mirrors/zotero--zotero-schema"]
+	path = .projio/codio/mirrors/zotero--zotero-schema
+	url = https://github.com/zotero/zotero-schema

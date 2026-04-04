@@ -1,0 +1,54 @@
+{
+  "job_id": "build-43e76d5f",
+  "status": "completed",
+  "started_at": "2026-04-04T02:15:32+0200",
+  "finished_at": "2026-04-04T03:12:23+0200",
+  "elapsed_seconds": 3410.8,
+  "sources_completed": 7,
+  "sources_total": 7,
+  "result": {
+    "config_path": "/storage2/arash/projects/projio/.projio/indexio/config.yaml",
+    "root": "/storage2/arash/projects/projio",
+    "store": "local",
+    "persist_directory": "/storage2/arash/projects/projio/.cache/indexio/chroma_db",
+    "status_manifest": "/storage2/arash/projects/projio/.cache/indexio/chroma_db/indexio.status.json",
+    "partial": true,
+    "source_stats": {
+      "docs": {
+        "files": 240,
+        "chars": 954447,
+        "chunks": 1329
+      },
+      "codio-catalog": {
+        "files": 1,
+        "chars": 4327,
+        "chunks": 6
+      },
+      "codio-src-grobid": {
+        "files": 401,
+        "chars": 4009758,
+        "chunks": 5666
+      },
+      "codio-src-grobid_client_python": {
+        "files": 19,
+        "chars": 253461,
+        "chunks": 350
+      },
+      "codio-src-biblio_glutton": {
+        "files": 125,
+        "chars": 800458,
+        "chunks": 1142
+      },
+      "codio-src-oadoi": {
+        "files": 125,
+        "chars": 950854,
+        "chunks": 1316
+      },
+      "codio-src-openalex_gui": {
+        "files": 380,
+        "chars": 30600113,
+        "chunks": 39969
+      }
+    }
+  }
+}

@@ -17,3 +17,87 @@ sources:
 - id: codio-catalog
   corpus: codelib
   path: /storage2/arash/projects/projio/.codio/catalog.yml
+- id: codio-src-snakemake
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/snakemake--snakemake/**/*.{py,ipynb,md}
+  metadata:
+    library: snakemake
+    kind: external_mirror
+- id: codio-src-openalex_api_tutorials
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/ourresearch--openalex-api-tutorials/**/*.{py,ipynb,md}
+  metadata:
+    library: openalex_api_tutorials
+    kind: external_mirror
+- id: codio-src-openalex_elastic_api
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/ourresearch--openalex-elastic-api/**/*.py
+  metadata:
+    library: openalex_elastic_api
+    kind: external_mirror
+- id: codio-src-openalex_docs
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/ourresearch--openalex-docs/**/*.{py,ipynb,md}
+  metadata:
+    library: openalex_docs
+    kind: external_mirror
+- id: codio-src-openalex_documentation_scripts
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/ourresearch--openalex-documentation-scripts/**/*.py
+  metadata:
+    library: openalex_documentation_scripts
+    kind: external_mirror
+- id: codio-src-openalex_concept_tagging
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/ourresearch--openalex-concept-tagging/**/*.{py,ipynb,md}
+  metadata:
+    library: openalex_concept_tagging
+    kind: external_mirror
+- id: codio-src-pyzotero
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/urschrei--pyzotero/**/*.py
+  metadata:
+    library: pyzotero
+    kind: external_mirror
+- id: codio-src-zotero_schema
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/zotero--zotero-schema/**/*.js
+  metadata:
+    library: zotero_schema
+    kind: external_mirror
+- id: codio-src-translators
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/zotero--translators/**/*.js
+  metadata:
+    library: translators
+    kind: external_mirror
+- id: codio-src-grobid
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/grobidorg--grobid/**/*.java
+  metadata:
+    library: grobid
+    kind: external_mirror
+- id: codio-src-grobid_client_python
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/grobidorg--grobid-client-python/**/*.py
+  metadata:
+    library: grobid_client_python
+    kind: external_mirror
+- id: codio-src-biblio_glutton
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/kermitt2--biblio-glutton/**/*.java
+  metadata:
+    library: biblio_glutton
+    kind: external_mirror
+- id: codio-src-oadoi
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/ourresearch--oadoi/**/*.py
+  metadata:
+    library: oadoi
+    kind: external_mirror
+- id: codio-src-openalex_gui
+  corpus: codelib
+  glob: /storage2/arash/projects/projio/.projio/codio/mirrors/ourresearch--openalex-gui/**/*
+  metadata:
+    library: openalex_gui
+    kind: external_mirror

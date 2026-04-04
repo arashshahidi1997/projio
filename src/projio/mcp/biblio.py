@@ -374,12 +374,12 @@ def biblio_docling(citekey: str, force: bool = False, background: bool = False) 
             "json_path": str(out.json_path),
             "outdir": str(out.outdir),
         }
-        # Auto-chain ref-md if GROBID TEI already exists
+        # Auto-chain ref-md if GROBID TEI already exists (checks pool too)
         try:
-            from biblio.grobid import grobid_outputs_for_key
+            from biblio.grobid import resolve_grobid_outputs
             from biblio.ref_md import run_ref_md_for_key
-            grobid_out = grobid_outputs_for_key(cfg, citekey)
-            if grobid_out.tei_path.exists():
+            grobid_out, grobid_src = resolve_grobid_outputs(cfg, citekey)
+            if grobid_src != "missing" and grobid_out.tei_path.exists():
                 ref_out = run_ref_md_for_key(cfg, citekey, force=force)
                 result["ref_md_path"] = str(ref_out.md_path)
                 result["ref_md"] = "resolved"
@@ -487,12 +487,12 @@ def biblio_grobid(citekey: str, force: bool = False) -> JsonDict:
             "tei_path": str(out.tei_path),
             "outdir": str(out.outdir),
         }
-        # Auto-chain ref-md if Docling markdown already exists
+        # Auto-chain ref-md if Docling markdown already exists (checks pool too)
         try:
-            from biblio.docling import outputs_for_key as docling_outputs_for_key
+            from biblio.docling import resolve_docling_outputs
             from biblio.ref_md import run_ref_md_for_key
-            docling_out = docling_outputs_for_key(cfg, citekey)
-            if docling_out.md_path.exists():
+            docling_out, docling_src = resolve_docling_outputs(cfg, citekey)
+            if docling_src != "missing" and docling_out.md_path.exists():
                 ref_out = run_ref_md_for_key(cfg, citekey, force=force)
                 result["ref_md_path"] = str(ref_out.md_path)
                 result["ref_md"] = "resolved"
@@ -564,6 +564,27 @@ def biblio_rag_sync(force_init: bool = False) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def biblio_pdf_validate(fix: bool = False) -> JsonDict:
+    """Scan bib/articles/ for files that aren't valid PDFs (HTML paywall pages, etc.).
+
+    Returns per-file validation results. Invalid files are typically HTML
+    paywall/login pages that were saved as .pdf before the content-type check
+    was added.
+
+    Args:
+        fix: If True, delete invalid files so they can be re-fetched
+             with ``biblio_pdf_fetch_oa()``.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_pdf_validate")
+    root = get_project_root()
+    try:
+        from biblio.mcp import pdf_validate
+        return json_dict(pdf_validate(root=root, fix=fix))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def biblio_library_quality() -> JsonDict:
     """Scan the merged bibliography for entry quality issues.
 
@@ -589,5 +610,329 @@ def biblio_grobid_check() -> JsonDict:
         cfg = _load_biblio_cfg()
         from biblio.grobid import check_grobid_server_as_dict
         return json_dict(check_grobid_server_as_dict(cfg.grobid))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+# --- Discovery tools ---
+
+
+def biblio_discover_authors(
+    query: str = "",
+    author_id: str = "",
+    orcid: str = "",
+) -> JsonDict:
+    """Search for authors by name, OpenAlex ID, or ORCID.
+
+    Provide exactly one of the three parameters. Name search returns ranked
+    candidates; ID/ORCID lookups return a single author profile.
+
+    Args:
+        query: Author name to search (e.g. "György Buzsáki").
+        author_id: OpenAlex author ID (e.g. "A5023888391").
+        orcid: ORCID identifier.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_discover_authors")
+    root = get_project_root()
+    try:
+        from biblio.mcp import discover_authors
+        return json_dict(discover_authors(
+            root=root,
+            query=query or None,
+            author_id=author_id or None,
+            orcid=orcid or None,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_discover_institutions(
+    query: str = "",
+    institution_id: str = "",
+) -> JsonDict:
+    """Search for institutions by name or fetch by OpenAlex ID.
+
+    Returns ranked candidates with country, type (education/facility/...),
+    and publication metrics.
+
+    Args:
+        query: Institution name to search (e.g. "LMU Munich", "NYU").
+        institution_id: OpenAlex institution ID (e.g. "I57206974").
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_discover_institutions")
+    root = get_project_root()
+    try:
+        from biblio.mcp import discover_institutions
+        return json_dict(discover_institutions(
+            root=root,
+            query=query or None,
+            institution_id=institution_id or None,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_institution_works(
+    institution_id: str,
+    since_year: int | None = None,
+    min_citations: int | None = None,
+) -> JsonDict:
+    """Fetch all works affiliated with an institution.
+
+    Cross-references against the local library to flag already-ingested papers.
+
+    Args:
+        institution_id: OpenAlex institution ID (from biblio_discover_institutions).
+        since_year: Only include works from this year onward.
+        min_citations: Minimum citation count filter.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_institution_works")
+    root = get_project_root()
+    try:
+        from biblio.mcp import institution_works
+        return json_dict(institution_works(
+            root=root,
+            institution_id=institution_id,
+            since_year=since_year,
+            min_citations=min_citations,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_institution_authors(
+    institution_id: str,
+    min_works: int | None = None,
+) -> JsonDict:
+    """Fetch authors affiliated with an institution (last known affiliation).
+
+    Returns authors ranked by publication count. Use min_works to filter
+    to active researchers.
+
+    Args:
+        institution_id: OpenAlex institution ID (from biblio_discover_institutions).
+        min_works: Only include authors with at least this many publications.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_institution_authors")
+    root = get_project_root()
+    try:
+        from biblio.mcp import institution_authors
+        return json_dict(institution_authors(
+            root=root,
+            institution_id=institution_id,
+            min_works=min_works,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_author_papers(
+    author_id: str = "",
+    orcid: str = "",
+    position: str = "",
+    since_year: int | None = None,
+    min_citations: int | None = None,
+) -> JsonDict:
+    """Fetch works by an author with optional position filtering.
+
+    Provide ``author_id`` (OpenAlex ID) or ``orcid`` to identify the author.
+    Use ``position`` to filter by authorship position:
+    - "last" = PI/senior author papers (lab output)
+    - "first" = first-author papers
+    - "middle" = middle-author collaborations
+
+    Args:
+        author_id: OpenAlex author ID (e.g. "A5023888391").
+        orcid: ORCID identifier (alternative to author_id).
+        position: Filter by author position: "first", "middle", or "last".
+        since_year: Only include works from this year onward.
+        min_citations: Minimum citation count filter.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_author_papers")
+    root = get_project_root()
+    try:
+        from biblio.mcp import author_works_by_position
+        return json_dict(author_works_by_position(
+            root=root,
+            author_id=author_id or None,
+            orcid=orcid or None,
+            position=position or None,
+            since_year=since_year,
+            min_citations=min_citations,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_pool_promote(
+    citekeys: list[str],
+    target: str = "",
+    dry_run: bool = False,
+) -> JsonDict:
+    """Promote project-local papers into a shared pool.
+
+    Copies PDFs, derivatives (docling, grobid, openalex), and BibTeX entries
+    from the project into the configured pool. Replaces local PDFs with
+    symlinks to the pool copies so other projects can access them.
+
+    Args:
+        citekeys: List of BibTeX citekeys to promote.
+        target: Pool path override (default: pool.path from biblio.yml).
+        dry_run: Report what would happen without writing.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_pool_promote")
+    root = get_project_root()
+    try:
+        from biblio.mcp import pool_promote
+        return json_dict(pool_promote(
+            citekeys=citekeys,
+            root=root,
+            target=target,
+            dry_run=dry_run,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc), "citekeys": citekeys})
+
+
+def biblio_zotero_pull(
+    collection: str = "",
+    tags: list[str] | None = None,
+    dry_run: bool = False,
+) -> JsonDict:
+    """Pull items and PDFs from Zotero into the biblio workspace.
+
+    Performs incremental sync using Zotero's version tracking. Downloads
+    metadata as BibTeX to bib/srcbib/zotero.bib and PDFs to bib/articles/.
+    Requires a ``zotero`` section in biblio.yml with at least ``library_id``.
+
+    Args:
+        collection: Zotero collection key to pull (overrides config).
+        tags: Only pull items with these tags.
+        dry_run: Report what would happen without writing.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_zotero_pull")
+    root = get_project_root()
+    try:
+        from biblio.mcp import zotero_pull
+        return json_dict(zotero_pull(
+            root=root,
+            collection=collection or None,
+            tags=tags,
+            dry_run=dry_run,
+        ))
+    except ImportError as exc:
+        return json_dict({"error": f"pyzotero required: {exc}"})
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_zotero_status() -> JsonDict:
+    """Show Zotero sync state — last sync time, item counts, library info.
+
+    Requires a ``zotero`` section in biblio.yml.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_zotero_status")
+    root = get_project_root()
+    try:
+        from biblio.mcp import zotero_status
+        return json_dict(zotero_status(root=root))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_enrich(
+    citekeys: list[str] | None = None,
+    force: bool = False,
+) -> JsonDict:
+    """Run OpenAlex enrichment: persist topics, keywords, type, and retraction
+    status per citekey from resolved.jsonl.
+
+    Writes per-citekey YAML to ``bib/derivatives/openalex/{citekey}.yml``
+    and builds a cross-paper topic index.
+
+    Args:
+        citekeys: Only enrich these citekeys (default: all resolved papers).
+        force: Overwrite existing enrichment files.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_enrich")
+    root = get_project_root()
+    try:
+        from biblio.mcp import enrich
+        return json_dict(enrich(root=root, citekeys=citekeys, force=force))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_enrich_topic_tags(
+    citekeys: list[str] | None = None,
+    dry_run: bool = False,
+) -> JsonDict:
+    """Populate library.yml tags from OpenAlex enrichment data.
+
+    Maps OpenAlex topics/keywords to ``oa:``-prefixed tags and adds them
+    to library.yml entries (union merge — never removes existing tags).
+
+    Args:
+        citekeys: Only process these citekeys (default: all in library).
+        dry_run: Report changes without writing.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_enrich_topic_tags")
+    root = get_project_root()
+    try:
+        from biblio.mcp import enrich_topic_tags
+        return json_dict(enrich_topic_tags(root=root, citekeys=citekeys, dry_run=dry_run))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_zotero_push(
+    citekeys: list[str] | None = None,
+    push_tags: bool = True,
+    push_notes: bool = False,
+    push_ids: bool = True,
+    force: bool = False,
+    dry_run: bool = False,
+) -> JsonDict:
+    """Push biblio enrichments (tags, notes, DOI/OpenAlex IDs) back to Zotero.
+
+    Writes biblio-generated tags with ``biblio:`` prefix, optionally creates
+    child notes from LLM summaries, and fills in missing DOI/OpenAlex IDs.
+    Uses optimistic concurrency — skips items modified in Zotero since last sync
+    unless ``force`` is True. Requires a ``zotero`` section in biblio.yml.
+
+    Args:
+        citekeys: Push only these citekeys (default: all synced items).
+        push_tags: Push autotag/concept/status tags to Zotero.
+        push_notes: Create Zotero child notes from LLM summaries.
+        push_ids: Write DOI and OpenAlex ID to Zotero items.
+        force: Push even if item was modified in Zotero since last sync.
+        dry_run: Report what would happen without writing.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_zotero_push")
+    root = get_project_root()
+    try:
+        from biblio.mcp import zotero_push
+        return json_dict(zotero_push(
+            root=root,
+            citekeys=citekeys,
+            push_tags=push_tags,
+            push_notes=push_notes,
+            push_ids=push_ids,
+            force=force,
+            dry_run=dry_run,
+        ))
+    except ImportError as exc:
+        return json_dict({"error": f"pyzotero required: {exc}"})
     except Exception as exc:
         return json_dict({"error": str(exc)})

@@ -4,3 +4,100 @@ profiles:
     runtime_import: reference_only
     decision_default: new
     status: candidate
+  openalex_api_tutorials:
+    priority: tier2
+    runtime_import: reference_only
+    decision_default: new
+    capabilities:
+    - jupyter-notebooks
+    - openalex
+    - python
+    - research-analytics
+    - scholarly-metadata
+    - scientometrics
+    status: candidate
+  openalex_elastic_api:
+    priority: tier2
+    runtime_import: pip_only
+    decision_default: wrap
+    status: candidate
+  openalex_docs:
+    priority: tier2
+    runtime_import: reference_only
+    decision_default: new
+    status: candidate
+  openalex_documentation_scripts:
+    priority: tier2
+    runtime_import: pip_only
+    decision_default: wrap
+    status: candidate
+  openalex_concept_tagging:
+    priority: tier2
+    runtime_import: reference_only
+    decision_default: new
+    status: candidate
+  pyzotero:
+    priority: tier2
+    runtime_import: pip_only
+    decision_default: wrap
+    capabilities:
+    - citations
+    - digital-humanities
+    - zotero
+    status: candidate
+  zotero_schema:
+    priority: tier2
+    runtime_import: reference_only
+    decision_default: new
+    status: candidate
+  translators:
+    priority: tier2
+    runtime_import: reference_only
+    decision_default: new
+    status: candidate
+  grobid:
+    priority: tier2
+    runtime_import: reference_only
+    decision_default: new
+    capabilities:
+    - bibliographical-references
+    - crf
+    - deep-learning
+    - fulltext
+    - hamburger-to-cow
+    - machine-learning
+    - metadata
+    - pdf
+    - rnn
+    - scientific-articles
+    - transformers
+    status: candidate
+  grobid_client_python:
+    priority: tier2
+    runtime_import: pip_only
+    decision_default: wrap
+    status: candidate
+  biblio_glutton:
+    priority: tier2
+    runtime_import: reference_only
+    decision_default: new
+    capabilities:
+    - bibliographical-references
+    - disambiguation
+    - doi
+    - hal
+    - metadata-api
+    - openaccess
+    - pubmed
+    - reference-matching
+    status: candidate
+  oadoi:
+    priority: tier2
+    runtime_import: pip_only
+    decision_default: wrap
+    status: candidate
+  openalex_gui:
+    priority: tier2
+    runtime_import: reference_only
+    decision_default: new
+    status: candidate

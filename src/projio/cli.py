@@ -195,6 +195,26 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p_skill_list = skill_sub.add_parser("list", help="List available skills.")
 
+    p_manuscript = sub.add_parser("manuscript", help="Manuscript management.")
+    p_manuscript.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    ms_sub = p_manuscript.add_subparsers(dest="manuscript_command", required=True)
+
+    p_ms_init = ms_sub.add_parser("init", help="Scaffold a new manuscript with sections.")
+    p_ms_init.add_argument("name", help="Manuscript name (slug, e.g. my-paper).")
+    p_ms_init.add_argument("--path", default=None,
+                           help="Directory for the manuscript (default: docs/manuscript/<name>).")
+
+    p_master = sub.add_parser("master", help="Master document management.")
+    p_master.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    ma_sub = p_master.add_subparsers(dest="master_command", required=True)
+
+    p_ma_init = ma_sub.add_parser("init", help="Scaffold a dual-marker master document.")
+    p_ma_init.add_argument("name", help="Master document name (slug, e.g. my-plan).")
+    p_ma_init.add_argument("--path", default=None,
+                           help="Directory for the master doc (default: docs/<name>).")
+    p_ma_init.add_argument("--sections", nargs="*", default=None,
+                           help="Initial section names (e.g. overview approach timeline).")
+
     p_render = sub.add_parser("render", help="Render config management.")
     p_render.add_argument("-C", "--root", default=".", help="Project root (default: .).")
     render_sub = p_render.add_subparsers(dest="render_command", required=True)
@@ -377,6 +397,22 @@ def main(argv: Iterable[str] | None = None) -> None:
             skill_new(args.root, args.name)
         elif args.skill_command == "list":
             skill_list(args.root)
+        return
+
+    if args.command == "manuscript":
+        from pathlib import Path
+        root = Path(args.root).expanduser().resolve()
+        if args.manuscript_command == "init":
+            from .manuscript_cmd import init_manuscript
+            init_manuscript(root, args.name, path=args.path)
+        return
+
+    if args.command == "master":
+        from pathlib import Path
+        root = Path(args.root).expanduser().resolve()
+        if args.master_command == "init":
+            from .manuscript_cmd import init_master
+            init_master(root, args.name, path=args.path, sections=args.sections)
         return
 
     if args.command == "render":

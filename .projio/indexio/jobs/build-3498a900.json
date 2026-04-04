@@ -1,0 +1,64 @@
+{
+  "job_id": "build-3498a900",
+  "status": "completed",
+  "started_at": "2026-04-03T19:09:00+0200",
+  "finished_at": "2026-04-03T19:22:58+0200",
+  "elapsed_seconds": 837.9,
+  "sources_completed": 9,
+  "sources_total": 9,
+  "result": {
+    "config_path": "/storage2/arash/projects/projio/.projio/indexio/config.yaml",
+    "root": "/storage2/arash/projects/projio",
+    "store": "local",
+    "persist_directory": "/storage2/arash/projects/projio/.cache/indexio/chroma_db",
+    "status_manifest": "/storage2/arash/projects/projio/.cache/indexio/chroma_db/indexio.status.json",
+    "partial": false,
+    "source_stats": {
+      "docs": {
+        "files": 210,
+        "chars": 811811,
+        "chunks": 1133
+      },
+      "codio-notes": {
+        "files": 0,
+        "chars": 0,
+        "chunks": 0
+      },
+      "codio-catalog": {
+        "files": 1,
+        "chars": 2005,
+        "chunks": 3
+      },
+      "codio-src-snakemake": {
+        "files": 230,
+        "chars": 1886066,
+        "chunks": 2681
+      },
+      "codio-src-openalex_api_tutorials": {
+        "files": 13,
+        "chars": 676035,
+        "chunks": 864
+      },
+      "codio-src-openalex_elastic_api": {
+        "files": 245,
+        "chars": 1192498,
+        "chunks": 1707
+      },
+      "codio-src-openalex_docs": {
+        "files": 105,
+        "chars": 536461,
+        "chunks": 713
+      },
+      "codio-src-openalex_documentation_scripts": {
+        "files": 1,
+        "chars": 38752,
+        "chunks": 48
+      },
+      "codio-src-openalex_concept_tagging": {
+        "files": 52,
+        "chars": 3722251,
+        "chunks": 4712
+      }
+    }
+  }
+}

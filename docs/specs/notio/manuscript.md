@@ -472,21 +472,81 @@ Iterates figure mappings with `spec` paths and invokes figio build on each.
 
 #### `manuscript_diff(name)`
 
-Compare current assembled text against last `_build/assembled.md`.
+Compare current section content against last `_build/assembled.md` snapshot.
+Detects section-level changes, word count deltas, and citation drift.
 
-Returns: sections changed, word count delta, new/removed citations.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | str | Manuscript name |
+
+Returns:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sections_changed` | list[str] | Section keys whose content differs from the last build |
+| `sections_added` | list[str] | Section keys present now but absent in last build |
+| `sections_removed` | list[str] | Section keys in last build but absent now |
+| `word_count_before` | int | Word count of last `_build/assembled.md` |
+| `word_count_after` | int | Word count of current assembled text |
+| `word_count_delta` | int | `after - before` |
+| `citations_added` | list[str] | Citekeys in current text but not in last build |
+| `citations_removed` | list[str] | Citekeys in last build but not in current text |
+| `has_previous_build` | bool | Whether `_build/assembled.md` existed |
+
+Uses `difflib` for comparison — no external dependencies. When no previous
+build exists, all current sections are reported as added.
 
 #### `manuscript_cite_suggest(name, section, claim?)`
 
-Search RAG biblio corpus for papers relevant to a section or claim. Returns
-ranked citekeys with snippets.
+Search the RAG biblio corpus for papers relevant to a section or claim text.
+Returns ranked citekeys with relevance scores and snippets.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | str | Manuscript name |
+| `section` | str | Section key (e.g. `introduction`) |
+| `claim` | str? | Optional claim text to search for (overrides section content) |
+
+Returns:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `suggestions` | list[dict] | Ranked citation suggestions |
+| `suggestions[].citekey` | str | Citekey if extractable from RAG source path |
+| `suggestions[].relevance_score` | float | RAG similarity score |
+| `suggestions[].snippet` | str | Matching text snippet from corpus |
+| `suggestions[].source` | str | Source document path |
+| `query_used` | str | The text that was actually sent to RAG |
+| `section` | str | Section key queried |
+
+Degrades gracefully: returns `{error}` when RAG or biblio corpus is unavailable.
 
 ### P3 — Journal awareness
 
 #### `manuscript_journal_check(name, journal?)`
 
-Check word count limits, figure count limits, required sections, and CSL match
-against journal target profiles. Could reuse figio's TargetProfile concept.
+Compare manuscript metrics against built-in journal target profiles.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | str | Manuscript name |
+| `journal` | str? | Journal key (e.g. `nature`, `plos-one`, `elife`, `biorxiv`). When omitted, lists available profiles. |
+
+Returns:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `journal` | str | Journal key used |
+| `journal_name` | str | Full journal name |
+| `word_count` | dict | `{current, limit, over_by?}` — current total vs journal limit |
+| `figure_count` | dict | `{current, limit, over_by?}` — current total vs journal limit |
+| `required_sections` | list[dict] | `{key, required, present}` — sections the journal expects, with present/missing status |
+| `csl_match` | dict | `{expected, configured, match}` — whether the configured CSL matches the target journal |
+| `warnings` | list[str] | Actionable issues (over word limit, missing required sections, CSL mismatch, etc.) |
+| `available_profiles` | list[str] | Only returned when `journal` is omitted |
+
+Built-in profiles are minimal dicts — extensible without a new schema. Initial
+set: `nature`, `plos-one`, `elife`, `biorxiv`.
 
 ## Future Considerations
 

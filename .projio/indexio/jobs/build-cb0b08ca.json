@@ -1,0 +1,44 @@
+{
+  "job_id": "build-cb0b08ca",
+  "status": "completed",
+  "started_at": "2026-04-03T20:16:35+0200",
+  "finished_at": "2026-04-03T20:37:53+0200",
+  "elapsed_seconds": 1277.9,
+  "sources_completed": 5,
+  "sources_total": 5,
+  "result": {
+    "config_path": "/storage2/arash/projects/projio/.projio/indexio/config.yaml",
+    "root": "/storage2/arash/projects/projio",
+    "store": "local",
+    "persist_directory": "/storage2/arash/projects/projio/.cache/indexio/chroma_db",
+    "status_manifest": "/storage2/arash/projects/projio/.cache/indexio/chroma_db/indexio.status.json",
+    "partial": true,
+    "source_stats": {
+      "docs": {
+        "files": 221,
+        "chars": 868079,
+        "chunks": 1208
+      },
+      "codio-catalog": {
+        "files": 1,
+        "chars": 2803,
+        "chunks": 4
+      },
+      "codio-src-pyzotero": {
+        "files": 26,
+        "chars": 276459,
+        "chunks": 381
+      },
+      "codio-src-zotero_schema": {
+        "files": 0,
+        "chars": 0,
+        "chunks": 0
+      },
+      "codio-src-translators": {
+        "files": 759,
+        "chars": 11402092,
+        "chunks": 15737
+      }
+    }
+  }
+}

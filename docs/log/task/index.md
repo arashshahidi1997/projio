@@ -10,6 +10,28 @@
 
 ## status: done
 
+- [task-arash-20260404-015001-691920 status:done title:OpenAlex API P1 fixes from audit](task-arash-20260404-015001-691920.md)
+- [task-arash-20260403-210053-391568 status:done title:## Implement: biblio GUI — OpenAlex outbound links in corpus table](task-arash-20260403-210053-391568.md)
+- [task-arash-20260403-210031-898352 status:done title:## Implement: biblio zotero push-tags — write enrichments back to Zotero](task-arash-20260403-210031-898352.md)
+- [task-arash-20260403-210018-484102 status:done title:## Implement: biblio zotero pull — read items + PDFs from Zotero via API](task-arash-20260403-210018-484102.md)
+- [task-arash-20260403-210000-819864 status:done title:## Implement: biblio pool promote — move project-local papers to a pool](task-arash-20260403-210000-819864.md)
+- [task-arash-20260403-201627-821230 status:done title:## Spec: biblio ↔ Zotero integration model](task-arash-20260403-201627-821230.md)
+- [task-arash-20260403-193124-041896 status:done title:## Spec: biblio enrichment pipeline redesign](task-arash-20260403-193124-041896.md)
+- [task-arash-20260403-193053-418834 status:done title:## Audit: biblio concept tagging vs OpenAlex topic classification — overlap anal](task-arash-20260403-193053-418834.md)
+- [task-arash-20260403-193018-521162 status:done title:## Audit: biblio OpenAlex API usage vs actual API capabilities](task-arash-20260403-193018-521162.md)
+- [task-arash-20260403-053526-884621 status:done title:Implement Shibboleth SAML login for biblio auth ezproxy --login](task-arash-20260403-053526-884621.md)
+- [task-arash-20260402-221711-206073 status:done title:## Prompt](task-arash-20260402-221711-206073.md)
+- [task-arash-20260402-221637-400871 status:done title:## Prompt](task-arash-20260402-221637-400871.md)
+- [task-arash-20260402-221355-169517 status:done title:pipeio: modkey.bib default output to .projio/pipeio/](task-arash-20260402-221355-169517.md)
+- [task-arash-20260402-221349-409107 status:done title:projio: Update MCP tools and CLAUDE.md for new bib architecture](task-arash-20260402-221349-409107.md)
+- [task-arash-20260402-221348-236987 status:done title:projio: Ship CSL files and update render paths](task-arash-20260402-221348-236987.md)
+- [task-arash-20260402-221347-057952 status:done title:biblio: New biblio_compile tool](task-arash-20260402-221347-057952.md)
+- [task-arash-20260402-221345-937235 status:done title:biblio: Move merge output, config, logs to .projio/biblio/](task-arash-20260402-221345-937235.md)
+- [task-arash-20260402-221336-068739 status:done title:Spec: Document new bib architecture](task-arash-20260402-221336-068739.md)
+- [task-arash-20260402-221203-017791 status:done title:## Prompt](task-arash-20260402-221203-017791.md)
+- [task-arash-20260402-122154-118393 status:done title:## Prompt](task-arash-20260402-122154-118393.md)
+- [task-arash-20260402-122133-307410 status:done title:## Prompt](task-arash-20260402-122133-307410.md)
+- [task-arash-20260402-122112-581688 status:done title:## Prompt](task-arash-20260402-122112-581688.md)
 - [task-arash-20260331-175739-980549 status:done title:## Register manuscript MCP tools in notio and projio](task-arash-20260331-175739-980549.md)
 - [task-arash-20260331-175703-656609 status:done title:## Implement manuscript subpackage in notio: schema, assembly, render, figures,](task-arash-20260331-175703-656609.md)
 - [task-arash-20260331-175617-644481 status:done title:## Design spec: manuscript as a notio subpackage](task-arash-20260331-175617-644481.md)
@@ -42,15 +64,16 @@
 
 ## status: open
 
-- [task-arash-20260402-122154-118393 status:open title:## Prompt](task-arash-20260402-122154-118393.md)
-- [task-arash-20260402-122133-307410 status:open title:## Prompt](task-arash-20260402-122133-307410.md)
-- [task-arash-20260402-122112-581688 status:open title:## Prompt](task-arash-20260402-122112-581688.md)
 - [task-arash-20260331-175508-399347 status:open title:## Register manuscripto in projio: MCP tools, submodule, optional dependency](task-arash-20260331-175508-399347.md)
 - [task-arash-20260331-175439-058148 status:open title:## Implement manuscripto core: assembly, render, and notio section type](task-arash-20260331-175439-058148.md)
 - [task-arash-20260318-022253-067748 status:open title:Debug worklog-projio agent_instructions integration](task-arash-20260318-022253-067748.md)
 
 ## status: pending
 
+- [task-arash-20260404-021712-357763 status:pending title:Study: biblio-glutton — reference resolution improvement](task-arash-20260404-021712-357763.md)
+- [task-arash-20260404-021710-894108 status:pending title:Study: Unpaywall/oadoi internals — improve biblio OA cascade](task-arash-20260404-021710-894108.md)
+- [task-arash-20260404-021709-360539 status:pending title:Spec: GROBID citation context — beyond simple citation networks](task-arash-20260404-021709-360539.md)
+- [task-arash-20260403-151849-591875 status:pending title:biblio: pool-aware derivative resolution (docling, grobid, openalex from shared storage)](task-arash-20260403-151849-591875.md)
 - [task-arash-20260331-231724-488753 status:pending title:Implement pipeio flow rename with modkey.bib citekey update](task-arash-20260331-231724-488753.md)
 - [task-arash-20260329-230343-774295 status:pending title:codio_func_doc — MCP tool to return function signature + docstring from any installed package](task-arash-20260329-230343-774295.md)
 - [task-arash-20260328-092458-062195 status:pending title:Task from 20260327-141523-996883](task-arash-20260328-092458-062195.md)
@@ -85,6 +108,9 @@
 
 ## status: scheduled
 
+- [task-arash-20260404-015006-010722 status:scheduled title:CLI commands for zotero and pool promote](task-arash-20260404-015006-010722.md)
+- [task-arash-20260404-015004-461584 status:scheduled title:Register Zotero + pool tools in MCP server and update docs](task-arash-20260404-015004-461584.md)
+- [task-arash-20260404-015003-191891 status:scheduled title:Topic enrichment pipeline](task-arash-20260404-015003-191891.md)
 - [task-arash-20260331-175356-958039 status:scheduled title:## Scaffold manuscripto package under packages/](task-arash-20260331-175356-958039.md)
 - [task-arash-20260331-175313-566067 status:scheduled title:## manuscripto design spec — architecture and API surface](task-arash-20260331-175313-566067.md)
 

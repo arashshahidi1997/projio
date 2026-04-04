@@ -1,0 +1,9 @@
+pdf-engine: xelatex
+metadata:
+  bibliography: bib/main.bib
+citeproc: true
+filters:
+- .projio/filters/include.lua
+resource-path:
+- .
+- docs
