@@ -815,29 +815,20 @@ def untrack_gitignored(root: str | Path, *, dry_run: bool = False) -> list[str]:
 
 
 def _ensure_vscode_settings(root: Path) -> None:
+    """Create .vscode/settings.json with site excludes if it doesn't exist.
+
+    If the file already exists, leave it untouched — VS Code settings.json
+    commonly contains JSONC (comments) which json.loads cannot parse safely.
+    """
     settings_path = root / ".vscode" / "settings.json"
-    payload: dict[str, object] = {}
     if settings_path.exists():
-        try:
-            payload = json.loads(settings_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            payload = {}
-    changed = False
-    for key, mapping in _VSCODE_SITE_EXCLUDES.items():
-        existing = payload.get(key)
-        if not isinstance(existing, dict):
-            existing = {}
-            payload[key] = existing
-            changed = True
-        for exclude_key, exclude_value in mapping.items():
-            if existing.get(exclude_key) != exclude_value:
-                existing[exclude_key] = exclude_value
-                changed = True
-    if settings_path.exists() and not changed:
         return
+    payload: dict[str, object] = {}
+    for key, mapping in _VSCODE_SITE_EXCLUDES.items():
+        payload[key] = dict(mapping)
     settings_path.parent.mkdir(parents=True, exist_ok=True)
     settings_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    print(f"[OK] wrote {settings_path.relative_to(root)}")
+    print(f"[OK] created {settings_path.relative_to(root)}")
 
 
 def _github_pages_setup_steps(site_framework: str, *, vite_app_dir: str) -> str:

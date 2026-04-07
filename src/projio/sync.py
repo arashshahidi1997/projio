@@ -379,6 +379,144 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
     return {"action": "updated", "path": str(mkdocs_path.relative_to(root))}
 
 
+_PROJIO_VSCODE_BEGIN = "// >>> projio >>>"
+_PROJIO_VSCODE_END = "// <<< projio <<<"
+
+
+_PROJIO_WATCHER_EXCLUDES = [
+    "**/site/**",
+    "**/_site/**",
+    "**/_build/**",
+    "**/build/**",
+    "**/.projio/indexio/index/**",
+    "**/.snakemake/**",
+    "**/__pycache__/**",
+    "**/.git/**",
+]
+
+
+def _find_json_block(text: str, key: str) -> tuple[int, int] | None:
+    """Find the span of a JSON key + brace-delimited value in JSONC text.
+
+    Returns (start, end) covering from the key to the closing brace,
+    including any trailing comma.  Uses brace counting to handle nested values.
+    """
+    key_pattern = rf'"{re.escape(key)}"\s*:\s*\{{'
+    m = re.search(key_pattern, text)
+    if not m:
+        return None
+    # Walk forward counting braces from the opening {
+    brace_start = text.index("{", m.start() + len(key))
+    depth = 0
+    for i in range(brace_start, len(text)):
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+            if depth == 0:
+                end = i + 1
+                # Consume trailing comma and whitespace
+                rest = text[end:]
+                trail = re.match(r'\s*,?', rest)
+                if trail:
+                    end += trail.end()
+                # Include leading whitespace/newline before the key
+                start = m.start()
+                while start > 0 and text[start - 1] in " \t":
+                    start -= 1
+                if start > 0 and text[start - 1] == "\n":
+                    start -= 1
+                return (start, end)
+    return None
+
+
+def _collect_existing_excludes(text: str, key: str) -> list[str]:
+    """Extract existing exclude patterns from a JSONC settings key."""
+    span = _find_json_block(text, key)
+    if not span:
+        return []
+    block = text[span[0]:span[1]]
+    return re.findall(r'"([^"]+)"\s*:\s*true', block)
+
+
+def _remove_unmanaged_excludes(text: str, key: str) -> str:
+    """Remove the user-section exclude block so it doesn't conflict with the managed one."""
+    managed_pattern = rf"{re.escape(_PROJIO_VSCODE_BEGIN)}.*?{re.escape(_PROJIO_VSCODE_END)}"
+    managed_match = re.search(managed_pattern, text, flags=re.DOTALL)
+
+    span = _find_json_block(text, key)
+    if not span:
+        return text
+    # Skip if inside managed block
+    if managed_match and managed_match.start() <= span[0] <= managed_match.end():
+        return text
+    return text[:span[0]] + text[span[1]:]
+
+
+def _sync_vscode_settings(root: Path, render_cfg: Any, *, dry_run: bool = False) -> dict[str, str]:
+    """Sync projio-managed VS Code settings: PandocCiter + watcher excludes.
+
+    Uses a managed block (like gitignore) to avoid destroying JSONC comments
+    or user settings.  The block is inserted/replaced between markers.
+
+    For files.watcherExclude: merges projio's standard patterns with any
+    existing user patterns, then writes the combined set into the managed
+    block.  The unmanaged copy (if any) is removed to avoid conflicts.
+    """
+    settings_path = root / ".vscode" / "settings.json"
+    if not settings_path.parent.is_dir():
+        return {"action": "skipped", "reason": "no .vscode/"}
+    if not settings_path.exists():
+        return {"action": "skipped", "reason": "no .vscode/settings.json"}
+
+    bib = render_cfg.bibliography or ""
+    csl = render_cfg.csl or ""
+
+    text = settings_path.read_text(encoding="utf-8")
+
+    # Collect existing watcher excludes from BOTH user section and managed block
+    existing_excludes = _collect_existing_excludes(text, "files.watcherExclude")
+    # Merge: projio standard + existing user patterns (deduplicated, sorted)
+    merged_excludes = sorted(set(_PROJIO_WATCHER_EXCLUDES + existing_excludes))
+
+    # Remove unmanaged files.watcherExclude so it doesn't conflict
+    text = _remove_unmanaged_excludes(text, "files.watcherExclude")
+
+    # Build the managed block
+    lines = [f"  {_PROJIO_VSCODE_BEGIN}"]
+    if bib:
+        lines.append(f'  "PandocCiter.DefaultBibs": ["{bib}"],')
+        lines.append(f'  "PandocCiter.UseDefaultBib": true,')
+    if csl:
+        lines.append(f'  "pandocCiter.csl": "{csl}",')
+    lines.append(f'  "files.watcherExclude": {{')
+    for pattern in merged_excludes:
+        lines.append(f'    "{pattern}": true,')
+    lines.append(f'  }},')
+    lines.append(f"  {_PROJIO_VSCODE_END}")
+    block = "\n".join(lines)
+
+    original = settings_path.read_text(encoding="utf-8")
+
+    # Replace existing managed block, or insert before closing brace
+    managed_re = rf"[ \t]*{re.escape(_PROJIO_VSCODE_BEGIN)}\n.*?{re.escape(_PROJIO_VSCODE_END)}"
+    if re.search(managed_re, text, flags=re.DOTALL):
+        text = re.sub(managed_re, block, text, flags=re.DOTALL)
+    else:
+        last_brace = text.rfind("}")
+        if last_brace >= 0:
+            text = text[:last_brace] + "\n" + block + "\n" + text[last_brace:]
+
+    if text == original:
+        return {"action": "skipped", "reason": "already up to date"}
+
+    if dry_run:
+        return {"action": "would_update"}
+
+    settings_path.write_text(text, encoding="utf-8")
+    return {"action": "updated"}
+
+
 def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]:
     """Run all sync operations on a projio workspace.
 
@@ -390,6 +528,7 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
     6. Validate code.envs conda configuration
     7. Regenerate projio.mk
     8. Ensure mkdocs.yml has monorepo plugin + pipeio !include
+    9. Sync VS Code settings (PandocCiter + watcher excludes) via managed block
 
     Args:
         root: Project root directory.
@@ -457,6 +596,11 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
         print(f"[!] CSL sync: {csl_action.get('reason', '')}")
 
     # 5. Generate pandoc defaults from render.yml
+    from projio.render import RenderConfig, load_render_config
+    try:
+        render_cfg = load_render_config(root_path)
+    except Exception:
+        render_cfg = RenderConfig()
     render_action = _sync_render_config(root_path, dry_run=dry_run)
     if render_action["action"] in ("generated", "would_generate"):
         print(f"{prefix}[+] pandoc-defaults.yaml → {render_action.get('output', '')}")
@@ -486,6 +630,15 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
         if reason not in ("no mkdocs.yml", "no pipeio registry"):
             print(f"[=] mkdocs.yml ({reason})")
 
+    # 9. Sync VS Code settings (PandocCiter + watcher excludes)
+    vscode_action = _sync_vscode_settings(root_path, render_cfg, dry_run=dry_run)
+    if vscode_action["action"] in ("updated", "would_update"):
+        print(f"{prefix}[+] .vscode/settings.json: projio managed block updated")
+    elif vscode_action["action"] == "skipped":
+        reason = vscode_action.get("reason", "")
+        if "no .vscode" in reason:
+            print(f"[!] {reason} — PandocCiter autocompletion won't work without it")
+
     return {
         "libraries": lib_actions,
         "project_utils": utils_action,
@@ -495,4 +648,5 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
         "code_envs": env_validation,
         "projio_mk": mk_action,
         "mkdocs": mkdocs_action,
+        "vscode": vscode_action,
     }
