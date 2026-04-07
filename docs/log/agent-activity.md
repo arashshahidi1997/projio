@@ -296,3 +296,31 @@ Session: `b82cd142` | Task: `task-arash-20260407-040528-084168.md`
 - 14 new tests ...
 
 Session: `e610359f` | Task: `task-arash-20260407-051120-006858.md`
+
+## 2026-04-08 01:16 | projio | opus | 1 steps
+
+**Task 2 — result note type for notio + pixecog:**
+- Added `result` note type to `notio.toml` and `DEFAULT_CONFIG_TEXT` in `config.py` (mode=event, toc_groupby=series, toc_keys for question/milestone/metric/confidence)
+- Added `result.md` template to `DEFAULT_TEMPLATES` in `core.py` with all questio evidence fields (question, milestone, subjects, metric, value, figure, confidence)
+- Created `docs/log/result/` directory with index.md and sample result note in pixecog
+- Committed in notio as `a...
+
+Session: `e64cb29d` | Task: `task-arash-20260408-010641-661071.md`
+
+## 2026-04-08 01:23 | projio | opus | 1 steps
+
+Tested against pixecog — correctly processed 7 questions, 18 milestones, 1 result note.
+
+Session: `1d764211` | Task: `task-arash-20260408-010716-419596.md`
+
+## 2026-04-08 01:27 | projio | opus | 1 steps
+
+Shared logic factored into `_load_plan_yaml()` and `_find_blockers()`. Existing helpers (`_collect_results`, `_results_by_question`, `_results_by_milestone`, `_milestone_status_summary`) are reused by all three tools. `questio_docs_collect` refactored to use the shared loader.
+
+Session: `edf2954c` | Task: `task-arash-20260408-010716-841242.md`
+
+## 2026-04-08 01:31 | projio | opus | 1 steps
+
+Each follows the `{name}/SKILL.md` directory convention expected by `skill_read()`, with YAML frontmatter declaring name, description, and tools.
+
+Session: `30e7b48f` | Task: `task-arash-20260408-010717-773063.md`

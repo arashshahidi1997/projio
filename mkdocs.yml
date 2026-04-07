@@ -53,6 +53,7 @@ nav:
       - Shared Code Library: tutorials/shared-codelib.md
       - Agent Orchestration: tutorials/agent-orchestration.md
       - Grand Routine: tutorials/grand-routine.md
+      - Research Orchestration (Questio): tutorials/questio-setup.md
       - Site & Docs Workflow: tutorials/site-workflow.md
   - How-To Guides:
       - how-to/index.md
@@ -68,6 +69,7 @@ nav:
       - Package Integration: explanation/package-integration.md
       - Search Before Creation: explanation/search-before-creation.md
       - Agent Safety & Permissions: explanation/agent-safety.md
+      - Research Orchestration (Questio): explanation/questio.md
   - Reference:
       - reference/index.md
       - CLI: reference/cli.md
