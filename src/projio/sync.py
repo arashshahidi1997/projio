@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from pathlib import Path
 from typing import Any
 
@@ -313,8 +314,8 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
     - mkdocs.yml exists in the project
     - pipeio is available (registry exists)
 
-    Adds ``monorepo`` to the plugins list and a ``Pipelines: '!include ...'``
-    entry to the nav, preserving existing content.
+    Uses text-level insertion to avoid YAML parsing issues with
+    ``!!python/name:`` tags used by mkdocs-material.
     """
     mkdocs_path = root / "mkdocs.yml"
     if not mkdocs_path.exists():
@@ -322,7 +323,6 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
     if not mkdocs_path.exists():
         return {"action": "skipped", "reason": "no mkdocs.yml"}
 
-    # Check if pipeio is present
     has_pipeio = (
         (root / ".projio" / "pipeio" / "registry.yml").exists()
         or (root / ".pipeio" / "registry.yml").exists()
@@ -330,62 +330,52 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
     if not has_pipeio:
         return {"action": "skipped", "reason": "no pipeio registry"}
 
-    import yaml
-
     text = mkdocs_path.read_text(encoding="utf-8")
-    config = yaml.safe_load(text) or {}
     changed = False
+    include_line = "  - Pipelines: '!include ./docs/pipelines/mkdocs.yml'"
 
-    # --- Ensure monorepo plugin is listed ---
-    plugins = config.get("plugins")
-    if plugins is None:
-        plugins = ["search", "monorepo"]
-        config["plugins"] = plugins
-        changed = True
-    elif "monorepo" not in plugins:
-        plugins.append("monorepo")
+    # --- Ensure monorepo in plugins ---
+    if "- monorepo" not in text:
+        # Find plugins: section or insert one
+        if re.search(r"^plugins:", text, re.MULTILINE):
+            # Append monorepo after last plugin entry
+            text = re.sub(
+                r"(^plugins:\n(?:  - .+\n)*)",
+                r"\g<1>  - monorepo\n",
+                text,
+                count=1,
+                flags=re.MULTILINE,
+            )
+        else:
+            # Insert plugins section before markdown_extensions (common anchor)
+            anchor = re.search(r"^markdown_extensions:", text, re.MULTILINE)
+            if anchor:
+                text = text[:anchor.start()] + "plugins:\n  - search\n  - monorepo\n\n" + text[anchor.start():]
+            else:
+                text += "\nplugins:\n  - search\n  - monorepo\n"
         changed = True
 
     # --- Ensure Pipelines !include in nav ---
-    include_path = "docs/pipelines/mkdocs.yml"
-    include_val = f"!include ./{include_path}"
-    nav = config.get("nav")
-    if nav is not None:
-        has_include = any(
-            isinstance(entry, dict) and "Pipelines" in entry
-            and include_val in str(entry.get("Pipelines", ""))
-            for entry in nav
-        )
-        if not has_include:
-            # Remove any old Pipelines entry (from nav_patch)
-            nav[:] = [
-                e for e in nav
-                if not (isinstance(e, dict) and "Pipelines" in e)
-            ]
-            # Insert before Log if present, otherwise append
-            log_idx = next(
-                (i for i, e in enumerate(nav)
-                 if isinstance(e, dict) and "Log" in e),
-                None,
-            )
-            entry = {"Pipelines": include_val}
-            if log_idx is not None:
-                nav.insert(log_idx, entry)
+    if "!include ./docs/pipelines/mkdocs.yml" not in text:
+        # Find the nav: section
+        nav_match = re.search(r"^nav:", text, re.MULTILINE)
+        if nav_match:
+            # Find insertion point: before "- Log:" if present, else end of nav
+            log_match = re.search(r"^  - Log:", text, re.MULTILINE)
+            if log_match:
+                text = text[:log_match.start()] + include_line + "\n" + text[log_match.start():]
             else:
-                nav.append(entry)
+                # Append at end of nav (find last nav entry)
+                text = text.rstrip("\n") + "\n" + include_line + "\n"
             changed = True
 
     if not changed:
         return {"action": "skipped", "reason": "already configured"}
 
     if dry_run:
-        return {"action": "would_update", "changes": ["monorepo plugin", "Pipelines !include"]}
+        return {"action": "would_update"}
 
-    # Write back preserving as much structure as possible
-    yaml.Dumper.ignore_aliases = lambda *args: True
-    updated = yaml.dump(config, default_flow_style=False, sort_keys=False, allow_unicode=True)
-    mkdocs_path.write_text(updated, encoding="utf-8")
-
+    mkdocs_path.write_text(text, encoding="utf-8")
     return {"action": "updated", "path": str(mkdocs_path.relative_to(root))}
 
 
