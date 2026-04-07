@@ -1230,6 +1230,25 @@ def pipeio_run_kill_tool(run_id: str):
 
 # --- Questio tools ---
 
+@server.tool("questio_status")
+def questio_status_tool(question_id: str = ""):
+    """Overview of research state — questions, milestone progress, evidence counts.
+
+    Args:
+        question_id: If provided, return details for that question only.
+                     Omit or pass empty string for all questions."""
+    return questio.questio_status(question_id=question_id)
+
+
+@server.tool("questio_gap")
+def questio_gap_tool(question_id: str):
+    """Gap analysis for a research question — unmet milestones, blockers, evidence.
+
+    Args:
+        question_id: Which question to analyze (e.g. "H1")."""
+    return questio.questio_gap(question_id=question_id)
+
+
 @server.tool("questio_docs_collect")
 def questio_docs_collect_tool():
     """Generate docs/plan/ pages from plan/questions.yml and plan/milestones.yml.

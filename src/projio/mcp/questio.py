@@ -1,4 +1,4 @@
-"""MCP tools: questio research orchestration — docs generation from plan YAML."""
+"""MCP tools: questio research orchestration — status, gap analysis, docs generation."""
 from __future__ import annotations
 
 from collections import defaultdict
@@ -358,25 +358,24 @@ def _generate_index_md(
 
 
 # ---------------------------------------------------------------------------
-# MCP tool entry point
+# Shared data loading
 # ---------------------------------------------------------------------------
 
 
-def questio_docs_collect() -> JsonDict:
-    """Generate docs/plan/ pages from plan/questions.yml and plan/milestones.yml.
+def _load_plan_yaml(
+    root: Path,
+) -> tuple[dict[str, dict], dict[str, dict]] | str:
+    """Load questions.yml and milestones.yml, return (questions, milestones).
 
-    Reads the YAML plan files and result notes, then generates five markdown
-    pages: questions.md, milestones.md, roadmap.md, evidence.md, index.md.
+    Returns an error string if files are missing or unparseable.
     """
-    root = get_project_root()
-
     questions_path = root / "plan" / "questions.yml"
     milestones_path = root / "plan" / "milestones.yml"
 
     if not questions_path.exists():
-        return json_dict({"error": f"Not found: {questions_path}"})
+        return f"Not found: {questions_path}"
     if not milestones_path.exists():
-        return json_dict({"error": f"Not found: {milestones_path}"})
+        return f"Not found: {milestones_path}"
 
     try:
         questions_raw = yaml.safe_load(
@@ -386,10 +385,327 @@ def questio_docs_collect() -> JsonDict:
             milestones_path.read_text(encoding="utf-8")
         )
     except yaml.YAMLError as exc:
-        return json_dict({"error": f"YAML parse error: {exc}"})
+        return f"YAML parse error: {exc}"
 
-    questions: dict[str, dict] = questions_raw.get("questions", {}) or {}
-    milestones: dict[str, dict] = milestones_raw.get("milestones", {}) or {}
+    questions: dict[str, dict] = (questions_raw or {}).get("questions", {}) or {}
+    milestones: dict[str, dict] = (milestones_raw or {}).get("milestones", {}) or {}
+    return questions, milestones
+
+
+def _find_blockers(
+    milestone_ids: list[str],
+    milestones: dict[str, dict],
+) -> list[str]:
+    """Return milestone IDs from *milestone_ids* whose depends_on includes
+    an incomplete milestone."""
+    blocked: list[str] = []
+    for mid in milestone_ids:
+        mdata = milestones.get(mid, {})
+        deps = mdata.get("depends_on", []) or []
+        for dep in deps:
+            dep_status = milestones.get(dep, {}).get("status", "not_started")
+            if dep_status not in ("complete", "done"):
+                blocked.append(mid)
+                break
+    return blocked
+
+
+# ---------------------------------------------------------------------------
+# MCP tools
+# ---------------------------------------------------------------------------
+
+
+def questio_status(question_id: str = "") -> JsonDict:
+    """Overview of research state — questions, milestone progress, evidence.
+
+    Args:
+        question_id: If provided, return details for that question only.
+                     Empty string returns all questions.
+    """
+    root = get_project_root()
+    loaded = _load_plan_yaml(root)
+    if isinstance(loaded, str):
+        return json_dict({"error": loaded})
+    questions, milestones = loaded
+
+    # Filter to single question if requested
+    if question_id:
+        if question_id not in questions:
+            return json_dict({"error": f"Unknown question: {question_id}"})
+        questions = {question_id: questions[question_id]}
+
+    results = _collect_results(root)
+    q_to_m, _ = _question_milestone_map(questions)
+    results_by_q = _results_by_question(results)
+
+    question_summaries: list[dict[str, Any]] = []
+    total_evidence = 0
+
+    for qid, qdata in questions.items():
+        ms_ids = q_to_m.get(qid, [])
+        ms_progress = _milestone_status_summary(milestones, ms_ids)
+        q_results = results_by_q.get(qid, [])
+        evidence_count = len(q_results)
+        total_evidence += evidence_count
+        blockers = _find_blockers(ms_ids, milestones)
+
+        question_summaries.append({
+            "id": qid,
+            "text": qdata.get("text", ""),
+            "type": qdata.get("type", ""),
+            "status": qdata.get("status", "not_started"),
+            "milestone_progress": f"{ms_progress} complete",
+            "evidence_count": evidence_count,
+            "blockers": blockers,
+        })
+
+    # Overall stats (across all milestones, not just filtered)
+    all_questions, all_milestones = _load_plan_yaml(root)  # type: ignore[misc]
+    total_milestones = len(all_milestones)
+    done_milestones = sum(
+        1 for mdata in all_milestones.values()
+        if mdata.get("status") in ("complete", "done")
+    )
+
+    return json_dict({
+        "questions": question_summaries,
+        "overall": {
+            "total_questions": len(all_questions),
+            "milestone_progress": f"{done_milestones}/{total_milestones} complete",
+            "total_evidence": total_evidence,
+        },
+    })
+
+
+def questio_gap(question_id: str) -> JsonDict:
+    """Gap analysis for a research question — what's missing to answer it.
+
+    Args:
+        question_id: Which question to analyze (required).
+    """
+    root = get_project_root()
+    loaded = _load_plan_yaml(root)
+    if isinstance(loaded, str):
+        return json_dict({"error": loaded})
+    questions, milestones = loaded
+
+    if question_id not in questions:
+        return json_dict({"error": f"Unknown question: {question_id}"})
+
+    qdata = questions[question_id]
+    ms_ids = qdata.get("milestones", []) or []
+
+    results = _collect_results(root)
+    results_by_q = _results_by_question(results)
+    results_by_m = _results_by_milestone(results)
+
+    # Build milestone detail with dependency resolution
+    milestone_details: list[dict[str, Any]] = []
+    unmet: list[str] = []
+    blocked: list[str] = []
+    actionable: list[str] = []
+    missing_evidence: list[str] = []
+
+    for mid in ms_ids:
+        mdata = milestones.get(mid, {})
+        status = mdata.get("status", "not_started")
+        deps = mdata.get("depends_on", []) or []
+
+        # Find incomplete dependencies
+        blocked_by = [
+            dep for dep in deps
+            if milestones.get(dep, {}).get("status", "not_started")
+            not in ("complete", "done")
+        ]
+
+        # Linked evidence
+        m_results = results_by_m.get(mid, [])
+        evidence = [
+            {
+                "title": r.get("title", r.get("_filename", "")),
+                "confidence": r.get("confidence", ""),
+                "filename": r.get("_filename", ""),
+            }
+            for r in m_results
+        ]
+
+        # Highest confidence among linked results
+        confidence_order = {"final": 3, "validated": 2, "preliminary": 1}
+        evidence_confidence = ""
+        if m_results:
+            best = max(
+                m_results,
+                key=lambda r: confidence_order.get(
+                    r.get("confidence", ""), 0
+                ),
+            )
+            evidence_confidence = best.get("confidence", "")
+
+        milestone_details.append({
+            "id": mid,
+            "description": mdata.get("description", mid),
+            "status": status,
+            "blocked_by": blocked_by,
+            "pipelines": mdata.get("pipelines", []) or [],
+            "evidence": evidence,
+            "evidence_confidence": evidence_confidence,
+        })
+
+        # Classify
+        if status not in ("complete", "done"):
+            unmet.append(mid)
+            if blocked_by:
+                blocked.append(mid)
+            else:
+                actionable.append(mid)
+        if not m_results:
+            missing_evidence.append(mid)
+
+    # Evidence from question-level linking
+    q_results = results_by_q.get(question_id, [])
+    q_evidence = [
+        {
+            "title": r.get("title", r.get("_filename", "")),
+            "confidence": r.get("confidence", ""),
+            "milestone": r.get("milestone", ""),
+            "filename": r.get("_filename", ""),
+        }
+        for r in q_results
+    ]
+
+    # Generate recommendation
+    recommendation = _generate_recommendation(
+        question_id, qdata, milestones, unmet, blocked, actionable,
+        missing_evidence,
+    )
+
+    return json_dict({
+        "question": {
+            "id": question_id,
+            "text": qdata.get("text", ""),
+            "status": qdata.get("status", "not_started"),
+        },
+        "milestones": milestone_details,
+        "evidence": q_evidence,
+        "gaps": {
+            "unmet_milestones": unmet,
+            "blocked_milestones": blocked,
+            "actionable_milestones": actionable,
+            "missing_evidence": missing_evidence,
+        },
+        "recommendation": recommendation,
+    })
+
+
+def _generate_recommendation(
+    question_id: str,
+    qdata: dict,
+    milestones: dict[str, dict],
+    unmet: list[str],
+    blocked: list[str],
+    actionable: list[str],
+    missing_evidence: list[str],
+) -> str:
+    """Generate a text recommendation for highest-impact next action."""
+    if not unmet:
+        if missing_evidence:
+            return (
+                f"All milestones for {question_id} are complete but "
+                f"{len(missing_evidence)} lack evidence notes. "
+                f"Record results for: {', '.join(missing_evidence)}."
+            )
+        return (
+            f"All milestones for {question_id} are complete with evidence. "
+            f"Consider updating question status to 'sufficient'."
+        )
+
+    if actionable:
+        # Pick the actionable milestone that unblocks the most others
+        unblock_count: dict[str, int] = {}
+        for mid in actionable:
+            count = 0
+            for other_mid, other_mdata in milestones.items():
+                deps = other_mdata.get("depends_on", []) or []
+                if mid in deps:
+                    count += 1
+            unblock_count[mid] = count
+
+        best = max(actionable, key=lambda m: unblock_count.get(m, 0))
+        best_desc = milestones.get(best, {}).get("description", best)
+        pipes = milestones.get(best, {}).get("pipelines", []) or []
+        pipe_str = f" (pipelines: {', '.join(pipes)})" if pipes else ""
+        unblocks = unblock_count.get(best, 0)
+        extra = f" Unblocks {unblocks} downstream milestone(s)." if unblocks else ""
+
+        return (
+            f"Highest impact: complete '{best}' — {best_desc}{pipe_str}.{extra}"
+        )
+
+    # All unmet milestones are blocked — find root actionable dependencies
+    # by recursively traversing the full dependency graph.
+    def _find_roots(start_ids: list[str], visited: set[str] | None = None) -> list[str]:
+        """Walk the dependency graph to find incomplete milestones with no
+        incomplete dependencies (i.e. actionable roots)."""
+        if visited is None:
+            visited = set()
+        roots: list[str] = []
+        for mid in start_ids:
+            if mid in visited:
+                continue
+            visited.add(mid)
+            mdata = milestones.get(mid, {})
+            status = mdata.get("status", "not_started")
+            if status in ("complete", "done"):
+                continue
+            deps = mdata.get("depends_on", []) or []
+            incomplete_deps = [
+                d for d in deps
+                if milestones.get(d, {}).get("status", "not_started")
+                not in ("complete", "done")
+            ]
+            if not incomplete_deps:
+                roots.append(mid)
+            else:
+                roots.extend(_find_roots(incomplete_deps, visited))
+        return roots
+
+    root_actionable = _find_roots(blocked)
+
+    if root_actionable:
+        # Pick the one that unblocks the most
+        unblock_count: dict[str, int] = {}
+        for b in root_actionable:
+            count = sum(
+                1 for _, md in milestones.items()
+                if b in (md.get("depends_on", []) or [])
+            )
+            unblock_count[b] = count
+        best = max(root_actionable, key=lambda m: unblock_count.get(m, 0))
+        best_desc = milestones.get(best, {}).get("description", best)
+        pipes = milestones.get(best, {}).get("pipelines", []) or []
+        pipe_str = f" (pipelines: {', '.join(pipes)})" if pipes else ""
+        return (
+            f"All {question_id} milestones are blocked. Root dependency: "
+            f"'{best}' — {best_desc}{pipe_str}. Complete this first."
+        )
+
+    return (
+        f"{len(unmet)} milestones remain for {question_id}, "
+        f"all currently blocked by upstream dependencies."
+    )
+
+
+def questio_docs_collect() -> JsonDict:
+    """Generate docs/plan/ pages from plan/questions.yml and plan/milestones.yml.
+
+    Reads the YAML plan files and result notes, then generates five markdown
+    pages: questions.md, milestones.md, roadmap.md, evidence.md, index.md.
+    """
+    root = get_project_root()
+    loaded = _load_plan_yaml(root)
+    if isinstance(loaded, str):
+        return json_dict({"error": loaded})
+    questions, milestones = loaded
 
     # Collect result notes
     results = _collect_results(root)
