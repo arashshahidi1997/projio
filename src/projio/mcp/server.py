@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from . import biblio, codio, context, datalad, manuscripto, notio, pipeio, rag, site as site_mcp
+from . import biblio, codio, context, datalad, manuscripto, notio, pipeio, questio, rag, site as site_mcp
 
 server = FastMCP("projio")
 
@@ -1226,6 +1226,17 @@ def pipeio_run_dashboard_tool():
 def pipeio_run_kill_tool(run_id: str):
     """Gracefully stop a running Snakemake screen session by run_id."""
     return pipeio.pipeio_run_kill(run_id=run_id)
+
+
+# --- Questio tools ---
+
+@server.tool("questio_docs_collect")
+def questio_docs_collect_tool():
+    """Generate docs/plan/ pages from plan/questions.yml and plan/milestones.yml.
+
+    Reads YAML plan files and result notes, then generates five markdown pages:
+    questions.md, milestones.md, roadmap.md (mermaid), evidence.md, index.md."""
+    return questio.questio_docs_collect()
 
 
 # --- Context tools ---
