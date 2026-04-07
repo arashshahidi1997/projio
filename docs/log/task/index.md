@@ -10,6 +10,7 @@
 
 ## status: done
 
+- [task-arash-20260407-051120-006858 status:done title:Commit pipeio find_registry fix + add input stage resolution to PipelineContext](task-arash-20260407-051120-006858.md)
 - [task-arash-20260407-040528-084168 status:done title:# pipeio_nb_exec: python_bin as string breaks subprocess](task-arash-20260407-040528-084168.md)
 - [task-arash-20260407-033724-576649 status:done title:# pipeio_nb_exec: add kernel/env option and fix papermill resolution](task-arash-20260407-033724-576649.md)
 - [task-arash-20260406-220506-783840 status:done title:pipeio_nb_sync nb2py fails for demo workspace notebooks — "Paired notebook not f](task-arash-20260406-220506-783840.md)
@@ -44,6 +45,7 @@
 - [task-arash-20260331-175739-980549 status:done title:## Register manuscript MCP tools in notio and projio](task-arash-20260331-175739-980549.md)
 - [task-arash-20260331-175703-656609 status:done title:## Implement manuscript subpackage in notio: schema, assembly, render, figures,](task-arash-20260331-175703-656609.md)
 - [task-arash-20260331-175617-644481 status:done title:## Design spec: manuscript as a notio subpackage](task-arash-20260331-175617-644481.md)
+- [task-arash-20260331-173957-317788 status:done title:DAG SVG export to docs + pipeio_docs_build convenience tool](task-arash-20260331-173957-317788.md)
 - [task-arash-20260331-145359-712330 status:done title:Audit pipeio docs against implementation](task-arash-20260331-145359-712330.md)
 - [task-arash-20260330-180056-943959 status:done title:Audit pixecog preprocess/ieeg and write migration guide to pipeio v2 snakebids app design](task-arash-20260330-180056-943959.md)
 - [task-arash-20260330-175554-840850 status:done title:Run live MCP integration test against pixecog preprocessing pipeline](task-arash-20260330-175554-840850.md)
@@ -79,7 +81,11 @@
 
 ## status: pending
 
-- [task-arash-20260407-051120-006858 status:pending title:Commit pipeio find_registry fix + add input stage resolution to PipelineContext](task-arash-20260407-051120-006858.md)
+- [task-arash-20260408-010717-773063 status:pending title:questio phase 3: create questio skills (next, ground, record, report, session)](task-arash-20260408-010717-773063.md)
+- [task-arash-20260408-010716-841242 status:pending title:questio phase 2: implement questio_status and questio_gap MCP tools](task-arash-20260408-010716-841242.md)
+- [task-arash-20260408-010716-419596 status:pending title:questio phase 1: implement questio_docs_collect MCP tool](task-arash-20260408-010716-419596.md)
+- [task-arash-20260408-010715-491261 status:pending title:questio phase 0: add result note type to notio + pixecog](task-arash-20260408-010715-491261.md)
+- [task-arash-20260408-010641-661071 status:pending title:questio phase 0: create questions.yml and milestones.yml for pixecog](task-arash-20260408-010641-661071.md)
 - [task-arash-20260403-151849-591875 status:pending title:biblio: pool-aware derivative resolution (docling, grobid, openalex from shared storage)](task-arash-20260403-151849-591875.md)
 - [task-arash-20260331-231724-488753 status:pending title:Implement pipeio flow rename with modkey.bib citekey update](task-arash-20260331-231724-488753.md)
 - [task-arash-20260329-230343-774295 status:pending title:codio_func_doc — MCP tool to return function signature + docstring from any installed package](task-arash-20260329-230343-774295.md)
@@ -108,10 +114,6 @@
 - [task-arash-20260318-000129-436019 status:pending title:Tutorial: Ecosystem overview (install, init workspace, connect MCP, verify tools)](task-arash-20260318-000129-436019.md)
 - [task-arash-20260318-000127-440315 status:pending title:Makefile: add DataLad subdataset management targets (pull-origin, push-origin, push-gitlab, pull-gitlab)](task-arash-20260318-000127-440315.md)
 - [task-arash-20260318-000125-085964 status:pending title:Publish prep: rename codio to codio-tools, bump versions, publish all subpackages + projio](task-arash-20260318-000125-085964.md)
-
-## status: queued
-
-- [task-arash-20260331-173957-317788 status:queued title:DAG SVG export to docs + pipeio_docs_build convenience tool](task-arash-20260331-173957-317788.md)
 
 ## status: scheduled
 

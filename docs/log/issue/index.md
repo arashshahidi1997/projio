@@ -2,6 +2,7 @@
 
 ## status: done
 
+- [issue-arash-20260407-162859-574826 status:done](issue-arash-20260407-162859-574826.md)
 - [issue-arash-20260407-040507-512890 status:done](issue-arash-20260407-040507-512890.md)
 - [issue-arash-20260407-033705-872924 status:done](issue-arash-20260407-033705-872924.md)
 - [issue-arash-20260404-021642-474901 status:done](issue-arash-20260404-021642-474901.md)
@@ -21,7 +22,8 @@
 
 ## status: open
 
-- [issue-arash-20260407-162859-574826 status:open](issue-arash-20260407-162859-574826.md)
+- [issue-arash-20260407-205536-605319 status:open](issue-arash-20260407-205536-605319.md)
+- [issue-arash-20260407-205521-274925 status:open](issue-arash-20260407-205521-274925.md)
 - [issue-arash-20260407-050947-246557 status:open](issue-arash-20260407-050947-246557.md)
 - [issue-arash-20260406-220445-357250 status:open](issue-arash-20260406-220445-357250.md)
 - [issue-arash-20260404-014926-649273 status:open](issue-arash-20260404-014926-649273.md)
