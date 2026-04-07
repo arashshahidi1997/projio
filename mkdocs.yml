@@ -17,6 +17,14 @@ extra:
       link: https://pypi.org/project/projio/
       name: PyPI
 
+plugins:
+  - search
+  - monorepo
+
+plugins:
+  - search
+  - monorepo
+
 markdown_extensions:
   - admonition
   - attr_list

@@ -75,8 +75,8 @@ def test_tool_kind_scaffolds_package_files(tmp_path: Path) -> None:
     makefile_text = (tmp_path / "Makefile").read_text(encoding="utf-8")
     assert "-include .projio/projio.mk" in makefile_text
     assert ".PHONY: test build check publish-test publish clean" in makefile_text
-    assert "$(PYTHON) -m twine upload --repository testpypi dist/*" in makefile_text
-    assert "$(PYTHON) -m twine upload dist/*" in makefile_text
+    assert "$(PUBLISH) --repository testpypi dist/*" in makefile_text
+    assert "$(PUBLISH) dist/*" in makefile_text
 
 
 def test_init_vscode_flag_scaffolds_settings(tmp_path: Path) -> None:

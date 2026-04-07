@@ -46,13 +46,12 @@ A project may have multiple core libraries (e.g., `cogpy` for signal processing,
 **Location:** `code/utils/` (one per project)
 
 **Properties:**
-- Pipeline-architecture-aware: knows about PipelineContext, registry, BIDS paths, session entities
 - Project-specific: references project conventions, data layouts, derivative structures
+- Cross-flow reusable: shared by multiple pipelines but too project-coupled for a core library
 - Not independently publishable — coupled to the project
-- Provides bootstrap helpers for notebooks and scripts
-- May contain legacy code superseded by pipeio tools
+- May read project-specific file formats, coordinate systems, or derivative outputs
 
-**Examples:** `utils.io.PipelineContext`, `utils.io.notebook_bootstrap()`, `utils.io.brainstate.read_state_epochs()`
+**Examples:** `utils.atlas.plot_dorsal_cortex_ecog_overlay()`, `utils.io.brainstate.read_state_epochs()`
 
 **projio config:** `code.project_utils: code/utils`
 
@@ -111,7 +110,7 @@ When pipeio scaffolds code, it queries projio config + codio to generate tier-aw
 ```
 ┌─────────────┐    codio: role=core libraries    ┌──────────────────┐
 │ pipeio      │ ──────────────────────────────→  │ import cogpy     │
-│ nb_create   │    projio: project_utils path    │ from utils.io    │
+│ nb_create   │    projio: project_utils path    │ from utils.atlas │
 │ script_create│ ──────────────────────────────→  │   import ...     │
 │ mod_create  │                                   │                  │
 └─────────────┘                                   └──────────────────┘
@@ -123,17 +122,15 @@ When pipeio scaffolds code, it queries projio config + codio to generate tier-aw
 ```python
 # %% Setup
 from pathlib import Path
-import yaml
 
 import cogpy                                    # ← core library (from codio, role=core)
-from utils.io import PipelineContext            # ← project utils (from projio config)
+from pipeio import PipelineContext              # ← pipeio (pipeline context + path resolution)
+from sutil.repo_root import repo_abs            # ← lab utils (repo root resolution)
 
-config_path = Path("../../config.yml")
-with open(config_path) as f:
-    config = yaml.safe_load(f)
-ctx = PipelineContext.from_registry("<flow>")   # ← project-specific bootstrap
+ctx = PipelineContext.from_registry("<flow>", root=repo_abs())
+sess = ctx.session(subject="01", session="04", task="free")
 
-# Available registry groups: deriv, qc, ...
+# Available registry groups: ctx.groups()
 ```
 
 **demo notebook:**
@@ -184,9 +181,9 @@ notebook cell →  │ pipeio_code_classify / nb_promote│
 | Signal in code | Tier | Reason |
 |---------------|------|--------|
 | References `snakemake.*` | flow_script | Coupled to snakemake execution |
-| References `PipelineContext`, registry, project paths | project_utils | Pipeline-architecture-aware |
+| Reads project-specific file formats, derivative structures, coordinate systems | project_utils | Project-coupled but cross-flow reusable |
 | Pure function: ndarray/xarray in → same out, no project deps | core_library | Dataset-agnostic, reusable |
-| Uses project-specific constants, file formats, naming conventions | project_utils | Project-coupled but not flow-coupled |
+| Uses project-specific constants, naming conventions, atlas registrations | project_utils | Project-coupled but not flow-coupled |
 | Hardcoded subject/session values | flow_script (or refactor) | Too specific for any library |
 
 #### AST-based detection
@@ -239,9 +236,9 @@ result = pipeio_nb_promote(flow, name, mod)
     {"name": "bandpass_filter", "tier": "core_library",
      "reason": "pure function, numpy in/out, no project deps",
      "suggested_module": "cogpy.preprocess"},
-    {"name": "load_session_lfp", "tier": "project_utils",
-     "reason": "uses PipelineContext",
-     "suggested_module": "utils.io"},
+    {"name": "plot_session_atlas_overlay", "tier": "project_utils",
+     "reason": "reads project-specific atlas registrations and electrode coordinates",
+     "suggested_module": "utils.atlas"},
     {"name": "run_pipeline", "tier": "flow_script",
      "reason": "references snakemake.input"}
   ]
@@ -265,7 +262,7 @@ result = pipeio_script_audit()
   ],
   "import_patterns": {
     "cogpy.preprocess": 12,     # used in 12 scripts
-    "utils.io.Session": 8,     # used in 8 scripts
+    "utils.atlas": 4,          # used in 4 scripts
     "numpy": 25,               # universal
   }
 }
@@ -280,7 +277,7 @@ Add to existing `mod_audit`:
 {
   "severity": "warning",
   "check": "import_health",
-  "message": "Script badlabel.py imports utils.io.PipelineRegistry (deprecated, use pipeio)"
+  "message": "Script badlabel.py imports utils.io.PipelineContext (deprecated, use pipeio.PipelineContext)"
 }
 ```
 

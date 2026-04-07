@@ -10,6 +10,15 @@
 
 ## status: done
 
+- [task-arash-20260407-040528-084168 status:done title:# pipeio_nb_exec: python_bin as string breaks subprocess](task-arash-20260407-040528-084168.md)
+- [task-arash-20260407-033724-576649 status:done title:# pipeio_nb_exec: add kernel/env option and fix papermill resolution](task-arash-20260407-033724-576649.md)
+- [task-arash-20260406-220506-783840 status:done title:pipeio_nb_sync nb2py fails for demo workspace notebooks — "Paired notebook not f](task-arash-20260406-220506-783840.md)
+- [task-arash-20260404-021712-357763 status:done title:Study: biblio-glutton — reference resolution improvement](task-arash-20260404-021712-357763.md)
+- [task-arash-20260404-021710-894108 status:done title:Study: Unpaywall/oadoi internals — improve biblio OA cascade](task-arash-20260404-021710-894108.md)
+- [task-arash-20260404-021709-360539 status:done title:Spec: GROBID citation context — beyond simple citation networks](task-arash-20260404-021709-360539.md)
+- [task-arash-20260404-015006-010722 status:done title:CLI commands for zotero and pool promote](task-arash-20260404-015006-010722.md)
+- [task-arash-20260404-015004-461584 status:done title:Register Zotero + pool tools in MCP server and update docs](task-arash-20260404-015004-461584.md)
+- [task-arash-20260404-015003-191891 status:done title:Topic enrichment pipeline](task-arash-20260404-015003-191891.md)
 - [task-arash-20260404-015001-691920 status:done title:OpenAlex API P1 fixes from audit](task-arash-20260404-015001-691920.md)
 - [task-arash-20260403-210053-391568 status:done title:## Implement: biblio GUI — OpenAlex outbound links in corpus table](task-arash-20260403-210053-391568.md)
 - [task-arash-20260403-210031-898352 status:done title:## Implement: biblio zotero push-tags — write enrichments back to Zotero](task-arash-20260403-210031-898352.md)
@@ -70,9 +79,7 @@
 
 ## status: pending
 
-- [task-arash-20260404-021712-357763 status:pending title:Study: biblio-glutton — reference resolution improvement](task-arash-20260404-021712-357763.md)
-- [task-arash-20260404-021710-894108 status:pending title:Study: Unpaywall/oadoi internals — improve biblio OA cascade](task-arash-20260404-021710-894108.md)
-- [task-arash-20260404-021709-360539 status:pending title:Spec: GROBID citation context — beyond simple citation networks](task-arash-20260404-021709-360539.md)
+- [task-arash-20260407-051120-006858 status:pending title:Commit pipeio find_registry fix + add input stage resolution to PipelineContext](task-arash-20260407-051120-006858.md)
 - [task-arash-20260403-151849-591875 status:pending title:biblio: pool-aware derivative resolution (docling, grobid, openalex from shared storage)](task-arash-20260403-151849-591875.md)
 - [task-arash-20260331-231724-488753 status:pending title:Implement pipeio flow rename with modkey.bib citekey update](task-arash-20260331-231724-488753.md)
 - [task-arash-20260329-230343-774295 status:pending title:codio_func_doc — MCP tool to return function signature + docstring from any installed package](task-arash-20260329-230343-774295.md)
@@ -108,9 +115,6 @@
 
 ## status: scheduled
 
-- [task-arash-20260404-015006-010722 status:scheduled title:CLI commands for zotero and pool promote](task-arash-20260404-015006-010722.md)
-- [task-arash-20260404-015004-461584 status:scheduled title:Register Zotero + pool tools in MCP server and update docs](task-arash-20260404-015004-461584.md)
-- [task-arash-20260404-015003-191891 status:scheduled title:Topic enrichment pipeline](task-arash-20260404-015003-191891.md)
 - [task-arash-20260331-175356-958039 status:scheduled title:## Scaffold manuscripto package under packages/](task-arash-20260331-175356-958039.md)
 - [task-arash-20260331-175313-566067 status:scheduled title:## manuscripto design spec — architecture and API surface](task-arash-20260331-175313-566067.md)
 

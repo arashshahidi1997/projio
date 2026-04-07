@@ -6,12 +6,19 @@ from .context import _expand
 
 
 def _resolve_docs_python() -> str | None:
-    """Resolve the Python binary for doc-site builds from Makefile vars.
+    """Resolve the Python binary for doc-site builds.
 
-    Checks ``MKDOCS`` first (e.g. ``/path/to/python -m mkdocs`` → extract the
-    python), then falls back to ``PYTHON``.  Returns ``None`` when no override
-    is found (caller should use ``sys.executable``).
+    Checks ``code.envs.docs`` in config first, then falls back to Makefile
+    vars (``MKDOCS`` → extract python, then ``PYTHON``).  Returns ``None``
+    when no override is found (caller should use ``sys.executable``).
     """
+    from projio.config import resolve_env_python
+
+    root = get_project_root()
+    env_python = resolve_env_python(root, "docs")
+    if env_python:
+        return env_python
+
     vars_ = resolve_makefile_vars()
     # Try MKDOCS first — if it's "python -m mkdocs", extract the python part
     if "MKDOCS" in vars_:

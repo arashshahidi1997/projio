@@ -91,6 +91,55 @@ def get_nested(mapping: dict[str, Any], *parts: str, default: Any = None) -> Any
     return current
 
 
+def resolve_env_python(
+    root: str | Path,
+    purpose: str,
+    *,
+    binary: str = "python",
+) -> str | None:
+    """Resolve a binary path for *purpose* from ``code.envs`` config.
+
+    Looks up ``code.envs.<purpose>`` for the conda env name and combines it
+    with ``code.conda_prefix`` to produce an absolute path.  Returns ``None``
+    when the config keys are absent.
+
+    Args:
+        root: Project root directory.
+        purpose: Environment purpose key (``default``, ``docs``, ``rag``,
+            ``datalad``).
+        binary: Binary name to resolve inside the env (default ``python``).
+    """
+    try:
+        cfg = load_effective_config(root)
+    except FileNotFoundError:
+        return None
+    code = cfg.get("code", {}) or {}
+    conda_prefix = code.get("conda_prefix")
+    envs = code.get("envs", {}) or {}
+
+    env_name = envs.get(purpose)
+    if not env_name or not conda_prefix:
+        return None
+
+    path = Path(conda_prefix) / "envs" / env_name / "bin" / binary
+    return str(path)
+
+
+def resolve_env_all(root: str | Path) -> dict[str, str | None]:
+    """Resolve all standard env binaries from ``code.envs`` config.
+
+    Returns a dict with keys: ``python``, ``projio``, ``docs``, ``datalad``,
+    ``pandoc``.  Values are absolute paths or ``None`` if not configured.
+    """
+    return {
+        "python": resolve_env_python(root, "default"),
+        "projio": resolve_env_python(root, "rag"),
+        "docs": resolve_env_python(root, "docs"),
+        "datalad": resolve_env_python(root, "datalad", binary="datalad"),
+        "pandoc": resolve_env_python(root, "datalad", binary="pandoc"),
+    }
+
+
 def scaffold_user_config(*, force: bool = False) -> Path:
     path = get_user_config_path()
     path.parent.mkdir(parents=True, exist_ok=True)

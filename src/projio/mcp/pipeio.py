@@ -6,10 +6,19 @@ from .context import _expand
 
 
 def _resolve_project_python() -> str | None:
-    """Resolve the project PYTHON from Makefile/projio.mk variables.
+    """Resolve the project PYTHON binary.
 
-    Returns ``None`` when no override is configured.
+    Checks ``code.envs.default`` in config first, then falls back to
+    Makefile/projio.mk variables.  Returns ``None`` when no override is
+    configured.
     """
+    from projio.config import resolve_env_python
+
+    root = get_project_root()
+    env_python = resolve_env_python(root, "default")
+    if env_python:
+        return env_python
+
     vars_ = resolve_makefile_vars()
     if "PYTHON" in vars_:
         return _expand(vars_["PYTHON"], vars_)
@@ -708,88 +717,38 @@ def pipeio_nb_pipeline(
 
 
 def pipeio_mkdocs_nav_patch() -> JsonDict:
-    """Apply the pipeio docs nav fragment to mkdocs.yml.
+    """Update the pipeio docs nav for mkdocs.
 
-    Reads the generated nav from ``pipeio_docs_nav``, finds or creates the
-    ``Pipelines`` section in ``mkdocs.yml``, and writes the updated file.
-    Returns the diff of what changed.
+    Writes ``docs/pipelines/mkdocs.yml`` (the monorepo sub-nav file).
+    The root ``mkdocs.yml`` includes it via ``!include``, set up by
+    ``projio sync``.  If the ``!include`` is missing, runs sync to add it.
     """
     if not _pipeio_available():
         return _unavailable("pipeio_mkdocs_nav_patch")
 
     root = get_project_root()
-    mkdocs_path = root / "mkdocs.yml"
-    if not mkdocs_path.exists():
-        mkdocs_path = root / "mkdocs.yaml"
-    if not mkdocs_path.exists():
-        return json_dict({"error": "mkdocs.yml not found"})
 
-    # Get nav fragment from pipeio
+    # Write the sub-mkdocs.yml via docs_nav
     try:
         from pipeio.mcp import mcp_docs_nav
-        nav_result = mcp_docs_nav(root)
+        nav_result = mcp_docs_nav(root, write=True)
     except Exception as exc:
         return json_dict({"error": f"docs_nav failed: {exc}"})
 
-    fragment_yaml = nav_result.get("nav_fragment", "")
-    if not fragment_yaml or fragment_yaml.startswith("#"):
-        return json_dict({"error": "No pipeline docs to inject (docs/pipelines/ empty or missing)"})
+    if not nav_result.get("written"):
+        return json_dict({"error": "No pipeline docs to write (docs/pipelines/ empty or missing)"})
 
-    # Parse the nav fragment
+    # Ensure root mkdocs.yml has monorepo + !include
     try:
-        import yaml
-        fragment = yaml.safe_load(fragment_yaml)
-    except Exception as exc:
-        return json_dict({"error": f"Failed to parse nav fragment: {exc}"})
-
-    if not isinstance(fragment, list):
-        fragment = [fragment]
-
-    # The fragment is a list like [{"Pipelines": {...}}]
-    # Extract the Pipelines entry
-    pipelines_entry = None
-    for item in fragment:
-        if isinstance(item, dict) and "Pipelines" in item:
-            pipelines_entry = item
-            break
-    if pipelines_entry is None:
-        pipelines_entry = {"Pipelines": fragment}
-
-    # Read and patch mkdocs.yml
-    try:
-        import yaml
-        original = mkdocs_path.read_text(encoding="utf-8")
-        config = yaml.safe_load(original) or {}
-    except Exception as exc:
-        return json_dict({"error": f"Failed to read mkdocs.yml: {exc}"})
-
-    nav = config.get("nav")
-    if nav is None:
-        nav = []
-        config["nav"] = nav
-
-    # Find and replace existing Pipelines entry, or append
-    replaced = False
-    for i, entry in enumerate(nav):
-        if isinstance(entry, dict) and "Pipelines" in entry:
-            nav[i] = pipelines_entry
-            replaced = True
-            break
-    if not replaced:
-        nav.append(pipelines_entry)
-
-    # Write back
-    try:
-        updated = yaml.dump(config, default_flow_style=False, sort_keys=False, allow_unicode=True)
-        mkdocs_path.write_text(updated, encoding="utf-8")
-    except Exception as exc:
-        return json_dict({"error": f"Failed to write mkdocs.yml: {exc}"})
+        from projio.sync import _sync_mkdocs_monorepo
+        sync_result = _sync_mkdocs_monorepo(root)
+    except Exception:
+        sync_result = {"action": "skipped", "reason": "sync unavailable"}
 
     return json_dict({
-        "patched": True,
-        "path": str(mkdocs_path.relative_to(root)),
-        "replaced_existing": replaced,
-        "pipelines_nav": pipelines_entry,
+        "written": True,
+        "sub_mkdocs": nav_result.get("sub_mkdocs"),
+        "mkdocs_sync": sync_result.get("action", "unknown"),
     })
 
 
@@ -1093,6 +1052,10 @@ def pipeio_nb_exec(
 ) -> JsonDict:
     """Execute a notebook via papermill with optional parameter overrides.
 
+    Both jupytext (sync) and papermill (orchestration) run from the MCP
+    server's own ``sys.executable``.  Cell execution is delegated to the
+    Jupyter kernel specified in ``notebook.yml`` via the ``-k`` flag.
+
     Args:
         flow: Flow name.
         name: Notebook basename (without extension).
@@ -1104,10 +1067,9 @@ def pipeio_nb_exec(
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_nb_exec  # type: ignore[import]
-        python_bin = _resolve_project_python()
         return json_dict(mcp_nb_exec(
             root, flow=flow, name=name,
-            params=params, timeout=timeout, python_bin=python_bin,
+            params=params, timeout=timeout,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})

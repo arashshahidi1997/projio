@@ -239,6 +239,53 @@ def _sync_render_config(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
     return {"action": "generated", "output": str(out_path.relative_to(root))}
 
 
+def _validate_code_envs(root: Path) -> dict[str, Any]:
+    """Check that conda envs declared in code.envs actually exist.
+
+    Returns a dict with ``valid``, ``missing``, and ``warnings`` keys.
+    """
+    from projio.config import load_effective_config
+
+    try:
+        cfg = load_effective_config(root)
+    except FileNotFoundError:
+        return {"valid": [], "missing": [], "warnings": ["no .projio/config.yml"]}
+
+    code = cfg.get("code", {}) or {}
+    conda_prefix = code.get("conda_prefix")
+    envs = code.get("envs", {}) or {}
+
+    if not envs:
+        return {"valid": [], "missing": [], "warnings": []}
+    if not conda_prefix:
+        return {
+            "valid": [],
+            "missing": [],
+            "warnings": ["code.envs configured but code.conda_prefix is missing"],
+        }
+
+    prefix = Path(conda_prefix)
+    valid: list[str] = []
+    missing: list[str] = []
+    warnings: list[str] = []
+
+    if not prefix.is_dir():
+        warnings.append(f"conda_prefix does not exist: {prefix}")
+
+    seen_envs: set[str] = set()
+    for purpose, env_name in sorted(envs.items()):
+        if env_name in seen_envs:
+            continue
+        seen_envs.add(env_name)
+        env_dir = prefix / "envs" / env_name
+        if env_dir.is_dir():
+            valid.append(env_name)
+        else:
+            missing.append(env_name)
+
+    return {"valid": valid, "missing": missing, "warnings": warnings}
+
+
 def _sync_projio_mk(root: Path, *, dry_run: bool = False) -> dict[str, str]:
     """Regenerate projio.mk to pick up new manuscripts/masters."""
     from projio.init import _projio_mk
@@ -259,6 +306,89 @@ def _sync_projio_mk(root: Path, *, dry_run: bool = False) -> dict[str, str]:
     return {"action": "updated"}
 
 
+def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
+    """Ensure mkdocs.yml has monorepo plugin and pipeio !include if pipeio is present.
+
+    Only acts when:
+    - mkdocs.yml exists in the project
+    - pipeio is available (registry exists)
+
+    Adds ``monorepo`` to the plugins list and a ``Pipelines: '!include ...'``
+    entry to the nav, preserving existing content.
+    """
+    mkdocs_path = root / "mkdocs.yml"
+    if not mkdocs_path.exists():
+        mkdocs_path = root / "mkdocs.yaml"
+    if not mkdocs_path.exists():
+        return {"action": "skipped", "reason": "no mkdocs.yml"}
+
+    # Check if pipeio is present
+    has_pipeio = (
+        (root / ".projio" / "pipeio" / "registry.yml").exists()
+        or (root / ".pipeio" / "registry.yml").exists()
+    )
+    if not has_pipeio:
+        return {"action": "skipped", "reason": "no pipeio registry"}
+
+    import yaml
+
+    text = mkdocs_path.read_text(encoding="utf-8")
+    config = yaml.safe_load(text) or {}
+    changed = False
+
+    # --- Ensure monorepo plugin is listed ---
+    plugins = config.get("plugins")
+    if plugins is None:
+        plugins = ["search", "monorepo"]
+        config["plugins"] = plugins
+        changed = True
+    elif "monorepo" not in plugins:
+        plugins.append("monorepo")
+        changed = True
+
+    # --- Ensure Pipelines !include in nav ---
+    include_path = "docs/pipelines/mkdocs.yml"
+    include_val = f"!include ./{include_path}"
+    nav = config.get("nav")
+    if nav is not None:
+        has_include = any(
+            isinstance(entry, dict) and "Pipelines" in entry
+            and include_val in str(entry.get("Pipelines", ""))
+            for entry in nav
+        )
+        if not has_include:
+            # Remove any old Pipelines entry (from nav_patch)
+            nav[:] = [
+                e for e in nav
+                if not (isinstance(e, dict) and "Pipelines" in e)
+            ]
+            # Insert before Log if present, otherwise append
+            log_idx = next(
+                (i for i, e in enumerate(nav)
+                 if isinstance(e, dict) and "Log" in e),
+                None,
+            )
+            entry = {"Pipelines": include_val}
+            if log_idx is not None:
+                nav.insert(log_idx, entry)
+            else:
+                nav.append(entry)
+            changed = True
+
+    if not changed:
+        return {"action": "skipped", "reason": "already configured"}
+
+    if dry_run:
+        return {"action": "would_update", "changes": ["monorepo plugin", "Pipelines !include"]}
+
+    # Write back preserving as much structure as possible
+    yaml.Dumper.ignore_aliases = lambda *args: True
+    updated = yaml.dump(config, default_flow_style=False, sort_keys=False, allow_unicode=True)
+    mkdocs_path.write_text(updated, encoding="utf-8")
+
+    return {"action": "updated", "path": str(mkdocs_path.relative_to(root))}
+
+
 def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]:
     """Run all sync operations on a projio workspace.
 
@@ -267,6 +397,9 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
     3. Copy include.lua to .projio/filters/
     4. Copy CSL files to .projio/render/csl/
     5. Generate .projio/render/pandoc-defaults.yaml from .projio/render.yml
+    6. Validate code.envs conda configuration
+    7. Regenerate projio.mk
+    8. Ensure mkdocs.yml has monorepo plugin + pipeio !include
 
     Args:
         root: Project root directory.
@@ -340,10 +473,28 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
     elif render_action["action"] == "skipped":
         pass  # silent if no render.yml
 
-    # 6. Regenerate projio.mk to pick up new manuscripts/masters
+    # 6. Validate code.envs configuration
+    env_validation = _validate_code_envs(root_path)
+    for w in env_validation.get("warnings", []):
+        print(f"[!] code.envs: {w}")
+    for m in env_validation.get("missing", []):
+        print(f"[!] code.envs: conda env not found: {m}")
+    if env_validation.get("valid"):
+        print(f"[=] code.envs: validated {', '.join(env_validation['valid'])}")
+
+    # 7. Regenerate projio.mk to pick up new manuscripts/masters
     mk_action = _sync_projio_mk(root_path, dry_run=dry_run)
     if mk_action["action"] in ("updated", "would_update"):
         print(f"{prefix}[~] projio.mk regenerated")
+
+    # 8. Ensure mkdocs monorepo plugin + pipeio !include
+    mkdocs_action = _sync_mkdocs_monorepo(root_path, dry_run=dry_run)
+    if mkdocs_action["action"] in ("updated", "would_update"):
+        print(f"{prefix}[+] mkdocs.yml: monorepo plugin + Pipelines !include")
+    elif mkdocs_action["action"] == "skipped":
+        reason = mkdocs_action.get("reason", "")
+        if reason not in ("no mkdocs.yml", "no pipeio registry"):
+            print(f"[=] mkdocs.yml ({reason})")
 
     return {
         "libraries": lib_actions,
@@ -351,5 +502,7 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
         "lua_filter": filter_action,
         "csl_files": csl_action,
         "render": render_action,
+        "code_envs": env_validation,
         "projio_mk": mk_action,
+        "mkdocs": mkdocs_action,
     }

@@ -320,16 +320,37 @@ def _master_targets(masters: list[str]) -> str:
 
 
 def _projio_mk(root: Path) -> str:
-    """Generate projio.mk, substituting runtime bins if configured."""
+    """Generate projio.mk, substituting runtime bins if configured.
+
+    Prefers ``code.envs`` + ``code.conda_prefix`` when present, falling
+    back to the legacy ``runtime.*`` keys for backward compatibility.
+    """
+    from projio.config import resolve_env_all
+
     try:
         cfg = load_effective_config(root)
         runtime = cfg.get("runtime", {})
     except Exception:
         cfg = {}
         runtime = {}
-    python_bin = runtime.get("python_bin")
-    datalad_bin = runtime.get("datalad_bin")
-    projio_python = runtime.get("projio_python")
+
+    # --- Resolve binaries: prefer code.envs, fall back to runtime.* ---
+    envs = resolve_env_all(root)
+    has_envs = any(v is not None for v in envs.values())
+
+    if has_envs:
+        python_bin = envs["python"]
+        projio_python = envs["projio"]
+        docs_python = envs["docs"]
+        datalad_bin = envs["datalad"]
+        pandoc_bin = envs["pandoc"]
+    else:
+        python_bin = runtime.get("python_bin")
+        projio_python = runtime.get("projio_python")
+        docs_python = None
+        datalad_bin = runtime.get("datalad_bin")
+        pandoc_bin = None
+
     push_sibling = cfg.get("push_sibling") or cfg.get("datalad_remote") or "github"
     mk = PROJIO_MK
     if push_sibling != "github":
@@ -369,27 +390,33 @@ def _projio_mk(root: Path) -> str:
             f"PUBLISH ?= {publish_script}",
             1,
         )
-    labpy_python = None
+    if docs_python:
+        mk = mk.replace(
+            "MKDOCS  ?= $(PYTHON) -m mkdocs",
+            f"MKDOCS  ?= {docs_python} -m mkdocs",
+            1,
+        )
     if datalad_bin:
         mk = mk.replace("DATALAD ?= datalad", f"DATALAD ?= {datalad_bin}", 1)
-        # Derive labpy python for MKDOCS/PANDOC from datalad_bin path
-        # e.g. .../envs/labpy/bin/datalad → .../envs/labpy/bin/python
-        datalad_path = Path(datalad_bin)
-        labpy_python = datalad_path.parent / "python"
-        if labpy_python.exists():
-            mk = mk.replace(
-                "MKDOCS  ?= $(PYTHON) -m mkdocs",
-                f"MKDOCS  ?= {labpy_python} -m mkdocs",
-                1,
-            )
-        # Pandoc lives alongside datalad in labpy
-        labpy_pandoc = datalad_path.parent / "pandoc"
-        if labpy_pandoc.exists():
-            mk = mk.replace(
-                "PANDOC  ?= pandoc",
-                f"PANDOC  ?= {labpy_pandoc}",
-                1,
-            )
+        if not has_envs:
+            # Legacy: derive MKDOCS/PANDOC from datalad_bin path
+            datalad_path = Path(datalad_bin)
+            labpy_python = datalad_path.parent / "python"
+            if labpy_python.exists() and not docs_python:
+                mk = mk.replace(
+                    "MKDOCS  ?= $(PYTHON) -m mkdocs",
+                    f"MKDOCS  ?= {labpy_python} -m mkdocs",
+                    1,
+                )
+            labpy_pandoc = datalad_path.parent / "pandoc"
+            if labpy_pandoc.exists() and not pandoc_bin:
+                mk = mk.replace(
+                    "PANDOC  ?= pandoc",
+                    f"PANDOC  ?= {labpy_pandoc}",
+                    1,
+                )
+    if pandoc_bin:
+        mk = mk.replace("PANDOC  ?= pandoc", f"PANDOC  ?= {pandoc_bin}", 1)
 
     # Detect manuscripts and masters, append conditional targets
     manuscripts = _detect_manuscripts(root)

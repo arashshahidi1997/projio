@@ -1048,7 +1048,10 @@ def pipeio_nb_exec_tool(
     timeout: int = 600,
 ):
     """Execute a notebook via papermill with optional RunCard parameter overrides.
-    Syncs py -> ipynb first, returns status/errors/output path/elapsed time."""
+    Syncs py -> ipynb first, returns status/errors/output path/elapsed time.
+    Both jupytext and papermill run from the MCP server's own Python;
+    the -k kernel flag (from notebook.yml) controls which Jupyter kernel
+    executes the cells."""
     return pipeio.pipeio_nb_exec(
         flow=flow, name=name,
         params=params or None, timeout=timeout,

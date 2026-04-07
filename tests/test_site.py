@@ -165,7 +165,7 @@ class TestServeBackground:
 
         with mock.patch(
             "projio.site.subprocess.Popen",
-            side_effect=[mock_chat_proc, mock_site_proc],
+            side_effect=[mock_site_proc, mock_chat_proc],
         ) as popen_mock, mock.patch(
             "projio.site.find_free_port",
             side_effect=[8001, 9101],

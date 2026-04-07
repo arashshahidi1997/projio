@@ -237,3 +237,62 @@ Session: `ed6dcb96` | Task: `task-arash-20260404-015001-691920.md`
 - `packages/biblio/src/biblio/mcp.py` — Added `enrich()...
 
 Session: `302dbc10` | Task: `task-arash-20260404-015003-191891.md`
+
+## 2026-04-05 01:45 | projio | opus | 1 steps
+
+**Task 2** — All CLI commands (`biblio zotero pull/push/status`, `biblio pool promote`) were already implemented with full argparse definitions and handler logic. The Zotero config schema is handled in `zotero.py` via `load_zotero_config()`. No changes needed.
+
+Session: `0814e95f` | Task: `task-arash-20260404-015004-461584.md`
+
+## 2026-04-05 03:14 | projio | opus | 1 steps
+
+- **TEI XML structure** — how GROBID encodes inline `<ref type="bibr" target="#bN">` elements within body paragraphs, with examples
+- **Data model** — per-citekey `contexts.json` schema (bib_id, cited_citekey, section, sentence, callout_text, position) and corpus-level inverted index
+- **Implementation plan** — new `extract_citation_contexts()` parser in `grobid.py`, integration with `run_grobid_for_key`, corpus aggregation function. Reuses existing `parse_tei_biblstructs` and `match_biblstru...
+
+Session: `02b6d370` | Task: `task-arash-20260404-021709-360539.md`
+
+## 2026-04-05 03:19 | projio | opus | 1 steps
+
+**Key findings from the study:**
+- Unpaywall API calls are largely redundant with OpenAlex (which incorporates Unpaywall data), but worth keeping as a fallback
+- biblio was only trying the single best OA URL — now tries all candidates
+- PDF validation was too simple compared to oadoi's approach — now catches encrypted PDFs and tiny error pages
+
+Session: `f3546bf9` | Task: `task-arash-20260404-021710-894108.md`
+
+## 2026-04-05 03:23 | projio | opus | 1 steps
+
+**Recommendation:** Start with **Option D** (improve current CrossRef matching by sending more metadata fields + adding instrumentation), then optionally add glutton as a fallback (Option B) once we have data showing CrossRef misses are a real problem.
+
+Session: `5bd08ddb` | Task: `task-arash-20260404-021712-357763.md`
+
+## 2026-04-06 22:08 | projio | sonnet | 1 steps
+
+Stale background task — already handled.
+
+Session: `125a7ab8` | Task: `task-arash-20260406-220506-783840.md`
+
+## 2026-04-07 03:41 | projio | opus | 1 steps
+
+The key insight: papermill (the runner) and the notebook kernel (the executor) are independent. Papermill just needs to be importable — it doesn't need to be in the same env that runs the notebook cells. The `-k` flag already handles kernel selection.
+
+Session: `56ce1f27` | Task: `task-arash-20260407-033724-576649.md`
+
+## 2026-04-07 04:09 | projio | opus | 1 steps
+
+Backward compatible — plain string `python_bin` (e.g. `"/usr/bin/python3"`) still works via the normalizer.
+
+Session: `b82cd142` | Task: `task-arash-20260407-040528-084168.md`
+
+## 2026-04-07 05:19 | projio | opus | 1 steps
+
+**Part 2 — InputStage for input resolution (new):**
+- Added `InputStage` dataclass in `resolver.py` with BIDS-style path construction from `pybids_inputs` config
+- `PipelineContext.stage()` now resolves input stages (from `input_dir` + `pybids_inputs`) after output registry groups
+- `PipelineContext.input_stages()` returns available input stage names
+- `InputStage` supports `paths()`, `have()`, `resolve()` — same interface as `Stage`
+- `stage_aliases` work for input stages too
+- 14 new tests ...
+
+Session: `e610359f` | Task: `task-arash-20260407-051120-006858.md`

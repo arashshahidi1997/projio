@@ -90,6 +90,8 @@ Projio-managed projects use two distinct environments, configured in `~/.config/
 
 The generated `.projio/projio.mk` substitutes these into `PROJIO ?=` and `DATALAD ?=`. `projio_python` takes precedence over `python_bin` for the `PROJIO` variable; `python_bin` still controls `PYTHON` for project code. Projects can override either key in their own `.projio/config.yml`.
 
+**Notebook execution:** `pipeio_nb_exec` runs papermill from the MCP server's own Python (`rag` env), not from the project's `PYTHON`. The `-k` kernel flag controls which Jupyter kernel executes the cells. Papermill must be installed in the `rag` env (`pip install papermill`).
+
 ### Claude Code Integration
 
 Projio scaffolds `.claude/settings.json` with pre-approved tool permissions (including `mcp__projio__*` and `mcp__worklog__*`) and `.mcp.json` for the MCP server. Both files are gitignored via the `# >>> projio >>>` block. Use `projio git untrack` to stop tracking them if they were committed before being gitignored.
@@ -101,7 +103,7 @@ Projects organize code in three tiers with a promotion model (notebooks → scri
 | Tier | Location | codio `role` | Description |
 |------|----------|-------------|-------------|
 | Core library | `code/lib/{name}/` | `core` | Dataset-agnostic, reusable. Agents may add code. |
-| Project utils | `code/utils/` | — | Pipeline-aware glue (PipelineContext, bootstrap). Configured via `code.project_utils` in `.projio/config.yml`. |
+| Project utils | `code/utils/` | — | Project-specific, cross-flow reusable (atlas overlays, brainstate I/O). Configured via `code.project_utils` in `.projio/config.yml`. |
 | Flow scripts | `code/pipelines/{flow}/scripts/` | — | Snakemake wiring, one per rule. |
 
 `projio sync` auto-discovers `code/lib/*/` and registers in codio with `role=core`, `kind=internal`. It also detects `code/utils/` and sets `code.project_utils` in config. The `project_context()` MCP tool returns the active code tier configuration.
