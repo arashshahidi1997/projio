@@ -2,6 +2,7 @@
 
 ## Contents
 
+- [idea-arash-20260407-172837-671335 title:Git-native issue mirroring — local mirrors of GitHub/GitLab issues in notio](idea-arash-20260407-172837-671335.md)
 - [idea-arash-20260407-171834-423514 title:## Configurable docs paths for subsystem-owned documentation](idea-arash-20260407-171834-423514.md)
 - [idea-arash-20260407-010140-074558 title:## Auto-generated CHANGELOG from task completions and datalad saves](idea-arash-20260407-010140-074558.md)
 - [idea-arash-20260403-172004-817050 title:Skill candidates for projio ecosystem](idea-arash-20260403-172004-817050.md)
