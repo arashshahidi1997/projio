@@ -144,13 +144,15 @@ questions:
 milestones:
   preprocessing-stable:
     description: "All preprocessing pipelines validated for all subjects"
-    pipelines: [preprocess_ieeg, preprocess_ecephys]
+    flow: preprocess_ieeg                # primary pipeio flow (structured link)
+    pipelines: [preprocess_ieeg, preprocess_ecephys]  # all flows, for multi-flow milestones
     depends_on: [ttl-removal-validated]
     status: in_progress
     evidence: []
 
   swr-detection-validated:
     description: "SWR detection validated across all subjects"
+    flow: sharpwaveripple
     pipelines: [sharpwaveripple]
     depends_on: [preprocessing-stable]
     status: not_started
@@ -158,6 +160,7 @@ milestones:
 
   delta-ripple-coupling:
     description: "Delta-ripple temporal coupling quantified"
+    flow: coupling_spindle_ripple
     pipelines: [coupling_spindle_ripple]
     depends_on: [swr-detection-validated, delta-event-detection]
     status: not_started
@@ -165,6 +168,7 @@ milestones:
 
   ttl-removal-validated:
     description: "TTL artifact removal validated for iEEG and neuropixels"
+    flow: preprocess_ieeg
     pipelines: [preprocess_ieeg]
     depends_on: []
     status: in_progress
@@ -176,6 +180,8 @@ milestones:
 - `depends_on` enables dependency graph resolution for dispatch.
 - `evidence` is a list of note IDs (pointers to notio result notes).
 - Status vocabulary: `not_started | in_progress | blocked | complete`.
+- `flow` is the primary structured link to a pipeio flow. It enables direct resolution: `questio_gap` returns the `flow` field → the agent calls `pipeio_flow_status(flow)` without NLU or guessing. When `flow` is absent but `pipelines` has exactly one entry, treat that as the flow.
+- `pipelines` is retained for milestones that span multiple flows (e.g., `preprocessing-stable` requires both `preprocess_ieeg` and `preprocess_ecephys`). For single-flow milestones, `pipelines` mirrors `flow` for backward compatibility.
 
 ### 5.3 Evidence records (notio `result` notes)
 
@@ -227,6 +233,30 @@ Pixecog already has `plan/Milestones.md` (markdown tables) and `plan/master/03-Q
 3. `plan/master/03-Questions-and-Hypotheses.md` remains as the prose narrative — YAML handles the structured/queryable data, prose handles the scientific context.
 4. YAML is the single source of truth. All rendered views in `docs/plan/` are output artifacts.
 
+### 5.5 Observation notes (mid-loop recording)
+
+During investigate and iterate loops (see [loop-mechanisms.md](loop-mechanisms.md)), agents capture mid-loop findings as lightweight observation notes. These use notio's existing `idea` note type — no dedicated note type is needed.
+
+**Convention:**
+
+```yaml
+---
+title: "Observation: sub-03 missing TTL events in first 100s"
+tags: [observation, investigate]     # or [observation, iterate]
+series: preprocess_ieeg              # links to the flow under investigation
+---
+
+<observation body — what was found, what it means, what to check next>
+```
+
+**Design choices:**
+- Observations use `idea` notes with `tags: [observation]` — they do NOT need a dedicated note type. Observations are lightweight and ephemeral.
+- The `series` field links the observation to the relevant flow, enabling lookup by flow name.
+- Tags include the loop type (`investigate` or `iterate`) for filtering.
+- Observations are *inputs to* result notes, not evidence themselves. They do not appear in milestone `evidence` lists.
+- Observations accumulate during a loop and are referenced in the body of the final `result` note that records the loop's conclusion.
+- The convention is: "when in doubt, write an observation note." The cost of an extra note is near zero; the cost of lost context when a loop is interrupted is high.
+
 ## 6. Tools and skills
 
 Questio divides its surface into **MCP tools** (structured queries requiring code) and **skills** (prompt-based compositions of existing tools). The split follows a simple rule: if it needs to parse YAML, resolve a dependency graph, or aggregate structured data — it's a tool. If it needs judgment, composition, or natural language output — it's a skill.
@@ -236,7 +266,7 @@ Questio divides its surface into **MCP tools** (structured queries requiring cod
 | Tool | Args | Returns | Description |
 |------|------|---------|-------------|
 | `questio_status` | `question_id?` | questions with status, evidence counts, milestone completion %, blockers | Overview of research state. Parses YAML + scans result notes. No args = all questions. |
-| `questio_gap` | `question_id` | unmet milestones, missing pipeline runs, confidence levels, dependency blockers | "What's missing to answer H3?" Requires dependency resolution. |
+| `questio_gap` | `question_id` | unmet milestones (with `flow` field), missing pipeline runs, confidence levels, dependency blockers | "What's missing to answer H3?" Requires dependency resolution. Returns each milestone's `flow` field for direct `pipeio_flow_status` resolution. |
 | `questio_docs_collect` | — | list of generated files | Regenerate `docs/plan/` pages from YAML: questions table, milestones table, mermaid roadmap, evidence index. Follows `pipeio_docs_collect` pattern. |
 
 **Tool count: 3.** Everything else is a skill.
@@ -530,6 +560,22 @@ The agent should **surface** these decision points rather than silently resolvin
 | Milestone completion (middle) | Semi-automated | Medium — works through milestones, pauses at checkpoints | Approve direction, review evidence |
 | Research cycle (outer) | Agent-guided | Low — proposes next steps | Approve priorities, interpret results |
 | Session workflow | Structured by skill | Medium — follows session structure | Initiate, review report |
+
+### 8.6 Failure mode taxonomy
+
+All workflow loops share a common failure vocabulary. When something goes wrong during any loop, the agent classifies the failure and acts accordingly. This taxonomy is shared across investigate, iterate, and orient loops (see [loop-mechanisms.md](loop-mechanisms.md) for detailed loop definitions).
+
+| Mode | Meaning | Agent action | Escalation path |
+|------|---------|-------------|-----------------|
+| `retry` | Transient failure (timeout, resource contention, network error) | Re-run with same parameters, max 2 attempts | → `investigate` after 2 failures |
+| `investigate` | Unexpected output (wrong values, empty files, partial results) | Enter investigate loop: gather evidence, trace cause | → `escalate` if cause not found after systematic search |
+| `escalate` | Needs human judgment (ambiguous results, scientific interpretation required) | Create observation note with all evidence gathered, present findings, ask human | Terminal — human decides next action |
+| `skip` | Blocked by external dependency (missing data, upstream flow incomplete) | Record the blocker in an observation note, move to next unblocked item | Re-check when dependency resolves (orient loop detects this) |
+| `abort` | Unrecoverable (corrupted data, infrastructure failure, data integrity issue) | Stop the loop immediately, create detailed observation note, alert human | Terminal — requires human intervention before any further work |
+
+**Escalation cascade:** each mode has a natural escalation path. `retry` escalates to `investigate` after max attempts. `investigate` escalates to `escalate` when the agent cannot determine the cause. This prevents infinite loops and ensures humans are informed when automation cannot resolve an issue.
+
+**Classification guidance:** the agent should default to `investigate` when uncertain. `retry` is only appropriate when the failure is clearly transient (identical operation succeeded before, error message indicates timeout/contention). `abort` is reserved for situations where continuing could corrupt data or produce misleading results.
 
 ## 9. Integration with existing subsystems
 
