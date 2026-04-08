@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from . import biblio, codio, context, datalad, manuscripto, notio, pipeio, questio, rag, site as site_mcp
+from . import biblio, codio, context, datalad, figio as figio_mcp, manuscripto, notio, pipeio, questio, rag, site as site_mcp
 
 server = FastMCP("projio")
 
@@ -651,6 +651,69 @@ def codio_func_doc_tool(package: str, module: str, function: str = "", env: str 
     If omitted, lists all public functions with signatures and first-line docstrings (browsing mode).
     Set env to a conda environment name to introspect packages in that env (e.g. "cogpy")."""
     return codio.codio_func_doc(package=package, module=module, function=function or None, env=env or None)
+
+
+# --- Figio tools ---
+
+@server.tool("figio_figure_list")
+def figio_figure_list_tool():
+    """List all figurespec YAML files in the project."""
+    return figio_mcp.figio_figure_list()
+
+
+@server.tool("figio_inspect")
+def figio_inspect_tool(figure_id: str = ""):
+    """Inspect a figure spec: panels, layout, constraints, annotations, style.
+
+    Args:
+        figure_id: Figure ID to inspect. If empty, lists all figures.
+    """
+    return figio_mcp.figio_inspect(figure_id=figure_id)
+
+
+@server.tool("figio_build")
+def figio_build_tool(figure_id: str, panels: str = "", force: bool = False):
+    """Build a figure from its spec. Returns output paths and validation.
+
+    Args:
+        figure_id: Figure ID to build.
+        panels: Comma-separated panel IDs to rebuild (empty = all).
+        force: Bypass cache and re-render all panels.
+    """
+    return figio_mcp.figio_build(figure_id=figure_id, panels=panels, force=force)
+
+
+@server.tool("figio_validate")
+def figio_validate_tool(figure_id: str, target: str = ""):
+    """Validate a figure spec against a target profile.
+
+    Args:
+        figure_id: Figure ID to validate.
+        target: Override target profile name (empty = use spec's target).
+    """
+    return figio_mcp.figio_validate(figure_id=figure_id, target=target)
+
+
+@server.tool("figio_edit_spec")
+def figio_edit_spec_tool(figure_id: str, patch: dict = {}):
+    """Apply a JSON merge-patch to a figure spec.
+
+    Args:
+        figure_id: Figure ID to edit.
+        patch: JSON merge-patch object to apply.
+    """
+    return figio_mcp.figio_edit_spec(figure_id=figure_id, patch=patch)
+
+
+@server.tool("figio_query_output")
+def figio_query_output_tool(figure_id: str, query: str):
+    """Query structured data from the last build output.
+
+    Args:
+        figure_id: Figure ID to query.
+        query: Query string (e.g. "bounding_box of panel X", "dimensions").
+    """
+    return figio_mcp.figio_query_output(figure_id=figure_id, query=query)
 
 
 # --- Pipeio tools ---

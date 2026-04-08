@@ -68,6 +68,7 @@ The MCP server (`src/projio/mcp/server.py`) is the primary agent interface. It r
 - `mcp/notio.py` — `note_list`, `note_latest`, `note_search`, `notio_reindex`
 - `mcp/manuscripto.py` — `manuscript_init`, `manuscript_list`, `manuscript_status`, `manuscript_build`, `manuscript_validate`, `manuscript_assemble`, `manuscript_figure_insert`, `manuscript_section_context`, `manuscript_overview`, `manuscript_cite_check`, `manuscript_figure_build_all`, `manuscript_diff`, `manuscript_cite_suggest`, `manuscript_journal_check`, `master_list`, `master_build`, `master_generate`
 - `mcp/codio.py` — `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`, `codio_rag_sync`, `codio_add` (with `role` param: core/shared/external)
+- `mcp/figio.py` — `figio_figure_list`, `figio_inspect`, `figio_build`, `figio_validate`, `figio_edit_spec`, `figio_query_output`
 - `mcp/pipeio.py` — 51 tools across flow/mod/rule/config/notebook/docs/execution/paths. Key additions: `pipeio_target_paths`, `pipeio_dag_export` (SVG auto-writes to docs/), `pipeio_mod_audit`, `pipeio_mod_doc_refresh`, `pipeio_script_create`, `pipeio_nb_promote`. No `pipe` parameter — flows addressed by name only. See `skill_read("pipeio-guide")` for full reference.
 - `mcp/datalad.py` — `datalad_save`, `datalad_status`, `datalad_push`, `datalad_pull`, `datalad_siblings`
 - `mcp/site.py` — `site_detect`, `site_build`, `site_deploy`, `site_serve`, `site_stop`, `site_list`

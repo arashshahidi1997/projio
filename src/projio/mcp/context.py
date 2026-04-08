@@ -332,8 +332,8 @@ def ecosystem_status() -> JsonDict:
 
     Checks: biblio (main.bib exists, citekey count), codio (catalog entry count,
     validation), notio (note count), pipeio (registry validity, contracts validity,
-    flow/mod counts), and indexio (corpus count). Returns structured results per
-    subsystem with an overall healthy flag.
+    flow/mod counts), figio (figure count), and indexio (corpus count). Returns
+    structured results per subsystem with an overall healthy flag.
     """
     import yaml as _yaml
     root = get_project_root()
@@ -465,6 +465,23 @@ def ecosystem_status() -> JsonDict:
         subsystems["pipeio"] = pipeio_status
     else:
         subsystems["pipeio"] = {"enabled": False}
+
+    # --- figio ---
+    figio_cfg = cfg.get("figio", {}) or {}
+    if figio_cfg.get("enabled", False):
+        figio_status: dict[str, Any] = {"enabled": True}
+        try:
+            from projio.mcp.figio import figio_figure_list
+            fl = figio_figure_list()
+            if isinstance(fl, dict) and "figures" in fl:
+                figio_status["figure_count"] = len(fl["figures"])
+            elif isinstance(fl, dict) and "error" not in fl:
+                figio_status["figure_count"] = 0
+        except Exception:
+            figio_status["available"] = False
+        subsystems["figio"] = figio_status
+    else:
+        subsystems["figio"] = {"enabled": False}
 
     # --- indexio ---
     indexio_cfg = cfg.get("indexio", {}) or {}

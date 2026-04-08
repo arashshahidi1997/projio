@@ -10,11 +10,11 @@ from .config import get_nested, load_effective_config, load_project_config
 KIND_CHOICES = ("generic", "tool", "study")
 SITE_FRAMEWORK_CHOICES = ("mkdocs", "sphinx", "vite")
 
-KNOWN_PACKAGES = ("biblio", "notio", "codio", "indexio", "pipeio", "claude")
+KNOWN_PACKAGES = ("biblio", "notio", "codio", "indexio", "pipeio", "figio", "claude")
 
 PROFILES: dict[str, tuple[str, ...]] = {
     "research": ("notio", "biblio", "indexio"),
-    "full": ("notio", "biblio", "codio", "indexio", "pipeio"),
+    "full": ("notio", "biblio", "codio", "indexio", "pipeio", "figio"),
 }
 
 BASE_PROJIO_CONFIG = """\
@@ -1052,6 +1052,10 @@ def _scaffold_component(root: Path, package: str, component_dir: Path) -> None:
             )
         templates_dir = component_dir / "templates" / "flow"
         templates_dir.mkdir(parents=True, exist_ok=True)
+    elif package == "figio":
+        component_dir.mkdir(parents=True, exist_ok=True)
+        # figio uses figurespec YAML files alongside panel scripts;
+        # no additional scaffolding needed beyond the component dir
     elif package == "claude":
         _scaffold_claude(root, component_dir)
     else:
@@ -1325,6 +1329,7 @@ def _generate_claude_md(root: Path) -> str:
     has_codio = packages.get("codio", {}).get("enabled", False)
     has_pipeio = packages.get("pipeio", {}).get("enabled", False)
     has_indexio = packages.get("indexio", {}).get("enabled", False)
+    has_figio = packages.get("figio", {}).get("enabled", False)
 
     sections: list[str] = []
 
@@ -1403,6 +1408,14 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Validate registry | `codio_validate()` | Run consistency checks manually |")
         rows.append("| Register a library (with role) | `codio_add(name, kind, role)` | Edit YAML registry files |")
         rows.append("| Sync codio sources to index | `codio_rag_sync()` | Run `codio rag sync` in terminal |")
+
+    if has_figio:
+        rows.append("| List figures | `figio_figure_list()` | Scan for YAML files manually |")
+        rows.append("| Inspect a figure | `figio_inspect(figure_id)` | Read spec files directly |")
+        rows.append("| Build a figure | `figio_build(figure_id)` | Run `figio build` in terminal |")
+        rows.append("| Validate a figure | `figio_validate(figure_id)` | Run `figio validate` in terminal |")
+        rows.append("| Edit a figure spec | `figio_edit_spec(figure_id, patch)` | Edit YAML directly |")
+        rows.append("| Query build output | `figio_query_output(figure_id, query)` | Parse SVG directly |")
 
     if has_pipeio:
         # Flow & registry
