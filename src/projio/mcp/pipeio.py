@@ -404,14 +404,21 @@ def pipeio_docs_nav() -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
-def pipeio_contracts_validate() -> JsonDict:
-    """Validate I/O contracts for all flows (config completeness, dirs, groups)."""
+def pipeio_contracts_validate(run: bool = False) -> JsonDict:
+    """Validate I/O contracts for all flows.
+
+    Checks config completeness, dirs, registry groups, and discovers
+    ``contracts.py`` modules with ``validate_inputs``/``validate_outputs``.
+
+    When *run=True*, also executes discovered contract functions (requires
+    that input/output paths are resolvable from the current project state).
+    """
     if not _pipeio_available():
         return _unavailable("pipeio_contracts_validate")
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_contracts_validate  # type: ignore[import]
-        return json_dict(mcp_contracts_validate(root))
+        return json_dict(mcp_contracts_validate(root, run=run))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
