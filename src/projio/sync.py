@@ -586,6 +586,23 @@ def _sync_vscode_settings(root: Path, render_cfg: Any, *, dry_run: bool = False)
     return {"action": "updated"}
 
 
+def _sync_questio_docs(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
+    """Regenerate questio plan docs if docs/plan/questions.yml exists."""
+    questions_path = root / "docs" / "plan" / "questions.yml"
+    if not questions_path.exists():
+        return {"action": "skipped", "reason": "no docs/plan/questions.yml"}
+    if dry_run:
+        return {"action": "would_generate"}
+    try:
+        import os
+        os.environ.setdefault("PROJIO_ROOT", str(root))
+        from projio.mcp.questio import questio_docs_collect
+        result = questio_docs_collect()
+        return {"action": "generated", "files": result.get("generated", 0)}
+    except Exception as exc:
+        return {"action": "error", "reason": str(exc)}
+
+
 def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]:
     """Run all sync operations on a projio workspace.
 
@@ -598,6 +615,7 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
     7. Regenerate projio.mk
     8. Ensure mkdocs.yml has monorepo plugin + pipeio !include
     9. Sync VS Code settings (PandocCiter + watcher excludes) via managed block
+    10. Regenerate questio plan docs if docs/plan/questions.yml exists
 
     Args:
         root: Project root directory.
@@ -712,6 +730,14 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
         if "no .vscode" in reason:
             print(f"[!] {reason} — PandocCiter autocompletion won't work without it")
 
+    # 10. Regenerate questio plan docs if questions.yml exists
+    questio_action = _sync_questio_docs(root_path, dry_run=dry_run)
+    if questio_action["action"] in ("generated", "would_generate"):
+        count = questio_action.get("files", 0)
+        print(f"{prefix}[+] questio: regenerated {count} plan docs")
+    elif questio_action["action"] == "skipped":
+        pass  # silent if no questions.yml
+
     return {
         "libraries": lib_actions,
         "project_utils": utils_action,
@@ -722,4 +748,5 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
         "projio_mk": mk_action,
         "mkdocs": mkdocs_action,
         "vscode": vscode_action,
+        "questio": questio_action,
     }

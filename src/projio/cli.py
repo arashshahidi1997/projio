@@ -224,6 +224,11 @@ def _build_parser() -> argparse.ArgumentParser:
 
     render_sub.add_parser("show", help="Print resolved render config.")
 
+    p_questio = sub.add_parser("questio", help="Research orchestration (questio).")
+    questio_sub = p_questio.add_subparsers(dest="questio_command", required=True)
+    p_questio_docs = questio_sub.add_parser("docs", help="Regenerate docs/plan/ pages from YAML.")
+    p_questio_docs.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+
     p_sync = sub.add_parser("sync", help="Sync workspace: auto-discover code/lib libraries, register in codio.")
     p_sync.add_argument("-C", "--root", default=".", help="Project root (default: .).")
     p_sync.add_argument("--dry-run", action="store_true", help="Show what would change without writing.")
@@ -428,6 +433,22 @@ def main(argv: Iterable[str] | None = None) -> None:
             import yaml
             cfg = load_render_config(root)
             print(yaml.dump(cfg.to_dict(), default_flow_style=False, sort_keys=False).rstrip())
+        return
+
+    if args.command == "questio":
+        if args.questio_command == "docs":
+            import os
+            from pathlib import Path
+            root = Path(args.root).expanduser().resolve()
+            os.environ.setdefault("PROJIO_ROOT", str(root))
+            from .mcp.questio import questio_docs_collect
+            result = questio_docs_collect()
+            if "error" in result:
+                print(f"[ERROR] {result['error']}")
+            else:
+                print(f"Generated {result['generated']} files in docs/plan/")
+                for f in result.get("files", []):
+                    print(f"  {f}")
         return
 
     if args.command == "sync":
