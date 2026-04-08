@@ -449,6 +449,20 @@ def questio_status(question_id: str = "") -> JsonDict:
         total_evidence += evidence_count
         blockers = _find_blockers(ms_ids, milestones)
 
+        # Per-milestone summary with flow field
+        milestone_list = []
+        for mid in ms_ids:
+            mdata = milestones.get(mid, {})
+            flow = mdata.get("flow") or ""
+            if not flow:
+                pipes = mdata.get("pipelines", []) or []
+                flow = pipes[0] if pipes else ""
+            milestone_list.append({
+                "id": mid,
+                "status": mdata.get("status", "not_started"),
+                "flow": flow,
+            })
+
         question_summaries.append({
             "id": qid,
             "text": qdata.get("text", ""),
@@ -457,6 +471,7 @@ def questio_status(question_id: str = "") -> JsonDict:
             "milestone_progress": f"{ms_progress} complete",
             "evidence_count": evidence_count,
             "blockers": blockers,
+            "milestones": milestone_list,
         })
 
     # Overall stats (across all milestones, not just filtered)
@@ -541,10 +556,17 @@ def questio_gap(question_id: str) -> JsonDict:
             )
             evidence_confidence = best.get("confidence", "")
 
+        # Resolve flow: explicit field, else first pipeline entry
+        flow = mdata.get("flow") or ""
+        if not flow:
+            pipes = mdata.get("pipelines", []) or []
+            flow = pipes[0] if pipes else ""
+
         milestone_details.append({
             "id": mid,
             "description": mdata.get("description", mid),
             "status": status,
+            "flow": flow,
             "blocked_by": blocked_by,
             "pipelines": mdata.get("pipelines", []) or [],
             "evidence": evidence,
@@ -631,14 +653,18 @@ def _generate_recommendation(
             unblock_count[mid] = count
 
         best = max(actionable, key=lambda m: unblock_count.get(m, 0))
-        best_desc = milestones.get(best, {}).get("description", best)
-        pipes = milestones.get(best, {}).get("pipelines", []) or []
-        pipe_str = f" (pipelines: {', '.join(pipes)})" if pipes else ""
+        best_data = milestones.get(best, {})
+        best_desc = best_data.get("description", best)
+        flow = best_data.get("flow") or ""
+        if not flow:
+            pipes = best_data.get("pipelines", []) or []
+            flow = pipes[0] if pipes else ""
+        flow_str = f" (flow: {flow})" if flow else ""
         unblocks = unblock_count.get(best, 0)
         extra = f" Unblocks {unblocks} downstream milestone(s)." if unblocks else ""
 
         return (
-            f"Highest impact: complete '{best}' — {best_desc}{pipe_str}.{extra}"
+            f"Highest impact: complete '{best}' — {best_desc}{flow_str}.{extra}"
         )
 
     # All unmet milestones are blocked — find root actionable dependencies
@@ -681,12 +707,16 @@ def _generate_recommendation(
             )
             unblock_count[b] = count
         best = max(root_actionable, key=lambda m: unblock_count.get(m, 0))
-        best_desc = milestones.get(best, {}).get("description", best)
-        pipes = milestones.get(best, {}).get("pipelines", []) or []
-        pipe_str = f" (pipelines: {', '.join(pipes)})" if pipes else ""
+        best_data = milestones.get(best, {})
+        best_desc = best_data.get("description", best)
+        flow = best_data.get("flow") or ""
+        if not flow:
+            pipes = best_data.get("pipelines", []) or []
+            flow = pipes[0] if pipes else ""
+        flow_str = f" (flow: {flow})" if flow else ""
         return (
             f"All {question_id} milestones are blocked. Root dependency: "
-            f"'{best}' — {best_desc}{pipe_str}. Complete this first."
+            f"'{best}' — {best_desc}{flow_str}. Complete this first."
         )
 
     return (

@@ -324,3 +324,21 @@ Session: `edf2954c` | Task: `task-arash-20260408-010716-841242.md`
 Each follows the `{name}/SKILL.md` directory convention expected by `skill_read()`, with YAML frontmatter declaring name, description, and tools.
 
 Session: `30e7b48f` | Task: `task-arash-20260408-010717-773063.md`
+
+## 2026-04-08 04:28 | projio | opus | 1 steps
+
+All 40 registry + mod discovery tests pass.
+
+Session: `43e7513d` | Task: `task-arash-20260408-042202-756848.md`
+
+## 2026-04-08 04:34 | projio | opus | 1 steps
+
+All 6 new tests pass, plus the pre-existing docs test was fixed (274 passed, 4 pre-existing resolver failures unrelated).
+
+Session: `c1af094a` | Task: `task-arash-20260408-042207-852032.md`
+
+## 2026-04-08 04:49 | projio | opus | 1 steps
+
+**Task 3** — Reconciled `design.md` with agent-as-judge philosophy: section 8.2 inner loop rewritten as "analysis iteration" (agent judges, not notebooks); Sequence B rewritten as "agent-driven assessment sweep"; section 6.2 skill table updated (added `questio-investigate` and `questio-iterate`, removed `questio-validate`, updated `questio-ground` and `questio-record` descriptions); section 8.5 automation levels updated (human reviews agent rationale, propose-review-confirm default); section ...
+
+Session: `f5d805ae` | Task: `task-arash-20260408-043830-spec-loops.md`

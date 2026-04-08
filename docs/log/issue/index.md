@@ -118,6 +118,36 @@
 
 ## open
 
+[**pipeio docs_collect: scripts**](issue-arash-20260408-042020-224344.md){ .note-card-title }
+
+<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**pipeio docs_collect: mod docs collected but not included in nav YAML**](issue-arash-20260408-041954-573205.md){ .note-card-title }
+
+<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**pipeio docs_collect: no index**](issue-arash-20260408-041929-434391.md){ .note-card-title }
+
+<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**pipeio docs_collect: index**](issue-arash-20260408-041909-523276.md){ .note-card-title }
+
+<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**pipeio registry_scan: has_docs always false despite flow-local docs/ existing**](issue-arash-20260408-041843-212992.md){ .note-card-title }
+
+<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
+
+---
+
 [**Commit pipeio fixes + add input stage resolution to PipelineContext**](issue-arash-20260407-050947-246557.md){ .note-card-title }
 
 <small>**created:** 2026-04-07 · **status:** open · **confidence:** 1.0</small>
