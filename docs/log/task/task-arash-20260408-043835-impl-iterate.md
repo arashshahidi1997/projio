@@ -2,7 +2,7 @@
 title: "Implement questio-iterate skill"
 date: 2026-04-08
 timestamp: 20260408-043835
-status: scheduled
+status: done
 actionable: true
 source_note: "docs/specs/research-orchestration/loop-mechanisms.md"
 project_primary: projio
@@ -83,3 +83,11 @@ The skill should guide the agent through:
 - [ ] References questio-investigate for failure cases
 - [ ] Convergence tracking after 3+ iterations
 - [ ] Committed
+
+
+## Batch Result
+
+- status: done
+- batch queue_id: `d63b4b31684a`
+- session: `be6951d6-6bf8-4098-b8ae-20e0a01542ea`
+- batch duration: 527.5s

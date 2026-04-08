@@ -88,5 +88,7 @@ nav:
           - Contracts: specs/pipeio/contracts.md
           - CLI: specs/pipeio/cli.md
           - MCP Tools: specs/pipeio/mcp-tools.md
+  - Pipelines: '!include ./docs/pipelines/mkdocs.yml'
   - Log:
       - log/index.md
+  - Log: '!include ./docs/log/mkdocs.yml'

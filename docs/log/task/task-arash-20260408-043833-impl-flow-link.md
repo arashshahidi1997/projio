@@ -2,7 +2,9 @@
 title: "Implement milestone→flow link in questio schema and tools"
 date: 2026-04-08
 timestamp: 20260408-043833
-status: scheduled
+status: done
+result_note: /storage2/arash/worklog/workflow/captures/20260408-045758-437620/note.md
+completed: 2026-04-08T04:57:59+02:00
 actionable: true
 source_note: "docs/specs/research-orchestration/design.md"
 project_primary: projio
@@ -50,3 +52,11 @@ Read the updated design spec at `docs/specs/research-orchestration/design.md` (s
 - [ ] pixecog milestones.yml has flow values for all milestones
 - [ ] Backward compatible when flow field is absent
 - [ ] Both repos committed
+
+
+## Batch Result
+
+- status: done
+- batch queue_id: `d63b4b31684a`
+- session: `be6951d6-6bf8-4098-b8ae-20e0a01542ea`
+- batch duration: 527.5s

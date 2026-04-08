@@ -2,7 +2,7 @@
 title: "Update questio-record for mid-loop observation capture"
 date: 2026-04-08
 timestamp: 20260408-043836
-status: scheduled
+status: done
 actionable: true
 source_note: "docs/specs/research-orchestration/loop-mechanisms.md"
 project_primary: projio
@@ -71,3 +71,11 @@ The skill should guide the agent to choose the right mode:
 - [ ] Observation notes explicitly excluded from milestone evidence
 - [ ] Compatible with existing notio note_create
 - [ ] Committed
+
+
+## Batch Result
+
+- status: done
+- batch queue_id: `d63b4b31684a`
+- session: `be6951d6-6bf8-4098-b8ae-20e0a01542ea`
+- batch duration: 527.5s

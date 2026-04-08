@@ -5,9 +5,22 @@
   "search.exclude": {
     "**/site": true
   },
-  "files.watcherExclude": {
-    "**/site/**": true
-  },
   "python-envs.defaultEnvManager": "ms-python.python:conda",
   "python-envs.defaultPackageManager": "ms-python.python:conda"
+
+  // >>> projio >>>
+  "PandocCiter.DefaultBibs": [".projio/render/compiled.bib"],
+  "PandocCiter.UseDefaultBib": true,
+  "pandocCiter.csl": ".projio/render/csl/apa.csl",
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/.projio/indexio/index/**": true,
+    "**/.snakemake/**": true,
+    "**/__pycache__/**": true,
+    "**/_build/**": true,
+    "**/_site/**": true,
+    "**/build/**": true,
+    "**/site/**": true,
+  },
+  // <<< projio <<<
 }

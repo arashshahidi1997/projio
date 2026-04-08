@@ -342,3 +342,21 @@ Session: `c1af094a` | Task: `task-arash-20260408-042207-852032.md`
 **Task 3** — Reconciled `design.md` with agent-as-judge philosophy: section 8.2 inner loop rewritten as "analysis iteration" (agent judges, not notebooks); Sequence B rewritten as "agent-driven assessment sweep"; section 6.2 skill table updated (added `questio-investigate` and `questio-iterate`, removed `questio-validate`, updated `questio-ground` and `questio-record` descriptions); section 8.5 automation levels updated (human reviews agent rationale, propose-review-confirm default); section ...
 
 Session: `f5d805ae` | Task: `task-arash-20260408-043830-spec-loops.md`
+
+## 2026-04-08 04:57 | projio | opus | 1 steps
+
+**Task 4** — Created dual-mode `questio-record` skill template at `docs/specs/research-orchestration/skills/questio-record.md` — Mode A (result notes for milestone evidence) and Mode B (observation notes for mid-loop capture), with clear decision criteria and tag conventions
+
+Session: `be6951d6` | Task: `task-arash-20260408-043833-impl-flow-link.md`
+
+## 2026-04-08 14:14 | projio | opus | 1 steps
+
+Each scenario uses the conversation format from the existing scenario book (Human:/Agent: blocks), includes mkdocs material admonitions, and ends with ecosystem coverage + loop patterns + key insight sections.
+
+Session: `49cfe4a4` | Task: `task-arash-20260408-051001-scenario-reproduce.md`
+
+## 2026-04-08 14:18 | projio | opus | 1 steps
+
+3. **`scenario-book.md`** — Rewritten as an index with a table linking all 8 scenarios (showing primary loop and ecosystem breadth), a reading guide explaining the admonition conventions, and the tool reference + anti-patterns sections retained from the original.
+
+Session: `01628669` | Task: `task-arash-20260408-051007-scenario-index.md`
