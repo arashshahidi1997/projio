@@ -114,5 +114,5 @@ Output as clean markdown:
 - If there are no recent results, say so explicitly — don't pad with filler.
 - Do not include implementation details (code, notebook names, script paths)
   in the report — keep it at the research level.
-- If `plan/questions.yml` doesn't exist, tell the user the project doesn't
+- If `docs/plan/questions.yml` doesn't exist, tell the user the project doesn't
   have a questio data model set up yet.

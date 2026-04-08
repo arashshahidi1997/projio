@@ -7,7 +7,7 @@
   - `questio_status` MCP tool — research state overview (questions, milestone completion %, evidence counts, blockers)
   - `questio_gap` MCP tool — per-question evidence gap analysis with dependency resolution and actionable recommendations
   - `questio_docs_collect` MCP tool — auto-generates `docs/plan/` pages (questions table, milestones tracker, mermaid roadmap, evidence index)
-  - Data model convention: `plan/questions.yml` (research question registry) and `plan/milestones.yml` (dependency-aware milestone tracker)
+  - Data model convention: `docs/plan/questions.yml` (research question registry) and `docs/plan/milestones.yml` (dependency-aware milestone tracker)
   - 5 skills: `questio-session` (full research session), `questio-next` (prioritization), `questio-ground` (literature/code grounding), `questio-record` (structured evidence capture), `questio-report` (supervisor summary)
   - Design spec: `docs/specs/research-orchestration/design.md`
 - **`result` note type in notio** — dedicated note type for structured evidence records with `question`, `milestone`, `metric`, `value`, `confidence` frontmatter fields; own directory (`docs/log/result/`), template, and index

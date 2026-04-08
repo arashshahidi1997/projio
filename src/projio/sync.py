@@ -308,11 +308,12 @@ def _sync_projio_mk(root: Path, *, dry_run: bool = False) -> dict[str, str]:
 
 
 def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
-    """Ensure mkdocs.yml has monorepo plugin and pipeio !include if pipeio is present.
+    """Ensure mkdocs.yml has monorepo plugin and !include lines for available subsystems.
 
-    Only acts when:
-    - mkdocs.yml exists in the project
-    - pipeio is available (registry exists)
+    Handles three subsystems:
+    - **pipeio**: ``!include ./docs/pipelines/mkdocs.yml`` (requires pipeio registry)
+    - **notio log**: ``!include ./docs/log/mkdocs.yml`` (requires docs/log/)
+    - **manuscript**: ``!include ./docs/manuscript/mkdocs.yml`` (requires docs/manuscript/)
 
     Uses text-level insertion to avoid YAML parsing issues with
     ``!!python/name:`` tags used by mkdocs-material.
@@ -323,22 +324,35 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
     if not mkdocs_path.exists():
         return {"action": "skipped", "reason": "no mkdocs.yml"}
 
+    # Detect which subsystems are present
     has_pipeio = (
         (root / ".projio" / "pipeio" / "registry.yml").exists()
         or (root / ".pipeio" / "registry.yml").exists()
     )
-    if not has_pipeio:
-        return {"action": "skipped", "reason": "no pipeio registry"}
+    has_log = (root / "docs" / "log").is_dir()
+    has_manuscript = (root / "docs" / "manuscript").is_dir()
+
+    # Discover master doc sections (docs/*/master.md, excluding managed dirs)
+    master_sections: list[str] = []
+    try:
+        from notio.manuscript.master import find_master_files  # type: ignore[import]
+        from notio.docs import _MANAGED_SECTIONS  # type: ignore[import]
+        for entry in find_master_files(root):
+            sec = entry["section_root"]
+            if sec not in _MANAGED_SECTIONS and sec not in master_sections:
+                master_sections.append(sec)
+    except Exception:
+        pass
+
+    if not (has_pipeio or has_log or has_manuscript or master_sections):
+        return {"action": "skipped", "reason": "no subsystems with docs"}
 
     text = mkdocs_path.read_text(encoding="utf-8")
     changed = False
-    include_line = "  - Pipelines: '!include ./docs/pipelines/mkdocs.yml'"
 
     # --- Ensure monorepo in plugins ---
     if "- monorepo" not in text:
-        # Find plugins: section or insert one
         if re.search(r"^plugins:", text, re.MULTILINE):
-            # Append monorepo after last plugin entry
             text = re.sub(
                 r"(^plugins:\n(?:  - .+\n)*)",
                 r"\g<1>  - monorepo\n",
@@ -347,7 +361,6 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
                 flags=re.MULTILINE,
             )
         else:
-            # Insert plugins section before markdown_extensions (common anchor)
             anchor = re.search(r"^markdown_extensions:", text, re.MULTILINE)
             if anchor:
                 text = text[:anchor.start()] + "plugins:\n  - search\n  - monorepo\n\n" + text[anchor.start():]
@@ -355,28 +368,84 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
                 text += "\nplugins:\n  - search\n  - monorepo\n"
         changed = True
 
-    # --- Ensure Pipelines !include in nav ---
-    if "!include ./docs/pipelines/mkdocs.yml" not in text:
-        # Find the nav: section
-        nav_match = re.search(r"^nav:", text, re.MULTILINE)
-        if nav_match:
-            # Find insertion point: before "- Log:" if present, else end of nav
-            log_match = re.search(r"^  - Log:", text, re.MULTILINE)
-            if log_match:
-                text = text[:log_match.start()] + include_line + "\n" + text[log_match.start():]
-            else:
-                # Append at end of nav (find last nav entry)
-                text = text.rstrip("\n") + "\n" + include_line + "\n"
-            changed = True
+    # --- Ensure !include lines in nav ---
+    # Fixed subsystems: (label, include path, detection flag, insert-before hint)
+    includes: list[tuple[str, str, bool, str | None]] = [
+        ("Pipelines", "docs/pipelines/mkdocs.yml", has_pipeio, "Log"),
+        ("Manuscript", "docs/manuscript/mkdocs.yml", has_manuscript, "Log"),
+    ]
+    # Master doc sections (inserted before Log)
+    for sec in master_sections:
+        label = sec.replace("-", " ").replace("_", " ").title()
+        includes.append((label, f"docs/{sec}/mkdocs.yml", True, "Log"))
+    # Log always last
+    includes.append(("Log", "docs/log/mkdocs.yml", has_log, None))
 
-    if not changed:
+    for label, include_path, present, insert_before in includes:
+        if not present:
+            continue
+        include_marker = f"!include ./{include_path}"
+        if include_marker in text:
+            continue
+
+        include_line = f"  - {label}: '!include ./{include_path}'"
+        nav_match = re.search(r"^nav:", text, re.MULTILINE)
+        if not nav_match:
+            continue
+
+        if insert_before:
+            anchor = re.search(rf"^  - {insert_before}:", text, re.MULTILINE)
+            if anchor:
+                text = text[:anchor.start()] + include_line + "\n" + text[anchor.start():]
+                changed = True
+                continue
+
+        # Fallback: append at end of nav
+        text = text.rstrip("\n") + "\n" + include_line + "\n"
+        changed = True
+
+    # --- Generate sub-mkdocs.yml files ---
+    generated: list[str] = []
+    if not dry_run:
+        if has_log:
+            try:
+                from notio.docs import log_nav  # type: ignore[import]
+                log_nav(root, write=True)
+                generated.append("docs/log/mkdocs.yml")
+            except Exception:
+                pass
+        if has_manuscript:
+            try:
+                from notio.docs import manuscript_nav  # type: ignore[import]
+                manuscript_nav(root, write=True)
+                generated.append("docs/manuscript/mkdocs.yml")
+            except Exception:
+                pass
+        if master_sections:
+            try:
+                from notio.docs import master_nav  # type: ignore[import]
+                results = master_nav(root, write=True)
+                for sec in results:
+                    generated.append(f"docs/{sec}/mkdocs.yml")
+            except Exception:
+                pass
+        if has_pipeio:
+            try:
+                from pipeio.docs import docs_nav  # type: ignore[import]
+                docs_nav(root, write=True)
+                generated.append("docs/pipelines/mkdocs.yml")
+            except Exception:
+                pass
+
+    if not changed and not generated:
         return {"action": "skipped", "reason": "already configured"}
 
     if dry_run:
         return {"action": "would_update"}
 
-    mkdocs_path.write_text(text, encoding="utf-8")
-    return {"action": "updated", "path": str(mkdocs_path.relative_to(root))}
+    if changed:
+        mkdocs_path.write_text(text, encoding="utf-8")
+    return {"action": "updated", "path": str(mkdocs_path.relative_to(root)), "generated": generated}
 
 
 _PROJIO_VSCODE_BEGIN = "// >>> projio >>>"
@@ -621,13 +690,17 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
     if mk_action["action"] in ("updated", "would_update"):
         print(f"{prefix}[~] projio.mk regenerated")
 
-    # 8. Ensure mkdocs monorepo plugin + pipeio !include
+    # 8. Ensure mkdocs monorepo plugin + subsystem !includes + sub-mkdocs.yml
     mkdocs_action = _sync_mkdocs_monorepo(root_path, dry_run=dry_run)
     if mkdocs_action["action"] in ("updated", "would_update"):
-        print(f"{prefix}[+] mkdocs.yml: monorepo plugin + Pipelines !include")
+        generated = mkdocs_action.get("generated", [])
+        if generated:
+            print(f"{prefix}[+] mkdocs.yml: monorepo !includes + generated {', '.join(generated)}")
+        else:
+            print(f"{prefix}[+] mkdocs.yml: monorepo plugin + !includes")
     elif mkdocs_action["action"] == "skipped":
         reason = mkdocs_action.get("reason", "")
-        if reason not in ("no mkdocs.yml", "no pipeio registry"):
+        if reason not in ("no mkdocs.yml", "no subsystems with docs"):
             print(f"[=] mkdocs.yml ({reason})")
 
     # 9. Sync VS Code settings (PandocCiter + watcher excludes)

@@ -6,7 +6,7 @@ This tutorial walks through setting up questio in a project — from defining re
 
 By the end, your project will have:
 
-- A machine-readable research plan (`plan/questions.yml`, `plan/milestones.yml`)
+- A machine-readable research plan (`docs/plan/questions.yml`, `docs/plan/milestones.yml`)
 - A `result` note type for capturing structured evidence
 - Auto-generated plan docs on your site (questions, milestones, roadmap, evidence index)
 - Skills for agent-driven research sessions
@@ -30,10 +30,10 @@ graph LR
 
 ## Step 1: Define your research questions
 
-Create `plan/questions.yml` in your project root. Each question gets an ID, a text description, and links to pipelines, milestones, and manuscript sections.
+Create `docs/plan/questions.yml`. Each question gets an ID, a text description, and links to pipelines, milestones, and manuscript sections.
 
 ```yaml
-# plan/questions.yml
+# docs/plan/questions.yml
 questions:
   H1:
     text: "Does treatment A improve outcome X?"
@@ -91,10 +91,10 @@ questions:
 
 ## Step 2: Define milestones
 
-Create `plan/milestones.yml`. Milestones are the concrete checkpoints between "question asked" and "question answered." They form a dependency graph.
+Create `docs/plan/milestones.yml`. Milestones are the concrete checkpoints between "question asked" and "question answered." They form a dependency graph.
 
 ```yaml
-# plan/milestones.yml
+# docs/plan/milestones.yml
 milestones:
   preprocessing-validated:
     description: "Preprocessing pipeline validated for all subjects"
@@ -304,7 +304,7 @@ confidence: validated
 ---
 ```
 
-2. Update `plan/milestones.yml` to add the note to the evidence list
+2. Update `docs/plan/milestones.yml` to add the note to the evidence list
 3. Regenerate plan docs via `questio_docs_collect()`
 
 ## What's next

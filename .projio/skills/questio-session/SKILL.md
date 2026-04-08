@@ -89,7 +89,7 @@ apply the `questio-record` logic:
 2. Create a `result` note via `note_create(note_type="result")`
 3. Fill in structured frontmatter (question, milestone, metric, value,
    confidence, subjects)
-4. Update `plan/milestones.yml` evidence list
+4. Update `docs/plan/milestones.yml` evidence list
 5. If milestone appears complete, ask about status update
 6. Call `questio_docs_collect()` to regenerate plan docs
 
@@ -127,7 +127,7 @@ Present as a brief session summary:
   insist, but note it.
 - The session does not need to complete all phases in one sitting. If the
   user stops mid-session, that's fine — summarize progress so far.
-- If `plan/questions.yml` doesn't exist, orient the user to set up the
+- If `docs/plan/questions.yml` doesn't exist, orient the user to set up the
   questio data model before running a full session.
 - Never auto-execute pipelines or notebooks without user awareness —
   always confirm before running compute-intensive operations.

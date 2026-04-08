@@ -1163,3 +1163,50 @@ def master_generate(name: str, sections: list[dict]) -> JsonDict:
         })
     except Exception as exc:
         return json_dict({"error": str(exc)})
+
+
+def master_nav() -> JsonDict:
+    """Generate sub-mkdocs.yml for each docs/ section containing a master.md.
+
+    Discovers master doc directories (e.g. docs/plan/), generates a standalone
+    mkdocs.yml for each, consumed by ``!include`` in the root mkdocs.yml.
+    Skips directories managed by other nav generators (pipelines, manuscript, log).
+    """
+    if not _master_available():
+        return _unavailable("master_nav")
+    root = get_project_root()
+    try:
+        from notio.docs import master_nav as _master_nav  # type: ignore[import]
+
+        results = _master_nav(root, write=True)
+        return json_dict({
+            "action": "written" if results else "skipped",
+            "sections": list(results.keys()),
+            "generated": [f"docs/{s}/mkdocs.yml" for s in results],
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def manuscript_nav() -> JsonDict:
+    """Generate docs/manuscript/mkdocs.yml for the monorepo plugin.
+
+    Scans docs/manuscript/ for manuscript subdirectories and writes a standalone
+    mkdocs.yml consumed by ``!include ./docs/manuscript/mkdocs.yml`` in the
+    root mkdocs.yml.
+    """
+    if not _manuscript_available():
+        return _unavailable("manuscript_nav")
+    root = get_project_root()
+    try:
+        from notio.docs import manuscript_nav as _manuscript_nav  # type: ignore[import]
+
+        yaml_str = _manuscript_nav(root, write=True)
+        sub_mkdocs = root / "docs" / "manuscript" / "mkdocs.yml"
+        return json_dict({
+            "action": "written" if sub_mkdocs.is_file() else "skipped",
+            "path": "docs/manuscript/mkdocs.yml",
+            "yaml": yaml_str,
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})

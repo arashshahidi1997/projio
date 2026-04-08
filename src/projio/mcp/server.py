@@ -435,6 +435,12 @@ def notio_reindex_tool(note_type: str = ""):
     return notio.notio_reindex(note_type=note_type)
 
 
+@server.tool("notio_log_nav")
+def notio_log_nav_tool():
+    """Generate docs/log/mkdocs.yml for the monorepo plugin (!include pattern)."""
+    return notio.notio_log_nav()
+
+
 # --- Manuscript tools ---
 
 @server.tool("manuscript_init")
@@ -539,6 +545,18 @@ def master_build_tool(name: str, format: str = "pdf"):
 def master_generate_tool(name: str, sections: list[dict]):
     """Generate/regenerate master.md with dual markers (wikilink + include-markdown) from section list."""
     return manuscripto.master_generate(name=name, sections=sections)
+
+
+@server.tool("manuscript_nav")
+def manuscript_nav_tool():
+    """Generate docs/manuscript/mkdocs.yml for the monorepo plugin (!include pattern)."""
+    return manuscripto.manuscript_nav()
+
+
+@server.tool("master_nav")
+def master_nav_tool():
+    """Generate sub-mkdocs.yml for each docs/ section with a master.md (!include pattern)."""
+    return manuscripto.master_nav()
 
 
 # --- Codio tools ---

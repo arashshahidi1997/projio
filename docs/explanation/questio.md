@@ -39,14 +39,14 @@ Questio is not a separate package. It's implemented as three lightweight layers:
 
 ```mermaid
 flowchart TD
-    C[Convention<br/>plan/questions.yml + milestones.yml] --> T[MCP Tools<br/>questio_status, questio_gap, questio_docs_collect]
+    C[Convention<br/>docs/plan/questions.yml + milestones.yml] --> T[MCP Tools<br/>questio_status, questio_gap, questio_docs_collect]
     N[Note Type<br/>result notes in docs/log/result/] --> T
     T --> S[Skills<br/>questio-next, questio-ground, questio-record, questio-report, questio-session]
 ```
 
 | Layer | What | Where |
 |-------|------|-------|
-| **Convention** | YAML schemas for questions and milestones | `plan/questions.yml`, `plan/milestones.yml` |
+| **Convention** | YAML schemas for questions and milestones | `docs/plan/questions.yml`, `docs/plan/milestones.yml` |
 | **Note type** | Dedicated `result` note type with structured frontmatter | `docs/log/result/` |
 | **MCP tools** | Structured queries: status overview, gap analysis, docs generation | `src/projio/mcp/questio.py` |
 | **Skills** | Prompt-based workflows composing existing tools | `.projio/skills/questio-*.md` |
@@ -58,7 +58,7 @@ flowchart TD
 Questions are the top-level entity. A hypothesis is a specific type of question.
 
 ```yaml
-# plan/questions.yml
+# docs/plan/questions.yml
 questions:
   H1:
     text: "Do cortical delta waves precede ripple initiation?"
@@ -77,7 +77,7 @@ questions:
 Milestones are decoupled from questions — multiple questions can share a milestone. They form a dependency graph.
 
 ```yaml
-# plan/milestones.yml
+# docs/plan/milestones.yml
 milestones:
   swr-detection-validated:
     description: "SWR detection validated across all subjects"
@@ -189,7 +189,7 @@ Questio is **project-local** research reasoning. Worklog is **cross-project** co
 | "How is H3 progressing?" | `questio_status("H3")` | -- |
 | "How is pixecog overall?" | -- | `get_project("pixecog")` |
 
-Worklog may optionally read `plan/questions.yml` and `plan/milestones.yml` to derive goal progress. Data flows project to worklog, never the reverse.
+Worklog may optionally read `docs/plan/questions.yml` and `docs/plan/milestones.yml` to derive goal progress. Data flows project to worklog, never the reverse.
 
 ## Design spec
 

@@ -369,8 +369,8 @@ def _load_plan_yaml(
 
     Returns an error string if files are missing or unparseable.
     """
-    questions_path = root / "plan" / "questions.yml"
-    milestones_path = root / "plan" / "milestones.yml"
+    questions_path = root / "docs" / "plan" / "questions.yml"
+    milestones_path = root / "docs" / "plan" / "milestones.yml"
 
     if not questions_path.exists():
         return f"Not found: {questions_path}"
@@ -696,7 +696,7 @@ def _generate_recommendation(
 
 
 def questio_docs_collect() -> JsonDict:
-    """Generate docs/plan/ pages from plan/questions.yml and plan/milestones.yml.
+    """Generate docs/plan/ pages from docs/plan/questions.yml and docs/plan/milestones.yml.
 
     Reads the YAML plan files and result notes, then generates five markdown
     pages: questions.md, milestones.md, roadmap.md, evidence.md, index.md.

@@ -200,6 +200,30 @@ def notio_reindex(note_type: str = "") -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def notio_log_nav() -> JsonDict:
+    """Generate docs/log/mkdocs.yml for the monorepo plugin.
+
+    Scans docs/log/ subdirectories for note types and writes a standalone
+    mkdocs.yml consumed by ``!include ./docs/log/mkdocs.yml`` in the root
+    mkdocs.yml.
+    """
+    if not _notio_available():
+        return _unavailable("notio_log_nav")
+    root = get_project_root()
+    try:
+        from notio.docs import log_nav  # type: ignore[import]
+
+        yaml_str = log_nav(root, write=True)
+        sub_mkdocs = root / "docs" / "log" / "mkdocs.yml"
+        return json_dict({
+            "action": "written" if sub_mkdocs.is_file() else "skipped",
+            "path": "docs/log/mkdocs.yml",
+            "yaml": yaml_str,
+        })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def note_search(query: str, k: int = 5) -> JsonDict:
     """Semantic search over notes via indexio.
 
