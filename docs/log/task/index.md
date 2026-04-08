@@ -34,6 +34,120 @@
 
 ## done
 
+[**Scenario book: create index page and update scenario-book.md as overview**](task-arash-20260408-051007-scenario-index.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, scenario-book]</small>
+
+---
+
+[**Scenario book: multi-day scheduled research sprint**](task-arash-20260408-051006-scenario-sprint.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, scenario-book]</small>
+
+---
+
+[**Scenario book: unexpected finding leads to new hypothesis**](task-arash-20260408-051005-scenario-surprise.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, scenario-book]</small>
+
+---
+
+[**Scenario book: drafting manuscript results from accumulated evidence**](task-arash-20260408-051004-scenario-manuscript.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, scenario-book]</small>
+
+---
+
+[**Scenario book: debugging a cross-flow anomaly**](task-arash-20260408-051003-scenario-crossflow.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, scenario-book]</small>
+
+---
+
+[**Scenario book: evaluating a new detection method from recent literature**](task-arash-20260408-051002-scenario-method-eval.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, scenario-book]</small>
+
+---
+
+[**Scenario book: reproduce Siapas & Wilson 1998 coupling results**](task-arash-20260408-051001-scenario-reproduce.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, scenario-book]</small>
+
+---
+
+[**Update questio-record for mid-loop observation capture**](task-arash-20260408-043836-impl-record-update.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, impl, skill]</small>
+
+---
+
+[**Implement questio-iterate skill**](task-arash-20260408-043835-impl-iterate.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, impl, skill]</small>
+
+---
+
+[**Implement questio-investigate skill**](task-arash-20260408-043834-impl-investigate.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, impl, skill]</small>
+
+---
+
+[**Implement milestone→flow link in questio schema and tools**](task-arash-20260408-043833-impl-flow-link.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, impl]</small>
+
+---
+
+[**Spec: reconcile design.md section 8 with agent-as-judge loop philosophy**](task-arash-20260408-043832-spec-reconcile.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, spec]</small>
+
+---
+
+[**Spec: loop infrastructure — milestone→flow link, mid-loop recording, failure taxonomy**](task-arash-20260408-043831-spec-infra.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, spec]</small>
+
+---
+
+[**Spec: questio loop mechanisms — investigate, iterate, orient**](task-arash-20260408-043830-spec-loops.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio, spec]</small>
+
+---
+
+[**Fix docs_collect scripts.md links outside docs_dir**](task-arash-20260408-042221-535626.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done</small>
+
+---
+
+[**Fix docs_collect mod docs missing from nav YAML**](task-arash-20260408-042216-849778.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done</small>
+
+---
+
+[**Fix docs_collect missing notebook index.md**](task-arash-20260408-042212-327298.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done</small>
+
+---
+
+[**Fix docs_collect index.md vs overview.md duplicate nav**](task-arash-20260408-042207-852032.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done</small>
+
+---
+
+[**Fix registry_scan has_docs always false**](task-arash-20260408-042202-756848.md){ .note-card-title }
+
+<small>**date:** 2026-04-08 · **status:** done</small>
+
+---
+
 [**questio phase 3: create questio skills (next, ground, record, report, session)**](task-arash-20260408-010717-773063.md){ .note-card-title }
 
 <small>**date:** 2026-04-08 · **status:** done · **tags:** [task, questio]</small>
@@ -442,31 +556,7 @@
 
 ## pending
 
-[**Fix docs_collect scripts.md links outside docs_dir**](task-arash-20260408-042221-535626.md){ .note-card-title }
-
-<small>**date:** 2026-04-08 · **status:** pending</small>
-
----
-
-[**Fix docs_collect mod docs missing from nav YAML**](task-arash-20260408-042216-849778.md){ .note-card-title }
-
-<small>**date:** 2026-04-08 · **status:** pending</small>
-
----
-
-[**Fix docs_collect missing notebook index.md**](task-arash-20260408-042212-327298.md){ .note-card-title }
-
-<small>**date:** 2026-04-08 · **status:** pending</small>
-
----
-
-[**Fix docs_collect index.md vs overview.md duplicate nav**](task-arash-20260408-042207-852032.md){ .note-card-title }
-
-<small>**date:** 2026-04-08 · **status:** pending</small>
-
----
-
-[**Fix registry_scan has_docs always false**](task-arash-20260408-042202-756848.md){ .note-card-title }
+[**Add pipeio.matlab module for MATLAB rule wiring**](task-arash-20260408-191715-378765.md){ .note-card-title }
 
 <small>**date:** 2026-04-08 · **status:** pending</small>
 

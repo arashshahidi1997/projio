@@ -165,6 +165,7 @@ MKDOCS  ?= $(PYTHON) -m mkdocs
 PROJIO  ?= $(PYTHON) -m projio
 NOTIO   ?= $(PYTHON) -m notio
 PANDOC  ?= pandoc
+MATLAB  ?= matlab
 PUBLISH ?= $(PYTHON) -m twine upload
 MSG     ?= Update
 
@@ -344,12 +345,14 @@ def _projio_mk(root: Path) -> str:
         docs_python = envs["docs"]
         datalad_bin = envs["datalad"]
         pandoc_bin = envs["pandoc"]
+        matlab_bin = envs["matlab"]
     else:
         python_bin = runtime.get("python_bin")
         projio_python = runtime.get("projio_python")
         docs_python = None
         datalad_bin = runtime.get("datalad_bin")
         pandoc_bin = None
+        matlab_bin = runtime.get("matlab_bin")
 
     push_sibling = cfg.get("push_sibling") or cfg.get("datalad_remote") or "github"
     mk = PROJIO_MK
@@ -417,6 +420,8 @@ def _projio_mk(root: Path) -> str:
                 )
     if pandoc_bin:
         mk = mk.replace("PANDOC  ?= pandoc", f"PANDOC  ?= {pandoc_bin}", 1)
+    if matlab_bin:
+        mk = mk.replace("MATLAB  ?= matlab", f"MATLAB  ?= {matlab_bin}", 1)
 
     # Detect manuscripts and masters, append conditional targets
     manuscripts = _detect_manuscripts(root)

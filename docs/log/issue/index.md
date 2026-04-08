@@ -118,6 +118,12 @@
 
 ## open
 
+[**Add pipeio**](issue-arash-20260408-191633-549705.md){ .note-card-title }
+
+<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
+
+---
+
 [**pipeio docs_collect: scripts**](issue-arash-20260408-042020-224344.md){ .note-card-title }
 
 <small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>

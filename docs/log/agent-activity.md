@@ -360,3 +360,9 @@ Session: `49cfe4a4` | Task: `task-arash-20260408-051001-scenario-reproduce.md`
 3. **`scenario-book.md`** — Rewritten as an index with a table linking all 8 scenarios (showing primary loop and ecosystem breadth), a reading guide explaining the admonition conventions, and the tool reference + anti-patterns sections retained from the original.
 
 Session: `01628669` | Task: `task-arash-20260408-051007-scenario-index.md`
+
+## 2026-04-08 19:23 | projio | opus | 1 steps
+
+5. **`packages/pipeio/tests/test_matlab.py`** (new) — 10 tests covering binary resolution, env fallback, prelude options, Snakemake pattern, and package import
+
+Session: `7d277ab5` | Task: `task-arash-20260408-191715-378765.md`

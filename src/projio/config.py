@@ -137,6 +137,7 @@ def resolve_env_all(root: str | Path) -> dict[str, str | None]:
         "docs": resolve_env_python(root, "docs"),
         "datalad": resolve_env_python(root, "datalad", binary="datalad"),
         "pandoc": resolve_env_python(root, "datalad", binary="pandoc"),
+        "matlab": resolve_env_python(root, "matlab", binary="matlab"),
     }
 
 
