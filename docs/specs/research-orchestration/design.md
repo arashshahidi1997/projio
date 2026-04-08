@@ -275,14 +275,17 @@ Questio divides its surface into **MCP tools** (structured queries requiring cod
 
 | Skill | Composes | Description |
 |-------|----------|-------------|
-| `questio-next` | `questio_status` + `questio_gap` + `pipeio_flow_status` | "What should I work on?" Agent reasons over status + gaps to recommend highest-impact unblocked work. |
-| `questio-ground` | `paper_context` + `codio_discover` + `rag_query` | Before starting work on a milestone: gather literature context, find existing code, search prior decisions. Sets quality criteria and expected values. |
-| `questio-record` | `note_create(type="result")` + YAML update | Guided result capture: agent creates a result note with proper frontmatter, then updates `milestones.yml` evidence list. |
-| `questio-validate` | `pipeio_nb_exec` + `pipeio_nb_read` + `questio-record` | Run validation notebook across subjects, check against expectations, record evidence if satisfactory. |
+| `questio-next` | `questio_status` + `questio_gap` + `pipeio_flow_status` | "What should I work on?" Agent reasons over status + gaps to recommend highest-impact unblocked work. Returns `flow` field for direct dispatch. |
+| `questio-ground` | `paper_context` + `codio_discover` + `rag_query` | Before starting work on a milestone: gather literature context, find existing code, search prior decisions. Sets quality criteria and expected values. Also supports diagnostic grounding: when entering an investigate loop, ground on expected outputs to enable comparison against actual. |
+| `questio-record` | `note_create(type="result")` + YAML update | Guided result capture: agent creates a result note with proper frontmatter, then updates `milestones.yml` evidence list. Also supports mid-loop use: creating observation notes during investigate/iterate loops (see section 5.5). |
+| `questio-investigate` | `pipeio_target_paths` + `pipeio_nb_read` + `pipeio_log_parse` + `paper_context` + `note_create` | Agent-driven deep dive into an anomaly or issue. The agent inspects pipeline outputs, compares against grounded expectations, traces causes, and proposes explanations or fixes. Replaces `questio-validate` — validation is agent judgment, not pre-scripted notebook execution. See [loop-mechanisms.md](loop-mechanisms.md) section 2. |
+| `questio-iterate` | `pipeio_run` + `pipeio_nb_exec` + `pipeio_target_paths` + `questio-record` | Execute-and-evaluate cycle within a human feedback loop. Replaces the standalone dispatch pattern — dispatch is one step within iterate. Covers: modify → execute → assess → report → receive feedback → next cycle. See [loop-mechanisms.md](loop-mechanisms.md) section 3. |
 | `questio-report` | `questio_status` + `note_search` | Generate supervisor-ready progress summary: milestones hit, key results, blockers, next steps. |
 | `questio-ready` | `questio_status` + `questio_gap` + `manuscript_status` | "Which manuscript sections can I draft now?" Check evidence sufficiency per question. |
-| `questio-session` | `questio_status` + `questio-next` + `questio-ground` + `questio-report` | Full research session workflow: orient → plan → ground → work → report. |
+| `questio-session` | `questio_status` + `questio-next` + `questio-ground` + `questio-report` | Full research session workflow: orient → plan → ground → work → report. Phase 4 (Execute) uses the iterate loop pattern. Recognizes when investigation is needed and switches to investigate mode. |
 | `questio-docs-refresh` | `questio_docs_collect` + `pipeio_docs_nav` | Regenerate all plan/ docs and patch mkdocs nav. |
+
+**Note on `questio-validate` (removed):** the original design included a `questio-validate` skill that ran pre-scripted validation notebooks per flow. This has been replaced by the agent-as-judge philosophy: the agent inspects outputs directly and applies judgment informed by grounding context. The `questio-investigate` skill covers the same use case with more flexibility. See [loop-mechanisms.md](loop-mechanisms.md) section 1 for the rationale.
 
 ### 6.3 Why this split works
 
@@ -294,7 +297,8 @@ MCP tools handle **structured data operations** (parse YAML, resolve dependency 
 
 | Excluded | Reason |
 |----------|--------|
-| `questio_dispatch` (auto-run pipelines for a hypothesis) | Premature automation. Agent calls `questio-next` then `pipeio_run` itself. |
+| `questio_dispatch` (auto-run pipelines for a hypothesis) | Subsumed by `questio-iterate`. Dispatch is execute-without-evaluate; iterate adds the essential assess-and-feedback cycle. See [loop-mechanisms.md](loop-mechanisms.md) section 3. |
+| `questio-validate` (pre-scripted validation notebooks) | Replaced by agent-as-judge philosophy. Validation is agent judgment during the iterate/investigate loops, not a pre-scripted notebook. See [loop-mechanisms.md](loop-mechanisms.md) section 1. |
 | `questio_milestone_update` as MCP tool | YAML file edit is simple enough for a skill (`questio-record`) to handle via file write. |
 | `questio_evidence` as MCP tool | `questio_status` returns evidence counts; the skill can `note_search(tags=["result"], series=...)` for full details. |
 | `questio_deps` as MCP tool | `questio_gap` already returns dependency information. Mermaid diagram is in the auto-generated `roadmap.md`. |
@@ -357,6 +361,8 @@ agent → questio_evidence("H2")
 
 Questio's value is not in tracking alone — it's in enabling **autonomous research loops** where the agent grounds its work in literature and code, executes analyses, assesses results, and iterates. This section defines the action components, the loops they compose into, and what can be automated.
 
+> **See also:** [loop-mechanisms.md](loop-mechanisms.md) extends this section with detailed investigate, iterate, and orient loop patterns. The inner/middle/outer loop framing here remains valid as a timescale model; loop-mechanisms.md adds concrete behavioral patterns (investigate, iterate, orient) that operate within these timescale loops, grounded in the agent-as-judge philosophy.
+
 ### 8.1 Action components
 
 Every research action maps to a projio subsystem. These are the atomic operations an agent performs:
@@ -389,27 +395,29 @@ Every research action maps to a projio subsystem. These are the atomic operation
 
 Research operates as nested loops at different timescales. Each loop has a clear entry condition, iteration logic, and exit condition.
 
-#### Inner loop: Notebook development (minutes–hours)
+#### Inner loop: Analysis iteration (minutes–hours)
 
-The tightest loop. Agent iterates on a single notebook until it produces satisfactory results. **Fully automatable** for well-defined analyses.
+The tightest loop. Agent iterates on an analysis — using notebooks, pipeline outputs, and direct file inspection as tools — until it produces satisfactory results. The agent IS the assessment layer: it reads outputs, compares against literature-grounded expectations, and makes a judgment call. **Automatable** when quality criteria are well-defined, but the agent's judgment quality is the bottleneck, not notebook scripting.
+
+See [loop-mechanisms.md](loop-mechanisms.md) section 3 (iterate loop) for the detailed mechanism.
 
 ```
-                    ┌──────────────────────────────────────┐
-                    │      NOTEBOOK DEVELOPMENT LOOP       │
-                    │                                      │
-  ground ──→ create/update notebook ──→ execute ──→ inspect
-                    ↑                                 │
-                    │          unsatisfactory          │
-                    └─────────────────────────────────┘
-                                                      │ satisfactory
-                                                      ↓
-                                               record evidence
+                    ┌──────────────────────────────────────────────┐
+                    │          ANALYSIS ITERATION LOOP             │
+                    │                                              │
+  ground ──→ modify (config/notebook/script) ──→ execute ──→ assess
+                    ↑                                          │
+                    │            unsatisfactory                 │
+                    └─────────────────────────────────────────┘
+                                                               │ satisfactory
+                                                               ↓
+                                                        record evidence
 ```
 
 **Entry:** milestone identified, analysis approach chosen.
 **Grounding:** before first iteration, agent checks biblio for expected values/methods and codio for existing implementations.
-**Iteration:** modify notebook code/parameters → execute → read outputs → assess quality.
-**Exit:** results meet quality criteria (statistical significance, consistency with literature, no artifacts). Agent creates a result note.
+**Iteration:** modify analysis (config, notebook code, script parameters) → execute (pipeio_run, pipeio_nb_exec, or other compute) → assess by reading outputs (pipeio_target_paths, pipeio_nb_read, file inspection) and comparing against expectations (paper_context, prior results). The assessment is agent-driven — the agent reads the data and judges, rather than executing a pre-scripted validation notebook.
+**Exit:** results meet quality criteria (statistical significance, consistency with literature, no artifacts). Agent creates a result note. Milestone update follows the propose-review-confirm pattern (agent proposes, human confirms).
 
 **Example — SWR detection validation:**
 ```
@@ -417,12 +425,17 @@ The tightest loop. Agent iterates on a single notebook until it produces satisfa
 2. codio: codio_discover("sharp wave ripple detection") → cogpy.detection.swr exists
 3. pipeio: pipeio_nb_create(flow="sharpwaveripple", notebook="validate_swr")
 4. pipeio: pipeio_nb_exec(notebook="validate_swr", subjects=["sub-01"])
-5. pipeio: pipeio_nb_read(notebook="validate_swr") → 12.3/min, looks good
+5. agent: reads output, compares 12.3/min against literature range — within expected bounds
 6. pipeio: pipeio_nb_update(notebook="validate_swr") → add remaining subjects
 7. pipeio: pipeio_nb_exec(notebook="validate_swr", subjects=["sub-01".."sub-05"])
-8. pipeio: pipeio_nb_read → 12.3 ± 2.1/min across all subjects, consistent with literature
-9. questio: questio-record(milestone="swr-detection-validated", ...)
+8. agent: reads outputs per subject, checks cross-subject consistency (12.3 ± 2.1/min)
+   — compares against literature, checks for outlier subjects, assesses overall quality
+9. agent: creates observation notes for any subjects with anomalous results
+10. questio: questio-record(milestone="swr-detection-validated", ...)
+11. agent: proposes milestone status → complete. Human confirms.
 ```
+
+**Key difference from earlier design:** the agent creates the validation analysis as part of the loop. Notebooks may be created and executed, but they are agent-authored analytical tools, not pre-scripted validation templates. The judgment about quality lives in the agent's reasoning, informed by grounding context.
 
 #### Middle loop: Milestone completion (hours–days)
 
@@ -488,22 +501,26 @@ rag_query: search project notes for prior attempts
 
 **Skill:** `questio-ground` — "before starting work on milestone X, gather context."
 
-#### Sequence B: Validation sweep
+#### Sequence B: Agent-driven assessment sweep
 
-Agent runs a validation notebook across all subjects, checking each result against expectations. Fully automatable.
+Agent inspects pipeline outputs across subjects, comparing each against literature-grounded expectations. The agent uses available tools to read outputs, not a pre-scripted validation notebook. Assessment is agent judgment, not notebook execution.
 
 ```
 for subject in subjects:
-  pipeio_nb_exec(notebook="validate_*", subject=subject)
-  pipeio_nb_read → extract metrics
-  compare against literature expectations (from grounding)
-if all subjects pass:
+  pipeio_target_paths(flow, subject=subject) → locate output files
+  read outputs (direct file inspection, pipeio_nb_read if notebook-generated)
+  compare against expectations from grounding (paper_context values, prior results)
+  create observation note for anomalous subjects
+if all subjects meet expectations:
   questio-record(confidence="validated")
 else:
-  flag failures, create observation note, iterate
+  summarize failures in observation note
+  enter investigate loop for anomalous subjects, or escalate to human
 ```
 
-**Skill:** `questio-validate` — "run validation for milestone X across all subjects."
+The agent may create a notebook as part of assessment (e.g., to compute summary statistics or generate comparison figures), but this is agent-authored during the loop, not a pre-existing template. The assessment logic — "is this SWR detection rate acceptable?" — comes from the agent's grounding context, not from hard-coded thresholds in a notebook.
+
+**Skill:** `questio-investigate` — "agent-driven deep dive into pipeline outputs against grounded expectations." See [loop-mechanisms.md](loop-mechanisms.md) section 2.
 
 #### Sequence C: Pipeline-to-evidence
 
@@ -555,11 +572,13 @@ The agent should **surface** these decision points rather than silently resolvin
 
 | Loop | Automation | Agent autonomy | Human role |
 |------|-----------|---------------|------------|
-| Notebook development (inner) | Fully automatable for well-defined analyses | High — iterate until quality criteria met | Set quality criteria upfront |
-| Validation sweep | Fully automatable | High — run, check, record | Review flagged failures |
-| Milestone completion (middle) | Semi-automated | Medium — works through milestones, pauses at checkpoints | Approve direction, review evidence |
+| Analysis iteration (inner) | Automatable — bounded by agent judgment quality, not notebook scripting | High — iterate until quality criteria met | Set quality criteria upfront; review agent's assessment rationale when results are non-obvious |
+| Assessment sweep | Agent-driven — agent inspects outputs and judges, no pre-scripted notebooks | High — read, compare, assess, record | Review flagged anomalies; confirm milestone completion via propose-review-confirm pattern |
+| Milestone completion (middle) | Semi-automated | Medium — works through milestones, pauses at checkpoints | Approve direction, review evidence, confirm milestone status changes |
 | Research cycle (outer) | Agent-guided | Low — proposes next steps | Approve priorities, interpret results |
 | Session workflow | Structured by skill | Medium — follows session structure | Initiate, review report |
+
+**Propose-review-confirm** is the default pattern for milestone status updates. The agent proposes a status change with evidence, the human reviews the rationale, and confirms or rejects. Full autonomy for milestone updates is opt-in (a future automation dial), not the default. See [loop-mechanisms.md](loop-mechanisms.md) section 5.3.
 
 ### 8.6 Failure mode taxonomy
 
