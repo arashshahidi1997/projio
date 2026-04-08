@@ -27,6 +27,6 @@ build/
 .projio/servers.json
 .projio/site/
 .snakemake/
-docs/pipelines/mkdocs.yml
+docs/pipelines/
 site/
 # <<< projio <<<

@@ -34,6 +34,24 @@ Each mod has up to three documentation facets, stored in `{flow}/docs/{mod}/`:
 
 **Delta** is operational and temporary. Created by agents after audits or when a gap is found between spec and reality. Deleted when the gap is resolved.
 
+### Flow Overview
+
+Each flow has a `docs/overview.md` — the entry point for understanding how the flow's mods compose into a processing chain and why. Scaffolded by `flow_new`, collected by `docs_collect` (renamed to `index.md` in the published site).
+
+Sections: **Purpose** (what the flow produces, why it's a unit), **Input/Output** (sources, derivatives, manifests), **Mod Chain** (processing order with rationale), **Design Decisions** (ordering choices, boundary rationale), **Known Gaps** (flow-level issues, planned mods).
+
+The overview describes *how* mods compose. Mod theory describes *why* a step works. Mod spec describes *what* it does. No duplication — the overview references mods by name and defers detail to their facet docs.
+
+### Pipeline Architecture
+
+One document per project — `code/pipelines/architecture.md` — describing how flows compose into a multi-stage analysis. Scaffolded by `pipeio_architecture_init` from live registry and manifest chain data.
+
+Sections: **Architecture Diagram** (mermaid graph of flow dependencies), **Flow Table** (status, stage, description), **Data Flow** (manifest producer→consumer chains), **Design Principles** (what defines a flow boundary), **References** (links to decision notes).
+
+Collected by `docs_collect` to `docs/pipelines/architecture.md` and placed first in the pipelines nav.
+
+See `docs/specs/pipeio/pipeline-docs.md` for the full specification including templates and scaffolding commands.
+
 ### Docs-to-Manuscript Pipeline
 
 Mod docs are written in pandoc-compatible markdown with citations. The `manuscript_assemble` tool can pull from theory and spec docs to draft methods sections:

@@ -374,8 +374,13 @@ def pipeio_modkey_bib(
 def pipeio_docs_collect() -> JsonDict:
     """Collect flow-local docs and notebook outputs into docs/pipelines/.
 
-    Copies hand-written docs from each flow's docs/ directory and publishes
-    notebooks into the MkDocs site structure.
+    **docs/pipelines/ is a build artifact (gitignored).** Never edit files
+    there directly — they will be overwritten. The source of truth for
+    hand-written docs is ``code/pipelines/<flow>/docs/``.
+
+    Copies hand-written docs (with source-path headers) from each flow's
+    docs/ directory, publishes notebooks, and generates script/report indexes.
+    Must be run before ``mkdocs build`` or ``mkdocs serve``.
     """
     if not _pipeio_available():
         return _unavailable("pipeio_docs_collect")
