@@ -358,4 +358,4 @@ DEFAULT_SELECT = (
 - [Bibliography Architecture](bib-architecture.md) — sources vs artifacts separation
 - [Concept/Topic Overlap Analysis](concept-topic-overlap.md) — layering strategy for OpenAlex topics + LLM extraction
 - [OpenAlex API Audit](openalex-audit.md) — field-level gap analysis
-- [Discovery Model](../../packages/biblio/docs/explanation/discovery.md) — design philosophy for external data integration
+- Discovery Model — design philosophy for external data integration (see `packages/biblio/docs/explanation/discovery.md`)

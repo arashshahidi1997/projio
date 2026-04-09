@@ -12,9 +12,34 @@ SITE_FRAMEWORK_CHOICES = ("mkdocs", "sphinx", "vite")
 
 KNOWN_PACKAGES = ("biblio", "notio", "codio", "indexio", "pipeio", "figio", "claude")
 
-PROFILES: dict[str, tuple[str, ...]] = {
-    "research": ("notio", "biblio", "indexio"),
-    "full": ("notio", "biblio", "codio", "indexio", "pipeio", "figio"),
+PROFILES: dict[str, dict] = {
+    "research": {
+        "packages": ("notio", "biblio", "indexio"),
+    },
+    "full": {
+        "packages": ("notio", "biblio", "codio", "indexio", "pipeio", "figio"),
+    },
+    "sirota": {
+        "packages": ("notio", "biblio", "codio", "indexio", "pipeio", "figio"),
+        "config": {
+            "push_sibling": "gitlab",
+            "biblio": {"enabled": True},
+            "notio": {"enabled": True},
+            "code": {
+                "conda_prefix": "/storage/share/python/environments/Anaconda3",
+                "envs": {
+                    "default": "cogpy",
+                    "docs": "rag",
+                    "rag": "rag",
+                    "datalad": "labpy",
+                },
+            },
+            "site": {
+                "output_dir": "_site",
+                "mkdocs": {"site_dir": "_site"},
+            },
+        },
+    },
 }
 
 BASE_PROJIO_CONFIG = """\
@@ -33,7 +58,7 @@ biblio:
 
 notio:
   enabled: true
-  notes_dir: notes/
+  notes_dir: docs/log/
   template_dir: .projio/notio/templates
 
 codio:
@@ -109,7 +134,7 @@ biblio:
 
 notio:
   enabled: false
-  notes_dir: notes/
+  notes_dir: docs/log/
   template_dir: .projio/notio/templates
 
 site:
@@ -961,12 +986,39 @@ def scaffold(
     elif kind == "study":
         _scaffold_study(root_path, force=force)
     if profile is not None:
-        for pkg in PROFILES[profile]:
+        prof = PROFILES[profile]
+        for pkg in prof.get("packages", ()):
             add_package(root_path, pkg)
+        config_overlay = prof.get("config")
+        if config_overlay:
+            _apply_config_overlay(root_path, config_overlay)
 
 
 def load_projio_config(root: str | Path) -> dict:
     return load_project_config(root)
+
+
+def _deep_merge(base: dict, overlay: dict) -> dict:
+    """Recursively merge *overlay* into *base*, returning *base*."""
+    for k, v in overlay.items():
+        if isinstance(v, dict) and isinstance(base.get(k), dict):
+            _deep_merge(base[k], v)
+        else:
+            base[k] = v
+    return base
+
+
+def _apply_config_overlay(root: Path, overlay: dict) -> None:
+    """Deep-merge *overlay* into the project .projio/config.yml."""
+    import yaml
+
+    cfg_path = root / ".projio" / "config.yml"
+    if not cfg_path.exists():
+        return
+    cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+    _deep_merge(cfg, overlay)
+    cfg_path.write_text(yaml.dump(cfg, default_flow_style=False, sort_keys=False), encoding="utf-8")
+    print(f"[OK] applied profile config overlay to {cfg_path.relative_to(root)}")
 
 
 # ---------------------------------------------------------------------------

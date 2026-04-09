@@ -28,6 +28,7 @@ This pulls in:
 | notio | `notio` | Structured notes |
 | codio | `codio-tools` | Code intelligence |
 | pipeio | `pipeio` | Pipeline registry + notebook lifecycle |
+| figio | `figio-tools` | Declarative figure orchestration |
 
 To install individual components:
 

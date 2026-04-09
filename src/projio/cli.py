@@ -22,9 +22,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_init.add_argument(
         "-c", "--profile",
-        choices=("research", "full"),
+        choices=("research", "full", "sirota"),
         default=None,
-        help="Activate a preset bundle of components (research: notio+biblio+indexio, full: all).",
+        help="Activate a preset bundle of components (research: notio+biblio+indexio, full: all, sirota: full + lab defaults).",
     )
     p_init.add_argument("--force", action="store_true", help="Overwrite existing files.")
     p_init.add_argument(

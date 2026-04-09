@@ -1,14 +1,25 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/arashshahidi1997/projio/master/docs/assets/logo.png" alt="projio logo" width="200">
+</p>
+
 # projio
 
 Project knowledge orchestrator and MCP server for research repositories.
 
-Generates project scaffolding (`.projio/` workspace, `Makefile`, `mkdocs.yml`, and optional kind-specific starters), builds project websites, and exposes a FastMCP server (stdio) that gives Claude unified access to indexio, biblio, notio, and codio tools.
+Turns a research repository into a queryable knowledge environment for humans and AI agents. Provides structured, machine-accessible knowledge layers by integrating code, papers, notes, pipelines, figures, and documentation through a unified MCP server interface.
 
 ## Install
 
 ```bash
-pip install projio
-# or editable with all ecosystem packages:
+pip install projio                # core orchestrator + MCP server
+pip install "projio[all]"         # all ecosystem packages
+```
+
+For development:
+
+```bash
+git clone https://github.com/arashshahidi1997/projio.git
+cd projio
 make dev
 ```
 
@@ -18,23 +29,11 @@ make dev
 # Scaffold .projio/ workspace
 projio init .
 
-# Scaffold a thin package/tool project
+# Scaffold a study or tool project
+projio init . --kind study
 projio init . --kind tool
 
-# Scaffold a thin study project
-projio init . --kind study
-
-# Generated Makefile shortcuts
-make projio-status
-make projio-auth
-
-# Scaffold ~/.config/projio/config.yml
-projio config init-user
-
-# Show merged user + project config
-projio config -C . show
-
-# Show status
+# Show project status
 projio status -C .
 
 # Start MCP server (stdio)
@@ -43,61 +42,55 @@ projio mcp -C .
 # Site operations
 projio site build
 projio site serve
-
-# Project helpers
-projio sibling github
-projio sibling gitlab
-projio sibling ria
-projio docs mkdocs-init
-projio auth doctor
 ```
 
-For MkDocs projects, `projio` can also mount the `indexio` chatbot.
-Set `site.chatbot.enabled: true` in `.projio/config.yml`; `projio site serve` will auto-start a local `indexio` backend and inject the widget into the served site.
+## Ecosystem
 
-## Helper config
+Projio orchestrates six specialized packages:
 
-Project-local defaults live in `.projio/config.yml` under `helpers:`.
-Optional user defaults live in `~/.config/projio/config.yml` and are merged first, with project config taking precedence.
-For GitHub and GitLab, DataLad/Git config remains the source of truth for site, access, and stored credentials; `projio` only fills project-local conventions and previews the resulting commands.
+| Package | Domain | Description |
+|---------|--------|-------------|
+| **projio** | orchestration | Workspace scaffold, site workflows, MCP entrypoint |
+| **indexio** | retrieval | Corpus indexing, chunking, embedding, semantic search |
+| **biblio** | literature | Bibliography management, citekey resolution, paper context |
+| **notio** | notes | Structured notes, idea capture, manuscript assembly & rendering |
+| **codio** | code | Library registry, code reuse discovery, implementation strategy |
+| **pipeio** | pipelines | Pipeline authoring, contracts, notebook lifecycle, Snakemake flows |
+| **figio** | figures | Declarative figure specs, panel rendering, SVG/PDF composition |
 
-Helper commands are preview-first. Pass `--yes` to execute the generated `datalad` command.
+Install individual extras: `pip install "projio[biblio]"`, `pip install "projio[pipeio]"`, etc.
 
-## MCP tools exposed
+## MCP tools
 
-| Tool | Description |
-|------|-------------|
-| `rag_query` | Semantic search against the project index |
-| `rag_query_multi` | Multi-query search, deduplicated |
-| `corpus_list` | List indexed corpora with chunk counts |
-| `citekey_resolve` | Resolve BibTeX citekeys (requires biblio) |
-| `paper_context` | Full paper context with docling excerpt (requires biblio) |
-| `paper_absent_refs` | Unresolved GROBID refs (requires biblio) |
-| `library_get` | Library ledger status/tags (requires biblio) |
-| `note_list` | List recent notes (requires notio) |
-| `note_latest` | Most recent note content (requires notio) |
-| `note_read` | Read a specific note by path (requires notio) |
-| `note_create` | Create a new note from template (requires notio) |
-| `note_update` | Update note frontmatter fields (requires notio) |
-| `note_types` | List configured note types (requires notio) |
-| `note_search` | Semantic search over notes (requires notio) |
-| `codio_list` | Filtered library listing (requires codio) |
-| `codio_get` | Full library record (requires codio) |
-| `codio_registry` | Full registry snapshot (requires codio) |
-| `codio_vocab` | Controlled vocabulary for registry fields (requires codio) |
-| `codio_validate` | Registry consistency check (requires codio) |
-| `codio_discover` | Capability search across libraries (requires codio) |
-| `codio_add_urls` | Add libraries from GitHub/GitLab URLs (requires codio) |
-| `biblio_ingest` | Ingest papers by DOI via OpenAlex (requires biblio) |
-| `biblio_library_set` | Bulk-update library ledger entries (requires biblio) |
-| `project_context` | Project config + README snapshot |
-| `runtime_conventions` | Parsed Makefile vars and commands |
-| `site_detect` | Detect doc framework (mkdocs, sphinx, vite) |
-| `site_serve` | Start doc server in background |
-| `site_stop` | Stop a running doc server |
-| `site_list` | List running doc servers |
+The MCP server exposes 70+ tools across all subsystems:
 
-## Claude Desktop / MCP config
+| Category | Tools | Examples |
+|----------|-------|---------|
+| **Retrieval** | 6 | `rag_query`, `rag_query_multi`, `corpus_list`, `indexio_build` |
+| **Bibliography** | 26 | `biblio_ingest`, `citekey_resolve`, `paper_context`, `biblio_compile` |
+| **Notes** | 10 | `note_create`, `note_list`, `note_search`, `notio_reindex` |
+| **Manuscripts** | 16 | `manuscript_build`, `manuscript_assemble`, `manuscript_cite_check` |
+| **Code** | 11 | `codio_list`, `codio_discover`, `codio_add`, `codio_registry` |
+| **Pipelines** | 51 | `pipeio_flow_new`, `pipeio_run`, `pipeio_nb_exec`, `pipeio_dag_export` |
+| **Figures** | 5 | `figio_build`, `figio_inspect`, `figio_validate` |
+| **Project** | 10 | `project_context`, `ecosystem_status`, `site_build`, `datalad_save` |
+
+See the [MCP tools reference](https://arashshahidi1997.github.io/projio/reference/mcp-tools/) for the full list.
+
+## Configuration
+
+Project-local defaults live in `.projio/config.yml`.
+Optional user defaults in `~/.config/projio/config.yml` are merged first, with project config taking precedence.
+
+```bash
+# Scaffold user config
+projio config init-user
+
+# Show merged config
+projio config -C . show
+```
+
+## Claude Code / MCP config
 
 ```json
 {
@@ -110,3 +103,11 @@ Helper commands are preview-first. Pass `--yes` to execute the generated `datala
   }
 }
 ```
+
+## Documentation
+
+Full docs at [arashshahidi1997.github.io/projio](https://arashshahidi1997.github.io/projio/).
+
+## License
+
+MIT

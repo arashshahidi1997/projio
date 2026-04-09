@@ -6,6 +6,8 @@ repo_name: arashshahidi1997/projio
 
 theme:
   name: material
+  logo: assets/logo.png
+  favicon: assets/logo.png
   features:
     - navigation.sections
     - navigation.indexes
@@ -16,10 +18,6 @@ extra:
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/projio/
       name: PyPI
-
-plugins:
-  - search
-  - monorepo
 
 plugins:
   - search
@@ -88,7 +86,21 @@ nav:
           - Contracts: specs/pipeio/contracts.md
           - CLI: specs/pipeio/cli.md
           - MCP Tools: specs/pipeio/mcp-tools.md
-  - Pipelines: '!include ./docs/pipelines/mkdocs.yml'
-  - Log:
-      - log/index.md
+      - Research Orchestration (Questio):
+          - specs/research-orchestration/design.md
+          - Loop Mechanisms: specs/research-orchestration/loop-mechanisms.md
+          - Scenario Book:
+              - specs/research-orchestration/scenario-book.md
+              - TTL Removal: specs/research-orchestration/scenarios/scenario-ttl-removal.md
+              - Anomaly Investigation: specs/research-orchestration/scenarios/scenario-anomaly-investigation.md
+              - Reproduce Paper: specs/research-orchestration/scenarios/scenario-reproduce-paper.md
+              - Method Evaluation: specs/research-orchestration/scenarios/scenario-method-evaluation.md
+              - Cross-Flow Debug: specs/research-orchestration/scenarios/scenario-cross-flow-debug.md
+              - Manuscript Drafting: specs/research-orchestration/scenarios/scenario-manuscript-drafting.md
+              - Unexpected Finding: specs/research-orchestration/scenarios/scenario-unexpected-finding.md
+              - Research Sprint: specs/research-orchestration/scenarios/scenario-research-sprint.md
+          - Skills:
+              - specs/research-orchestration/skills/questio-investigate.md
+              - specs/research-orchestration/skills/questio-iterate.md
+              - specs/research-orchestration/skills/questio-record.md
   - Log: '!include ./docs/log/mkdocs.yml'

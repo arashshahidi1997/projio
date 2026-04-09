@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Changed
+- README rewritten for PyPI — ecosystem table (all 6 subsystems), MCP tool categories with counts, cleaner install/quickstart sections
+- docs/index.md landing page rewritten — architecture diagram, install snippet, capabilities overview, Diataxis navigation table
+- Ecosystem references updated to include pipeio and figio across docs/index.md, explanation/ecosystem.md, README
+- pyproject.toml: added author email, Documentation URL, License and Information Analysis classifiers
+- Fixed duplicate `plugins:` block in mkdocs.yml
+
+## 0.1.1 — 2026-04-08
+
 ### Added
 - **Questio research orchestration layer** — hypothesis-to-evidence-to-manuscript reasoning for agentic research workflows
   - `questio_status` MCP tool — research state overview (questions, milestone completion %, evidence counts, blockers)

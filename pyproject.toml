@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "projio"
-version = "0.1.1"
+version = "0.1.2"
 description = "Project knowledge orchestrator and MCP server for research repositories"
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "Arash Shahidi" }]
+authors = [{ name = "Arash Shahidi", email = "A.Shahidi@campus.lmu.de" }]
 license = "MIT"
 license-files = ["LICENSE"]
 keywords = ["mcp", "research", "project", "knowledge", "rag", "datalad"]
@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Utilities",
 ]
 dependencies = [
@@ -30,16 +31,18 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/arashshahidi1997/projio"
+Documentation = "https://arashshahidi1997.github.io/projio/"
 Repository = "https://github.com/arashshahidi1997/projio"
 Issues = "https://github.com/arashshahidi1997/projio/issues"
 
 [project.optional-dependencies]
-indexio = ["indexio"]
-biblio  = ["biblio-tools"]
-notio   = ["notio"]
-codio   = ["codio-tools"]
-pipeio  = ["pipeio", "papermill>=2.4"]
-all     = ["indexio", "biblio-tools", "notio", "codio-tools", "pipeio", "papermill>=2.4"]
+indexio = ["indexio>=0.1.1"]
+biblio  = ["biblio-tools>=0.1.5"]
+notio   = ["notio>=0.1.1"]
+codio   = ["codio-tools>=0.1.1"]
+pipeio  = ["pipeio>=0.1.0", "papermill>=2.4"]
+figio   = ["figio-tools>=0.1.0"]
+all     = ["indexio>=0.1.1", "biblio-tools>=0.1.5", "notio>=0.1.1", "codio-tools>=0.1.1", "pipeio>=0.1.0", "papermill>=2.4", "figio-tools>=0.1.0"]
 docs    = ["mkdocs>=1.6", "mkdocs-material>=9.5", "mkdocs-monorepo-plugin>=1.1"]
 dev     = ["pytest", "twine", "build", "mkdocs>=1.6", "mkdocs-material>=9.5", "mkdocs-monorepo-plugin>=1.1"]
 
