@@ -184,6 +184,51 @@ def biblio_merge(dry_run: bool = False) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def biblio_openalex_resolve(
+    limit: int | None = None,
+    force: bool = False,
+) -> JsonDict:
+    """Resolve all bibliography entries against the OpenAlex API.
+
+    Creates ``bib/derivatives/openalex/resolved.jsonl`` — the prerequisite
+    for ``biblio_enrich``, ``biblio_pdf_fetch_oa``, ``biblio_graph_expand``,
+    and ``biblio_enrich_topic_tags``.
+
+    Pipeline order: ``biblio_ingest`` → ``biblio_merge`` → **biblio_openalex_resolve** → downstream tools.
+
+    Args:
+        limit: Max entries to resolve (default: all).
+        force: Re-resolve even if cached.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_openalex_resolve")
+    root = get_project_root()
+    try:
+        from biblio.mcp import openalex_resolve
+        return json_dict(openalex_resolve(root=root, limit=limit, force=force))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_crossref_resolve(dois: list[str]) -> JsonDict:
+    """Resolve DOIs via Crossref API. Use as fallback when OpenAlex
+    misses preprints, niche journals, or very recent publications.
+
+    Returns per-DOI metadata (title, authors, year, journal, type).
+
+    Args:
+        dois: List of DOIs to resolve.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_crossref_resolve")
+    root = get_project_root()
+    try:
+        from biblio.mcp import crossref_resolve
+        return json_dict(crossref_resolve(root=root, dois=dois))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def biblio_compile(
     sources: list[str] | None = None,
     output: str = "",
@@ -269,10 +314,17 @@ def biblio_pdf_fetch_oa(
     """
     if not _biblio_available():
         return _unavailable("biblio_pdf_fetch_oa")
+    root = get_project_root()
+    resolved = root / "bib" / "derivatives" / "openalex" / "resolved.jsonl"
+    if not resolved.exists():
+        return json_dict({
+            "error": "resolved.jsonl not found — cannot fetch OA PDFs without OpenAlex metadata.",
+            "hint": "Run biblio_openalex_resolve() first. Pipeline: biblio_ingest → biblio_merge → biblio_openalex_resolve → biblio_pdf_fetch_oa",
+            "total": 0,
+        })
     try:
         if background:
             from biblio.jobs import launch_pdf_fetch_oa_background
-            root = get_project_root()
             ck_filter = set(citekeys) if citekeys else None
             job_id, total = launch_pdf_fetch_oa_background(
                 root, force=force, citekey_filter=ck_filter,
@@ -536,6 +588,79 @@ def biblio_graph_expand(
         return json_dict({"error": str(exc)})
 
 
+def biblio_graph_promote(
+    top_n: int | None = None,
+    min_citations: int | None = None,
+    min_year: int | None = None,
+    max_year: int | None = None,
+    keyword_filter: str | None = None,
+    tags: list[str] | None = None,
+    dry_run: bool = False,
+) -> JsonDict:
+    """Promote graph expansion candidates into the bibliography.
+
+    Reads ``graph_candidates.json`` from ``biblio_graph_expand``, filters
+    by citations/year/keyword, deduplicates against the existing library,
+    and feeds selected DOIs to ``biblio_ingest``.
+
+    Use ``dry_run=True`` to preview which papers would be promoted.
+
+    Args:
+        top_n: Max candidates to promote (after filtering, sorted by citations).
+        min_citations: Minimum citation count filter.
+        min_year: Earliest publication year.
+        max_year: Latest publication year.
+        keyword_filter: Substring filter on paper title.
+        tags: Tags to apply to promoted papers.
+        dry_run: Preview without ingesting.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_graph_promote")
+    root = get_project_root()
+    try:
+        from biblio.mcp import graph_promote
+        return json_dict(graph_promote(
+            root=root,
+            top_n=top_n,
+            min_citations=min_citations,
+            min_year=min_year,
+            max_year=max_year,
+            keyword_filter=keyword_filter,
+            tags=tags,
+            dry_run=dry_run,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_extract(
+    citekey: str,
+    force: bool = False,
+    model: str = "sonnet",
+) -> JsonDict:
+    """Extract structured relevance data from a paper against research questions.
+
+    Reads docling markdown and ``plan/questions.yml``, uses an LLM to produce
+    structured extraction at ``bib/derivatives/claude/{citekey}/extract.yml``.
+
+    The output captures per-hypothesis relevance, methods, dataset opportunities,
+    and key findings — connecting literature to research questions.
+
+    Args:
+        citekey: Paper to extract from (must have docling output).
+        force: Overwrite existing extraction.
+        model: LLM model to use (default: sonnet).
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_extract")
+    root = get_project_root()
+    try:
+        from biblio.mcp import extract as _extract
+        return json_dict(_extract(root=root, citekey=citekey, force=force, model=model))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def biblio_rag_sync(force_init: bool = False) -> JsonDict:
     """Register biblio docling sources into the indexio config.
 
@@ -598,6 +723,28 @@ def biblio_library_quality() -> JsonDict:
     try:
         from biblio.mcp import library_quality
         return json_dict(library_quality(root=root))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def biblio_status(citekeys: list[str] | None = None) -> JsonDict:
+    """Per-citekey pipeline completeness dashboard.
+
+    Shows which stages (bib, resolved, pdf, docling, grobid, enriched, rag)
+    are complete for each paper. Returns a matrix with recommended next actions.
+
+    Different from ``biblio_library_quality`` which checks bib *field* quality —
+    this checks *derivative file* existence across the full pipeline.
+
+    Args:
+        citekeys: Check specific papers only (default: all).
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_status")
+    root = get_project_root()
+    try:
+        from biblio.mcp import pipeline_status
+        return json_dict(pipeline_status(root=root, citekeys=citekeys))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -865,6 +1012,13 @@ def biblio_enrich(
     if not _biblio_available():
         return _unavailable("biblio_enrich")
     root = get_project_root()
+    resolved = root / "bib" / "derivatives" / "openalex" / "resolved.jsonl"
+    if not resolved.exists():
+        return json_dict({
+            "error": "resolved.jsonl not found — cannot enrich without OpenAlex metadata.",
+            "hint": "Run biblio_openalex_resolve() first. Pipeline: biblio_ingest → biblio_merge → biblio_openalex_resolve → biblio_enrich",
+            "enriched": 0,
+        })
     try:
         from biblio.mcp import enrich
         return json_dict(enrich(root=root, citekeys=citekeys, force=force))

@@ -113,6 +113,21 @@ def biblio_merge_tool(dry_run: bool = False):
     return biblio.biblio_merge(dry_run=dry_run)
 
 
+@server.tool("biblio_openalex_resolve")
+def biblio_openalex_resolve_tool(limit: int | None = None, force: bool = False):
+    """Resolve bibliography entries against OpenAlex API. Creates resolved.jsonl
+    needed by biblio_enrich, biblio_pdf_fetch_oa, biblio_graph_expand, and biblio_enrich_topic_tags.
+    Pipeline: biblio_ingest → biblio_merge → biblio_openalex_resolve → downstream tools."""
+    return biblio.biblio_openalex_resolve(limit=limit, force=force)
+
+
+@server.tool("biblio_crossref_resolve")
+def biblio_crossref_resolve_tool(dois: list[str]):
+    """Resolve DOIs via Crossref API. Fallback when OpenAlex misses preprints or niche journals.
+    Returns per-DOI metadata (title, authors, year, journal, type)."""
+    return biblio.biblio_crossref_resolve(dois=dois)
+
+
 @server.tool("biblio_compile")
 def biblio_compile_tool(
     sources: list[str] | None = None,
@@ -202,6 +217,13 @@ def biblio_library_quality_tool():
     return biblio.biblio_library_quality()
 
 
+@server.tool("biblio_status")
+def biblio_status_tool(citekeys: list[str] = []):
+    """Per-citekey pipeline completeness dashboard. Shows bib/resolved/pdf/docling/grobid/enriched/rag
+    status for each paper with recommended next actions."""
+    return biblio.biblio_status(citekeys=citekeys or None)
+
+
 @server.tool("biblio_graph_expand")
 def biblio_graph_expand_tool(
     citekeys: list[str] = [],
@@ -216,6 +238,30 @@ def biblio_graph_expand_tool(
         direction=direction,
         merge=merge,
         force=force,
+    )
+
+
+@server.tool("biblio_graph_promote")
+def biblio_graph_promote_tool(
+    top_n: int | None = None,
+    min_citations: int | None = None,
+    min_year: int | None = None,
+    max_year: int | None = None,
+    keyword_filter: str = "",
+    tags: list[str] = [],
+    dry_run: bool = False,
+):
+    """Promote graph expansion candidates into the bibliography.
+    Filters graph_candidates.json by citations/year/keyword, deduplicates, and ingests.
+    Use dry_run=True to preview. Requires prior biblio_graph_expand."""
+    return biblio.biblio_graph_promote(
+        top_n=top_n,
+        min_citations=min_citations,
+        min_year=min_year,
+        max_year=max_year,
+        keyword_filter=keyword_filter or None,
+        tags=tags or None,
+        dry_run=dry_run,
     )
 
 
@@ -372,6 +418,14 @@ def biblio_enrich_topic_tags_tool(citekeys: list[str] | None = None, dry_run: bo
     return biblio.biblio_enrich_topic_tags(citekeys=citekeys, dry_run=dry_run)
 
 
+@server.tool("biblio_extract")
+def biblio_extract_tool(citekey: str, force: bool = False, model: str = "sonnet"):
+    """Extract structured relevance data from a paper against plan/questions.yml.
+    Uses LLM to produce per-hypothesis relevance, methods, findings at bib/derivatives/claude/{citekey}/extract.yml.
+    Requires docling output. Use questio_prior_art to aggregate extractions."""
+    return biblio.biblio_extract(citekey=citekey, force=force, model=model)
+
+
 # --- Notio tools ---
 
 @server.tool("note_list")
@@ -406,9 +460,19 @@ def note_resolve_tool(note_id: str):
 
 
 @server.tool("note_create")
-def note_create_tool(note_type: str, owner: str = "", title: str = "", date: str = ""):
-    """Create a new note of the given type."""
-    return notio.note_create(note_type=note_type, owner=owner, title=title, date=date)
+def note_create_tool(
+    note_type: str,
+    owner: str = "",
+    title: str = "",
+    date: str = "",
+    body: str = "",
+    frontmatter: str = "",
+):
+    """Create a new note of the given type, optionally fully populated in one call."""
+    return notio.note_create(
+        note_type=note_type, owner=owner, title=title, date=date,
+        body=body, frontmatter=frontmatter,
+    )
 
 
 @server.tool("note_update")
@@ -439,6 +503,47 @@ def notio_reindex_tool(note_type: str = ""):
 def notio_log_nav_tool():
     """Generate docs/log/mkdocs.yml for the monorepo plugin (!include pattern)."""
     return notio.notio_log_nav()
+
+
+@server.tool("note_promote")
+def note_promote_tool(
+    note_path: str,
+    labels: str = "",
+    assignee: str = "",
+    milestone: str = "",
+    dry_run: bool = False,
+):
+    """Promote a local note to a GitHub/GitLab issue. Writes remote ref back to note."""
+    return notio.note_promote(
+        note_path=note_path, labels=labels, assignee=assignee,
+        milestone=milestone, dry_run=dry_run,
+    )
+
+
+@server.tool("note_capture")
+def note_capture_tool(remote: str, note_type: str = "issue", owner: str = ""):
+    """Create a local note from a GitHub/GitLab issue and pull its thread."""
+    return notio.note_capture(remote=remote, note_type=note_type, owner=owner)
+
+
+@server.tool("note_pull")
+def note_pull_tool(
+    note_path: str = "",
+    note_type: str = "",
+    all_notes: bool = False,
+    dry_run: bool = False,
+):
+    """Fetch remote thread updates for notes linked to platform issues."""
+    return notio.note_pull(
+        note_path=note_path, note_type=note_type,
+        all_notes=all_notes, dry_run=dry_run,
+    )
+
+
+@server.tool("note_remote_status")
+def note_remote_status_tool():
+    """List all notes linked to platform issues with their remote references."""
+    return notio.note_remote_status()
 
 
 # --- Manuscript tools ---
@@ -1328,6 +1433,14 @@ def questio_gap_tool(question_id: str):
     Args:
         question_id: Which question to analyze (e.g. "H1")."""
     return questio.questio_gap(question_id=question_id)
+
+
+@server.tool("questio_prior_art")
+def questio_prior_art_tool(question_id: str = ""):
+    """Aggregate literature extractions per research question.
+    Reads bib/derivatives/claude/*/extract.yml (from biblio_extract) and generates
+    per-question prior art tables in docs/plan/prior_art/."""
+    return questio.questio_prior_art(question_id=question_id)
 
 
 @server.tool("questio_docs_collect")

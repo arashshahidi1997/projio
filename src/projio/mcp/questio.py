@@ -25,7 +25,11 @@ def _parse_frontmatter(path: Path) -> dict[str, Any]:
 
 
 def _collect_results(root: Path) -> list[dict[str, Any]]:
-    """Scan docs/log/result/ for result notes, return parsed frontmatter list."""
+    """Scan docs/log/result/ for result notes, return parsed frontmatter list.
+
+    Each result dict gets ``_path`` (absolute), ``_filename`` (full name
+    including ``.md``), and ``_label`` (stem, for display).
+    """
     result_dir = root / "docs" / "log" / "result"
     if not result_dir.is_dir():
         return []
@@ -34,7 +38,8 @@ def _collect_results(root: Path) -> list[dict[str, Any]]:
         fm = _parse_frontmatter(path)
         if fm:
             fm["_path"] = path
-            fm["_filename"] = path.stem
+            fm["_filename"] = path.name      # e.g. result-arash-20260408.md
+            fm["_label"] = path.stem          # e.g. result-arash-20260408
             results.append(fm)
     return results
 
@@ -192,7 +197,7 @@ def _generate_milestones_md(
             evidence_list = results_by_m.get(mid, [])
             if evidence_list:
                 ev_links = ", ".join(
-                    f"[{r['_filename']}](../log/result/{r['_filename']}/)"
+                    f"[{r['_label']}](../log/result/{r['_filename']})"
                     for r in evidence_list
                 )
             else:
@@ -295,9 +300,9 @@ def _generate_evidence_md(
                 "|--------|-----------|--------|-------|------------|------|"
             )
             for r in q_results:
-                title = r.get("title", r.get("_filename", ""))
+                title = r.get("title", r.get("_label", ""))
                 fname = r.get("_filename", "")
-                link = f"[{title}](../log/result/{fname}/)"
+                link = f"[{title}](../log/result/{fname})"
                 milestone = r.get("milestone", "")
                 if isinstance(milestone, list):
                     milestone = ", ".join(milestone)
@@ -351,7 +356,21 @@ def _generate_index_md(
         "- [Milestones](milestones.md) — progress tracker with evidence links",
         "- [Roadmap](roadmap.md) — visual dependency graph",
         "- [Evidence](evidence.md) — result index by question",
-        f"- [Backlog](../log/result/) — all result notes",
+        f"- [Backlog](../log/result/index.md) — all result notes",
+        "",
+        "## Source of truth",
+        "",
+        "- `questions.yml` — research question registry "
+        "(hypotheses, exploratory questions)",
+        "- `milestones.yml` — milestone definitions with dependency graph",
+        "",
+        "## Tools",
+        "",
+        "| Tool | Description |",
+        "|------|-------------|",
+        "| `questio_status` | Research state overview |",
+        "| `questio_gap` | Evidence gap analysis per question |",
+        "| `questio_docs_collect` | Regenerate these pages |",
         "",
     ]
     return "\n".join(lines)
@@ -369,8 +388,8 @@ def _load_plan_yaml(
 
     Returns an error string if files are missing or unparseable.
     """
-    questions_path = root / "docs" / "plan" / "questions.yml"
-    milestones_path = root / "docs" / "plan" / "milestones.yml"
+    questions_path = root / "plan" / "questions.yml"
+    milestones_path = root / "plan" / "milestones.yml"
 
     if not questions_path.exists():
         return f"Not found: {questions_path}"
@@ -390,6 +409,36 @@ def _load_plan_yaml(
     questions: dict[str, dict] = (questions_raw or {}).get("questions", {}) or {}
     milestones: dict[str, dict] = (milestones_raw or {}).get("milestones", {}) or {}
     return questions, milestones
+
+
+def _validate_result_refs(
+    results: list[dict[str, Any]],
+    questions: dict[str, dict],
+    milestones: dict[str, dict],
+) -> list[str]:
+    """Return warnings for result notes referencing non-existent questions/milestones."""
+    warnings: list[str] = []
+    for r in results:
+        fname = r.get("_filename", "?")
+        # Check question refs
+        qs = r.get("question", [])
+        if isinstance(qs, str):
+            qs = [qs]
+        for q in qs:
+            if q and q not in questions:
+                warnings.append(f"{fname}: unknown question '{q}'")
+        # Check milestone refs
+        ms = r.get("milestone", "")
+        if isinstance(ms, str):
+            ms_list = [ms] if ms else []
+        elif isinstance(ms, list):
+            ms_list = ms
+        else:
+            ms_list = []
+        for m in ms_list:
+            if m and m not in milestones:
+                warnings.append(f"{fname}: unknown milestone '{m}'")
+    return warnings
 
 
 def _find_blockers(
@@ -426,13 +475,15 @@ def questio_status(question_id: str = "") -> JsonDict:
     loaded = _load_plan_yaml(root)
     if isinstance(loaded, str):
         return json_dict({"error": loaded})
-    questions, milestones = loaded
+    all_questions, milestones = loaded
 
     # Filter to single question if requested
     if question_id:
-        if question_id not in questions:
+        if question_id not in all_questions:
             return json_dict({"error": f"Unknown question: {question_id}"})
-        questions = {question_id: questions[question_id]}
+        questions = {question_id: all_questions[question_id]}
+    else:
+        questions = all_questions
 
     results = _collect_results(root)
     q_to_m, _ = _question_milestone_map(questions)
@@ -475,21 +526,24 @@ def questio_status(question_id: str = "") -> JsonDict:
         })
 
     # Overall stats (across all milestones, not just filtered)
-    all_questions, all_milestones = _load_plan_yaml(root)  # type: ignore[misc]
-    total_milestones = len(all_milestones)
+    total_milestones = len(milestones)
     done_milestones = sum(
-        1 for mdata in all_milestones.values()
+        1 for mdata in milestones.values()
         if mdata.get("status") in ("complete", "done")
     )
 
-    return json_dict({
+    result: dict[str, Any] = {
         "questions": question_summaries,
         "overall": {
             "total_questions": len(all_questions),
             "milestone_progress": f"{done_milestones}/{total_milestones} complete",
             "total_evidence": total_evidence,
         },
-    })
+    }
+    ref_warnings = _validate_result_refs(results, all_questions, milestones)
+    if ref_warnings:
+        result["warnings"] = ref_warnings
+    return json_dict(result)
 
 
 def questio_gap(question_id: str) -> JsonDict:
@@ -537,7 +591,7 @@ def questio_gap(question_id: str) -> JsonDict:
         m_results = results_by_m.get(mid, [])
         evidence = [
             {
-                "title": r.get("title", r.get("_filename", "")),
+                "title": r.get("title", r.get("_label", "")),
                 "confidence": r.get("confidence", ""),
                 "filename": r.get("_filename", ""),
             }
@@ -587,7 +641,7 @@ def questio_gap(question_id: str) -> JsonDict:
     q_results = results_by_q.get(question_id, [])
     q_evidence = [
         {
-            "title": r.get("title", r.get("_filename", "")),
+            "title": r.get("title", r.get("_label", "")),
             "confidence": r.get("confidence", ""),
             "milestone": r.get("milestone", ""),
             "filename": r.get("_filename", ""),
@@ -601,6 +655,9 @@ def questio_gap(question_id: str) -> JsonDict:
         missing_evidence,
     )
 
+    # Literature expectations from biblio_extract output
+    literature = _collect_literature_expectations(root, question_id)
+
     return json_dict({
         "question": {
             "id": question_id,
@@ -609,6 +666,7 @@ def questio_gap(question_id: str) -> JsonDict:
         },
         "milestones": milestone_details,
         "evidence": q_evidence,
+        "literature": literature,
         "gaps": {
             "unmet_milestones": unmet,
             "blocked_milestones": blocked,
@@ -617,6 +675,31 @@ def questio_gap(question_id: str) -> JsonDict:
         },
         "recommendation": recommendation,
     })
+
+
+def _collect_literature_expectations(
+    root: Path, question_id: str,
+) -> dict[str, Any]:
+    """Collect literature relevance data for a question from extract.yml files."""
+    extractions = _collect_extractions(root)
+    if not extractions:
+        return {"papers": [], "count": 0}
+
+    relevant: list[dict[str, Any]] = []
+    for ext in extractions:
+        for rel in ext.get("relevance", []):
+            if rel.get("question_id") == question_id and rel.get("relevance") in (
+                "high",
+                "medium",
+            ):
+                relevant.append({
+                    "citekey": ext.get("citekey", ""),
+                    "relevance": rel.get("relevance", ""),
+                    "supports": rel.get("supports"),
+                    "summary": rel.get("summary", ""),
+                })
+
+    return {"papers": relevant, "count": len(relevant)}
 
 
 def _generate_recommendation(
@@ -668,14 +751,20 @@ def _generate_recommendation(
         )
 
     # All unmet milestones are blocked — find root actionable dependencies
-    # by recursively traversing the full dependency graph.
-    def _find_roots(start_ids: list[str], visited: set[str] | None = None) -> list[str]:
+    # by iteratively walking the dependency graph.
+    def _find_roots(start_ids: list[str]) -> list[str]:
         """Walk the dependency graph to find incomplete milestones with no
-        incomplete dependencies (i.e. actionable roots)."""
-        if visited is None:
-            visited = set()
+        incomplete dependencies (i.e. actionable roots).
+
+        Handles circular dependencies: cycle members that cannot be
+        resolved through normal ordering are returned as roots so the
+        recommendation engine still produces output.
+        """
+        visited: set[str] = set()
         roots: list[str] = []
-        for mid in start_ids:
+        queue = list(start_ids)
+        while queue:
+            mid = queue.pop()
             if mid in visited:
                 continue
             visited.add(mid)
@@ -692,7 +781,14 @@ def _generate_recommendation(
             if not incomplete_deps:
                 roots.append(mid)
             else:
-                roots.extend(_find_roots(incomplete_deps, visited))
+                queue.extend(incomplete_deps)
+        # If the graph has cycles, no roots are found despite visited nodes.
+        # Treat all visited-but-unrooted incomplete milestones as roots.
+        if not roots:
+            for mid in visited:
+                mdata = milestones.get(mid, {})
+                if mdata.get("status", "not_started") not in ("complete", "done"):
+                    roots.append(mid)
         return roots
 
     root_actionable = _find_roots(blocked)
@@ -725,67 +821,114 @@ def _generate_recommendation(
     )
 
 
-def _generate_readme(
-    questions: dict[str, dict], milestones: dict[str, dict],
-) -> str:
-    """Generate README.md for the plan directory."""
-    q_count = len(questions)
-    m_count = len(milestones)
-    lines = [
-        "# Research Plan",
-        "",
-        f"This directory contains the questio research orchestration data "
-        f"({q_count} questions, {m_count} milestones).",
-        "",
-        "## Source of truth (YAML)",
-        "",
-        "- `questions.yml` — research question registry "
-        "(hypotheses, exploratory questions)",
-        "- `milestones.yml` — milestone definitions with dependency graph",
-        "",
-        "## Auto-generated pages",
-        "",
-        "These files are regenerated by `questio_docs_collect` — "
-        "do not edit by hand:",
-        "",
-        "- `index.md` — overview with progress summary",
-        "- `questions.md` — question registry table",
-        "- `milestones.md` — milestone tracker with evidence links",
-        "- `roadmap.md` — mermaid dependency diagram",
-        "- `evidence.md` — per-question evidence index",
-        "",
-        "## Evidence",
-        "",
-        "Result notes are captured in `../log/result/` via the `result` "
-        "note type. Each result note links to questions and milestones "
-        "through its frontmatter fields.",
-        "",
-        "## Tools",
-        "",
-        "| Tool | Description |",
-        "|------|-------------|",
-        "| `questio_status` | Research state overview |",
-        "| `questio_gap` | Evidence gap analysis per question |",
-        "| `questio_docs_collect` | Regenerate these pages |",
-        "",
-        "## Skills",
-        "",
-        "| Skill | Description |",
-        "|-------|-------------|",
-        "| `questio-session` | Full research session workflow |",
-        "| `questio-next` | Recommend highest-impact work |",
-        "| `questio-ground` | Literature and code grounding |",
-        "| `questio-record` | Guided evidence capture |",
-        "| `questio-report` | Supervisor-ready progress summary |",
-    ]
-    return "\n".join(lines) + "\n"
+def _collect_extractions(root: Path) -> list[dict[str, Any]]:
+    """Scan bib/derivatives/claude/*/extract.yml for paper extractions."""
+    extract_dir = root / "bib" / "derivatives" / "claude"
+    results: list[dict[str, Any]] = []
+    if not extract_dir.is_dir():
+        return results
+    for ck_dir in sorted(extract_dir.iterdir()):
+        if not ck_dir.is_dir():
+            continue
+        extract_path = ck_dir / "extract.yml"
+        if not extract_path.exists():
+            continue
+        try:
+            data = yaml.safe_load(extract_path.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                results.append(data)
+        except Exception:
+            continue
+    return results
+
+
+def questio_prior_art(question_id: str = "") -> JsonDict:
+    """Aggregate literature extractions per research question.
+
+    Reads ``bib/derivatives/claude/*/extract.yml`` files (produced by
+    ``biblio_extract``) and groups relevance data by question.  Writes
+    per-question markdown tables to ``docs/plan/prior_art/``.
+
+    Args:
+        question_id: Aggregate for a specific question (default: all).
+    """
+    root = get_project_root()
+    loaded = _load_plan_yaml(root)
+    if isinstance(loaded, str):
+        return json_dict({"error": loaded})
+    questions, _milestones = loaded
+
+    if question_id and question_id not in questions:
+        return json_dict({"error": f"Unknown question: {question_id}"})
+
+    extractions = _collect_extractions(root)
+
+    # Group by question
+    by_question: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for ext in extractions:
+        for rel in ext.get("relevance", []):
+            qid = rel.get("question_id", "")
+            if question_id and qid != question_id:
+                continue
+            if qid:
+                by_question[qid].append({
+                    "citekey": ext.get("citekey", ""),
+                    "relevance": rel.get("relevance", ""),
+                    "summary": rel.get("summary", ""),
+                    "supports": rel.get("supports"),
+                    "methods": ext.get("methods", []),
+                    "key_findings": ext.get("key_findings", []),
+                })
+
+    # Generate markdown output
+    prior_art_dir = root / "docs" / "plan" / "prior_art"
+    prior_art_dir.mkdir(parents=True, exist_ok=True)
+    generated: list[str] = []
+
+    _relevance_order = {"high": 0, "medium": 1, "low": 2, "none": 3}
+    target_questions = {question_id: questions[question_id]} if question_id else questions
+
+    for qid, qdata in target_questions.items():
+        papers = by_question.get(qid, [])
+        q_text = qdata.get("text", "")
+        md_lines = [
+            f"# Prior Art: {qid}",
+            "",
+            f"**Question:** {q_text}",
+            "",
+            "| Paper | Relevance | Supports? | Summary |",
+            "|-------|-----------|-----------|---------|",
+        ]
+        for p in sorted(papers, key=lambda x: _relevance_order.get(x["relevance"], 4)):
+            supports = {True: "Yes", False: "No", None: "N/A"}.get(p["supports"], "N/A")
+            summary = (p.get("summary") or "").replace("|", "/").replace("\n", " ")
+            md_lines.append(
+                f"| {p['citekey']} | {p['relevance']} | {supports} | {summary} |"
+            )
+        md_lines.append("")
+
+        out_path = prior_art_dir / f"{qid}.md"
+        out_path.write_text("\n".join(md_lines), encoding="utf-8")
+        generated.append(str(out_path.relative_to(root)))
+
+    return json_dict({
+        "extractions_scanned": len(extractions),
+        "questions_covered": len(by_question),
+        "papers_by_question": {qid: len(papers) for qid, papers in by_question.items()},
+        "generated": generated,
+    })
 
 
 def questio_docs_collect() -> JsonDict:
-    """Generate docs/plan/ pages from docs/plan/questions.yml and docs/plan/milestones.yml.
+    """Generate ``docs/plan/`` pages and ``docs/deliverables/`` indexes.
 
-    Reads the YAML plan files and result notes, then generates five markdown
-    pages: questions.md, milestones.md, roadmap.md, evidence.md, index.md.
+    Source YAML (``plan/questions.yml``, ``plan/milestones.yml``) lives at the
+    project root — visible, human-edited scientific content.  Generated
+    markdown is written to ``docs/plan/`` (entirely build output, gitignored)
+    with a monorepo sub-``mkdocs.yml`` (``docs_dir: .``) so cross-site
+    relative links resolve correctly.
+
+    If ``docs/deliverables/`` exists, also generates deliverables index pages.
     """
     root = get_project_root()
     loaded = _load_plan_yaml(root)
@@ -793,15 +936,16 @@ def questio_docs_collect() -> JsonDict:
         return json_dict({"error": loaded})
     questions, milestones = loaded
 
-    # Collect result notes
+    # Collect result notes and validate cross-references
     results = _collect_results(root)
+    ref_warnings = _validate_result_refs(results, questions, milestones)
 
     # Build cross-reference maps
     q_to_m, m_to_q = _question_milestone_map(questions)
     results_by_q = _results_by_question(results)
     results_by_m = _results_by_milestone(results)
 
-    # Generate pages
+    # Generate plan pages into docs/plan/ (pure build output)
     docs_plan = root / "docs" / "plan"
     docs_plan.mkdir(parents=True, exist_ok=True)
     generated: list[str] = []
@@ -820,7 +964,6 @@ def questio_docs_collect() -> JsonDict:
         "evidence.md": _generate_evidence_md(
             questions, milestones, results_by_q, q_to_m,
         ),
-        "README.md": _generate_readme(questions, milestones),
     }
 
     for filename, content in pages.items():
@@ -828,10 +971,247 @@ def questio_docs_collect() -> JsonDict:
         out.write_text(content, encoding="utf-8")
         generated.append(str(out))
 
-    return json_dict({
+    # Generate sub-mkdocs.yml for monorepo plugin
+    sub_mkdocs = docs_plan / "mkdocs.yml"
+    sub_mkdocs.write_text(
+        "site_name: plan\n"
+        "docs_dir: .\n"
+        "nav:\n"
+        "  - Overview: index.md\n"
+        "  - Questions: questions.md\n"
+        "  - Milestones: milestones.md\n"
+        "  - Roadmap: roadmap.md\n"
+        "  - Evidence: evidence.md\n",
+        encoding="utf-8",
+    )
+    generated.append(str(sub_mkdocs))
+
+    # Generate deliverables indexes (if docs/deliverables/ exists)
+    deliverables_dir = root / "docs" / "deliverables"
+    deliverables_count = 0
+    if deliverables_dir.is_dir():
+        d_generated, deliverables_count = _generate_deliverables_pages(
+            deliverables_dir,
+        )
+        generated.extend(d_generated)
+
+    result: dict[str, Any] = {
         "generated": len(generated),
         "files": generated,
         "questions": len(questions),
         "milestones": len(milestones),
         "results": len(results),
-    })
+        "deliverables": deliverables_count,
+    }
+    if ref_warnings:
+        result["warnings"] = ref_warnings
+    return json_dict(result)
+
+
+# ---------------------------------------------------------------------------
+# Deliverables indexing
+# ---------------------------------------------------------------------------
+
+_DELIVERABLE_TYPES = ("reports", "presentations", "posters")
+
+
+def _scan_deliverables(
+    deliverables_dir: Path,
+) -> dict[str, list[dict[str, Any]]]:
+    """Scan docs/deliverables/{reports,presentations,posters}/ for items.
+
+    Reports are individual .md files.  Presentations and posters are
+    subdirectories containing a primary markdown file (slides.md, poster.md,
+    or index.md).
+    """
+    by_type: dict[str, list[dict[str, Any]]] = {t: [] for t in _DELIVERABLE_TYPES}
+
+    for dtype in _DELIVERABLE_TYPES:
+        type_dir = deliverables_dir / dtype
+        if not type_dir.is_dir():
+            continue
+
+        if dtype == "reports":
+            # Reports are flat .md files (excluding index.md)
+            for path in sorted(type_dir.glob("*.md"), reverse=True):
+                if path.name == "index.md":
+                    continue
+                fm = _parse_frontmatter(path)
+                if fm:
+                    fm["_path"] = path
+                    fm["_filename"] = path.stem
+                    fm["_rel"] = path.name
+                    by_type[dtype].append(fm)
+        else:
+            # Presentations and posters are subdirectories
+            for subdir in sorted(type_dir.iterdir(), reverse=True):
+                if not subdir.is_dir():
+                    continue
+                # Look for the primary file
+                primary = None
+                for candidate in ("slides.md", "poster.md", "index.md"):
+                    p = subdir / candidate
+                    if p.exists():
+                        primary = p
+                        break
+                if primary is None:
+                    # Try any .md file
+                    md_files = list(subdir.glob("*.md"))
+                    if md_files:
+                        primary = md_files[0]
+                if primary is not None:
+                    fm = _parse_frontmatter(primary)
+                    if fm:
+                        fm["_path"] = primary
+                        fm["_dirname"] = subdir.name
+                        fm["_rel"] = f"{subdir.name}/{primary.name}"
+                        by_type[dtype].append(fm)
+
+    return by_type
+
+
+def _generate_deliverables_overview(
+    by_type: dict[str, list[dict[str, Any]]],
+) -> str:
+    """Generate docs/deliverables/index.md — overview across all types."""
+    total = sum(len(items) for items in by_type.values())
+    lines = [
+        "# Deliverables",
+        "",
+        "<!-- auto-generated by questio_docs_collect — do not edit -->",
+        "",
+        f"**Total:** {total} deliverables",
+        "",
+        "| Type | Count |",
+        "|------|-------|",
+    ]
+    type_labels = {"reports": "Reports", "presentations": "Presentations", "posters": "Posters"}
+    for dtype in _DELIVERABLE_TYPES:
+        label = type_labels[dtype]
+        count = len(by_type.get(dtype, []))
+        lines.append(f"| [{label}]({dtype}/index.md) | {count} |")
+    lines.append("")
+
+    # Recent deliverables (up to 10 across all types)
+    all_items = []
+    for dtype, items in by_type.items():
+        for item in items:
+            item["_type"] = dtype
+            all_items.append(item)
+    all_items.sort(key=lambda x: str(x.get("date", "")), reverse=True)
+
+    if all_items:
+        lines.append("## Recent")
+        lines.append("")
+        lines.append("| Date | Type | Title | Audience |")
+        lines.append("|------|------|-------|----------|")
+        for item in all_items[:10]:
+            date = str(item.get("date", ""))
+            dtype = item["_type"]
+            title = item.get("title", item.get("_filename", item.get("_dirname", "")))
+            rel = item.get("_rel", "")
+            audience = item.get("audience", "")
+            lines.append(f"| {date} | {dtype} | [{title}]({dtype}/{rel}) | {audience} |")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def _generate_type_index(
+    dtype: str, items: list[dict[str, Any]],
+) -> str:
+    """Generate per-type index page (reports/index.md, etc.)."""
+    type_labels = {"reports": "Reports", "presentations": "Presentations", "posters": "Posters"}
+    label = type_labels.get(dtype, dtype.title())
+
+    lines = [
+        f"# {label}",
+        "",
+        "<!-- auto-generated by questio_docs_collect — do not edit -->",
+        "",
+    ]
+
+    if not items:
+        lines.append(f"No {dtype} yet.")
+        lines.append("")
+        return "\n".join(lines)
+
+    if dtype == "reports":
+        lines.append("| Date | Title | Audience | Period |")
+        lines.append("|------|-------|----------|--------|")
+        for item in items:
+            date = str(item.get("date", ""))
+            title = item.get("title", item.get("_filename", ""))
+            rel = item.get("_rel", "")
+            audience = item.get("audience", "")
+            period = item.get("period", "")
+            lines.append(f"| {date} | [{title}]({rel}) | {audience} | {period} |")
+    else:
+        lines.append("| Date | Title | Event | Audience |")
+        lines.append("|------|-------|-------|----------|")
+        for item in items:
+            date = str(item.get("date", ""))
+            title = item.get("title", item.get("_dirname", ""))
+            rel = item.get("_rel", "")
+            event = item.get("event", "")
+            audience = item.get("audience", "")
+            lines.append(f"| {date} | [{title}]({rel}) | {event} | {audience} |")
+
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _generate_deliverables_mkdocs(
+    by_type: dict[str, list[dict[str, Any]]],
+) -> str:
+    """Generate docs/deliverables/mkdocs.yml for MkDocs monorepo plugin."""
+    lines = [
+        "site_name: deliverables",
+        "docs_dir: .",
+        "nav:",
+        "- Overview: index.md",
+    ]
+    type_labels = {"reports": "Reports", "presentations": "Presentations", "posters": "Posters"}
+    for dtype in _DELIVERABLE_TYPES:
+        label = type_labels[dtype]
+        lines.append(f"- {label}: {dtype}/index.md")
+    return "\n".join(lines) + "\n"
+
+
+def _generate_deliverables_pages(
+    deliverables_dir: Path,
+) -> tuple[list[str], int]:
+    """Scan and generate all deliverables index pages.
+
+    Returns (list of generated file paths, total deliverable count).
+    """
+    by_type = _scan_deliverables(deliverables_dir)
+    generated: list[str] = []
+    total = sum(len(items) for items in by_type.values())
+
+    # Overview index
+    overview = deliverables_dir / "index.md"
+    overview.write_text(
+        _generate_deliverables_overview(by_type), encoding="utf-8",
+    )
+    generated.append(str(overview))
+
+    # Per-type indexes
+    for dtype in _DELIVERABLE_TYPES:
+        type_dir = deliverables_dir / dtype
+        type_dir.mkdir(parents=True, exist_ok=True)
+        index = type_dir / "index.md"
+        index.write_text(
+            _generate_type_index(dtype, by_type.get(dtype, [])),
+            encoding="utf-8",
+        )
+        generated.append(str(index))
+
+    # mkdocs.yml
+    mkdocs = deliverables_dir / "mkdocs.yml"
+    mkdocs.write_text(
+        _generate_deliverables_mkdocs(by_type), encoding="utf-8",
+    )
+    generated.append(str(mkdocs))
+
+    return generated, total
