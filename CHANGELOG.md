@@ -3,6 +3,13 @@
 ## Unreleased
 
 ### Added
+- **`pipeio_nb_move` MCP tool** — move a notebook between flows (files + notebook.yml update in both source and target)
+
+### Fixed
+- **`pipeio_nb_exec` output in `.src/`** — executed notebook now overwrites the workspace `.ipynb` instead of creating `_executed.ipynb` inside `.src/`
+- **Duplicate `"flow"` keys** in `mcp_nb_exec` and `mcp_mod_list` return dicts
+
+### Added
 - **`biblio_openalex_resolve` MCP tool** — wraps `biblio openalex resolve` CLI for agentic workflows; creates `resolved.jsonl` required by `biblio_enrich`, `biblio_pdf_fetch_oa`, `biblio_graph_expand`, and `biblio_enrich_topic_tags`
 - **`biblio_status` MCP tool** — per-citekey pipeline completeness dashboard showing bib/resolved/pdf/docling/grobid/enriched/rag stage status with recommended next actions; complements `biblio_library_quality` (field quality) with derivative-file existence checks
 - **`biblio_crossref_resolve` MCP tool** — standalone Crossref DOI resolver for preprints and niche journals missed by OpenAlex; also integrated as automatic fallback in `biblio_openalex_resolve` pipeline

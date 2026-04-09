@@ -886,6 +886,24 @@ def pipeio_nb_update_tool(
     )
 
 
+@server.tool("pipeio_nb_move")
+def pipeio_nb_move_tool(
+    flow_from: str,
+    flow_to: str,
+    name: str,
+    kind: str = "",
+):
+    """Move a notebook from one flow to another.
+
+    Moves .py source, paired .ipynb, and .myst files.
+    Updates notebook.yml in both source and target flows.
+    kind: override workspace (investigate/explore/demo/validate)."""
+    return pipeio.pipeio_nb_move(
+        flow_from=flow_from, flow_to=flow_to,
+        name=name, kind=kind,
+    )
+
+
 @server.tool("pipeio_mod_list")
 def pipeio_mod_list_tool(flow: str = ""):
     """List mods (logical modules) for a flow."""

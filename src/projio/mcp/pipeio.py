@@ -84,18 +84,18 @@ def _conda_run_cmd(env_name: str, cmd_name: str) -> list[str]:
     """
     from pathlib import Path
 
-    # Find conda binary from known locations
-    for base in ("/storage/share/python/environments/Anaconda3",):
-        for rel in ("condabin/conda", "bin/conda"):
-            conda = Path(base) / rel
-            if conda.is_file():
-                return [str(conda), "run", "-n", env_name, cmd_name]
-
-    # Try conda on PATH
     import shutil
+
     conda_bin = shutil.which("conda")
     if conda_bin:
         return [conda_bin, "run", "-n", env_name, cmd_name]
+
+    # Fallback: check relative to sys.prefix (works inside a conda env)
+    import sys
+    for rel in ("condabin/conda", "bin/conda"):
+        candidate = Path(sys.prefix).parent.parent / rel
+        if candidate.is_file():
+            return [str(candidate), "run", "-n", env_name, cmd_name]
 
     return [cmd_name]
 
@@ -276,6 +276,37 @@ def pipeio_nb_update(
         return json_dict({"error": str(exc)})
 
 
+def pipeio_nb_move(
+    flow_from: str,
+    flow_to: str,
+    name: str,
+    kind: str = "",
+) -> JsonDict:
+    """Move a notebook from one flow to another.
+
+    Moves the .py source, paired .ipynb, and .myst files.
+    Updates notebook.yml in both source and target flows.
+
+    Args:
+        flow_from: Source flow name.
+        flow_to: Destination flow name.
+        name: Notebook basename (without extension).
+        kind: Override workspace kind (investigate/explore/demo/validate).
+              Defaults to the notebook's existing kind.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_move")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_move  # type: ignore[import]
+        return json_dict(mcp_nb_move(
+            root, flow_from=flow_from, flow_to=flow_to,
+            name=name, kind=kind or None,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_mod_list(flow: str = "") -> JsonDict:
     """List mods for a specific flow.
 
@@ -374,13 +405,20 @@ def pipeio_modkey_bib(
 def pipeio_docs_collect() -> JsonDict:
     """Collect flow-local docs and notebook outputs into docs/pipelines/.
 
-    **docs/pipelines/ is a build artifact (gitignored).** Never edit files
-    there directly — they will be overwritten. The source of truth for
-    hand-written docs is ``code/pipelines/<flow>/docs/``.
+    **Two-phase pipeline:**
 
-    Copies hand-written docs (with source-path headers) from each flow's
-    docs/ directory, publishes notebooks, and generates script/report indexes.
+    1. **Export** — generate artifacts into ``{flow}/.build/``: DAG SVGs
+       via snakemake, notebook HTML via nbconvert.
+    2. **Collect** — copy hand-written docs, pre-built exports, reports,
+       and generated indexes into ``docs/pipelines/<flow>/``.
+
+    ``docs/pipelines/`` is a **build artifact** (gitignored). The source of
+    truth for hand-written docs is ``code/pipelines/<flow>/docs/``.
     Must be run before ``mkdocs build`` or ``mkdocs serve``.
+
+    **overview.md convention:** If a flow has ``docs/overview.md`` but no
+    ``docs/index.md``, overview.md is used as the flow index. If both exist,
+    both are collected as separate pages. The source tree is never modified.
     """
     if not _pipeio_available():
         return _unavailable("pipeio_docs_collect")
