@@ -22,6 +22,15 @@ make publish      # Publish to PyPI
 make publish-test # Publish to TestPyPI
 ```
 
+Without `make` (Windows or any platform):
+```bash
+pip install -e "packages/indexio[dev]" && pip install -e ".[dev,indexio,biblio,notio]"  # dev
+python -m pytest tests -q                # test
+python -m mkdocs build --strict          # docs
+python -m mkdocs serve                   # docs-serve
+python -m build                          # build
+```
+
 Run a single test:
 ```bash
 PYTHONPATH=src python -m pytest tests/test_cli.py -q
@@ -51,7 +60,7 @@ The full paper production pipeline: **figio** (figures) + **biblio** (citations)
 - `src/projio/cli.py` — CLI entry point (`projio` command), subcommand dispatch
 - `src/projio/init.py` — Workspace scaffolding (three kinds: `generic`, `tool`, `study`)
 - `src/projio/config.py` — Two-tier config: user (`~/.config/projio/config.yml`) merged with project (`.projio/config.yml`), project wins
-- `src/projio/sync.py` — `projio sync`: auto-discover code/lib libraries → codio, detect code/utils → config, sync Lua filter + CSL files, generate pandoc-defaults.yaml
+- `src/projio/sync.py` — `projio sync`: auto-discover code/lib libraries → codio, detect code/utils → config, sync Lua filter + CSL files, generate pandoc-defaults.yaml, incrementally rebuild stale index sources (`--index` or `automation.index.on_sync`), install git hooks (`--install-hooks`)
 - `src/projio/render.py` — `.projio/render.yml` loader: single source of truth for PDF engine, CSL, bibliography, bib_sources, Lua filter, conda env. Generates `.projio/render/pandoc-defaults.yaml`
 - `src/projio/data/filters/include.lua` — Bundled Lua transclusion filter for Pandoc (handles `{% include-markdown %}` and `--8<--` markers). Copied to `.projio/filters/` during `projio sync`
 - `src/projio/data/csl/` — Bundled CSL citation styles (apa, ieee, chicago-author-date, vancouver). Copied to `.projio/render/csl/` during `projio sync`
@@ -69,7 +78,7 @@ The MCP server (`src/projio/mcp/server.py`) is the primary agent interface. It r
 - `mcp/manuscripto.py` — `manuscript_init`, `manuscript_list`, `manuscript_status`, `manuscript_build`, `manuscript_validate`, `manuscript_assemble`, `manuscript_figure_insert`, `manuscript_section_context`, `manuscript_overview`, `manuscript_cite_check`, `manuscript_figure_build_all`, `manuscript_diff`, `manuscript_cite_suggest`, `manuscript_journal_check`, `master_list`, `master_build`, `master_generate`
 - `mcp/codio.py` — `codio_list`, `codio_get`, `codio_registry`, `codio_vocab`, `codio_validate`, `codio_discover`, `codio_rag_sync`, `codio_add` (with `role` param: core/shared/external)
 - `mcp/figio.py` — `figio_figure_list`, `figio_inspect`, `figio_build`, `figio_validate`, `figio_edit_spec`, `figio_query_output`
-- `mcp/pipeio.py` — 51 tools across flow/mod/rule/config/notebook/docs/execution/paths. Key additions: `pipeio_target_paths`, `pipeio_dag_export` (SVG auto-writes to docs/), `pipeio_mod_audit`, `pipeio_mod_doc_refresh`, `pipeio_script_create`, `pipeio_nb_promote`. No `pipe` parameter — flows addressed by name only. See `skill_read("pipeio-guide")` for full reference.
+- `mcp/pipeio.py` — 52 tools across flow/mod/rule/config/notebook/docs/execution/paths. Key additions: `pipeio_target_paths`, `pipeio_dag_export` (SVG auto-writes to docs/), `pipeio_mod_audit`, `pipeio_mod_doc_refresh`, `pipeio_script_create`, `pipeio_nb_promote`, `pipeio_nb_move`. No `pipe` parameter — flows addressed by name only. See `skill_read("pipeio-guide")` for full reference.
 - `mcp/datalad.py` — `datalad_save`, `datalad_status`, `datalad_push`, `datalad_pull`, `datalad_siblings`
 - `mcp/site.py` — `site_detect`, `site_build`, `site_deploy`, `site_serve`, `site_stop`, `site_list`
 - `mcp/context.py` — `project_context`, `runtime_conventions`, `agent_instructions`, `module_context`, `skill_read`, `projio_init`, `ecosystem_status`, `permissions_sync`
@@ -86,12 +95,12 @@ Projio-managed projects use two distinct environments, configured in `~/.config/
 
 | Key | Env | Purpose |
 |-----|-----|---------|
-| `projio_python` | `rag` | Python used to run `projio` itself and project Python |
+| `projio_python` | `projio` | Python used to run `projio` itself and project Python |
 | `datalad_bin` | `labpy` | DataLad + git-annex binary |
 
 The generated `.projio/projio.mk` substitutes these into `PROJIO ?=` and `DATALAD ?=`. `projio_python` takes precedence over `python_bin` for the `PROJIO` variable; `python_bin` still controls `PYTHON` for project code. Projects can override either key in their own `.projio/config.yml`.
 
-**Notebook execution:** `pipeio_nb_exec` runs papermill from the MCP server's own Python (`rag` env), not from the project's `PYTHON`. The `-k` kernel flag controls which Jupyter kernel executes the cells. Papermill must be installed in the `rag` env (`pip install papermill`).
+**Notebook execution:** `pipeio_nb_exec` runs papermill from the MCP server's own Python (`projio` env), not from the project's `PYTHON`. The `-k` kernel flag controls which Jupyter kernel executes the cells. Papermill must be installed in the `projio` env (`pip install papermill`).
 
 ### Claude Code Integration
 

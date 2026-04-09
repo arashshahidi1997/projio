@@ -10,7 +10,7 @@ from .config import get_nested, load_effective_config, load_project_config
 KIND_CHOICES = ("generic", "tool", "study")
 SITE_FRAMEWORK_CHOICES = ("mkdocs", "sphinx", "vite")
 
-KNOWN_PACKAGES = ("biblio", "notio", "codio", "indexio", "pipeio", "figio", "claude")
+KNOWN_PACKAGES = ("biblio", "notio", "codio", "indexio", "pipeio", "figio", "claude", "codex", "copilot")
 
 PROFILES: dict[str, dict] = {
     "research": {
@@ -26,11 +26,11 @@ PROFILES: dict[str, dict] = {
             "biblio": {"enabled": True},
             "notio": {"enabled": True},
             "code": {
-                "conda_prefix": "/storage/share/python/environments/Anaconda3",
+                "conda_prefix": "",
                 "envs": {
                     "default": "cogpy",
-                    "docs": "rag",
-                    "rag": "rag",
+                    "docs": "projio",
+                    "projio": "projio",
                     "datalad": "labpy",
                 },
             },
@@ -374,10 +374,28 @@ def _projio_mk(root: Path) -> str:
     else:
         python_bin = runtime.get("python_bin")
         projio_python = runtime.get("projio_python")
-        docs_python = None
+        docs_python = runtime.get("docs_python") or projio_python
         datalad_bin = runtime.get("datalad_bin")
         pandoc_bin = None
         matlab_bin = runtime.get("matlab_bin")
+
+    # Warn when projio/docs envs are not explicitly configured
+    import sys
+    if not projio_python and not docs_python:
+        print(
+            "Warning: no projio/docs Python configured — PROJIO and MKDOCS will "
+            "use the default Python, which may lack projio or mkdocs.\n"
+            "  Configure via code.envs in .projio/config.yml:\n"
+            "    code:\n"
+            "      conda_prefix: /path/to/anaconda3\n"
+            "      envs:\n"
+            "        projio: rag    # env with projio + mkdocs\n"
+            "        docs: rag      # env for site builds\n"
+            "  Or via legacy runtime keys in ~/.config/projio/config.yml:\n"
+            "    runtime:\n"
+            "      projio_python: /path/to/env/bin/python",
+            file=sys.stderr,
+        )
 
     push_sibling = cfg.get("push_sibling") or cfg.get("datalad_remote") or "github"
     mk = PROJIO_MK
@@ -549,6 +567,11 @@ site_name: {name}
 docs_dir: docs
 theme:
   name: material
+plugins:
+  - search
+  - ezlinks
+  - bibtex:
+      bib_file: .projio/render/compiled.bib
 """
 
 TOOL_PYPROJECT = """\
@@ -735,7 +758,12 @@ def _gitignore_entries_for_framework(site_framework: str) -> list[str]:
         # Claude Code / MCP
         ".mcp.json",
         ".claude/settings.json",
+        ".claude/commands/",
         ".projio/servers.json",
+        # Codex
+        ".codex/config.toml",
+        # VS Code / Copilot MCP
+        ".vscode/mcp.json",
         # indexio (search index + build jobs)
         ".projio/indexio/index/",
         ".projio/indexio/jobs/",
@@ -1115,6 +1143,10 @@ def _scaffold_component(root: Path, package: str, component_dir: Path) -> None:
         # no additional scaffolding needed beyond the component dir
     elif package == "claude":
         _scaffold_claude(root, component_dir)
+    elif package == "codex":
+        _scaffold_codex(root, component_dir)
+    elif package == "copilot":
+        _scaffold_copilot(root, component_dir)
     else:
         component_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1197,6 +1229,46 @@ def _scaffold_claude(root: Path, component_dir: Path) -> None:
         print(f"  [OK] wrote CLAUDE.md")
     else:
         print(f"  [skip] CLAUDE.md already exists")
+
+
+def _scaffold_codex(root: Path, component_dir: Path) -> None:
+    """Scaffold Codex MCP configuration for a project.
+
+    Creates:
+      - .codex/config.toml — MCP server definitions (managed block)
+      - .projio/codex/ — marker directory for projio tracking
+    """
+    component_dir.mkdir(parents=True, exist_ok=True)
+
+    from .mcp.config_gen import write_codex_config
+
+    codex_toml = root / ".codex" / "config.toml"
+    if not codex_toml.exists():
+        write_codex_config(root)
+    else:
+        # Update existing config with current server defs
+        write_codex_config(root)
+    print(f"  [OK] codex configured")
+
+
+def _scaffold_copilot(root: Path, component_dir: Path) -> None:
+    """Scaffold VS Code / Copilot MCP configuration for a project.
+
+    Creates:
+      - .vscode/mcp.json — MCP server definitions (``"servers"`` key)
+      - .projio/copilot/ — marker directory for projio tracking
+    """
+    component_dir.mkdir(parents=True, exist_ok=True)
+
+    from .mcp.config_gen import write_copilot_config
+
+    vscode_mcp = root / ".vscode" / "mcp.json"
+    if not vscode_mcp.exists():
+        write_copilot_config(root)
+    else:
+        # Update existing config with current server defs
+        write_copilot_config(root)
+    print(f"  [OK] copilot configured")
 
 
 def _mcp_server_wildcards(root: Path) -> list[str]:
@@ -1504,6 +1576,7 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Analyze notebook structure | `pipeio_nb_analyze(flow, name)` | Parse .py files manually |")
         rows.append("| Check sync state | `pipeio_nb_diff(flow, name)` | Compare mtimes manually |")
         rows.append("| Update notebook metadata | `pipeio_nb_update(flow, name)` | Edit notebook.yml directly |")
+        rows.append("| Move notebook between flows | `pipeio_nb_move(flow_from, flow_to, name)` | Copy files + edit both notebook.yml |")
         rows.append("| Sync notebook | `pipeio_nb_sync(flow, name, direction?)` | Run jupytext manually |")
         rows.append("| Sync all in flow | `pipeio_nb_sync_flow(flow)` | Sync each manually |")
         rows.append("| Scan for unregistered | `pipeio_nb_scan(register?)` | Walk filesystem manually |")
