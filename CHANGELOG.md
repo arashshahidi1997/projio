@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Added
+- **`pipeio_nb_report` MCP tool** — extract figures, markdown, and text outputs from an executed notebook into a structured payload for report writing; saves figures to `{flow}/docs/reports/{name}/`; supports percent-format (nbconvert) and marimo (`marimo export md`); detects interactive widget outputs (holoviews, bokeh, plotly) that can't be extracted as static images and returns guidance
+- **`/report` skill** — orchestrates `pipeio_nb_report` extraction + agent-written curated report at `{flow}/docs/reports/{name}.md`; reports are git-tracked source files published via `docs_collect`
 - **`pipeio_nb_move` MCP tool** — move a notebook between flows (files + notebook.yml update in both source and target)
 
 ### Fixed
