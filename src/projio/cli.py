@@ -67,6 +67,8 @@ def _build_parser() -> argparse.ArgumentParser:
     p_config_init_user.add_argument("--force", action="store_true", help="Overwrite existing user config.")
     config_sub.add_parser("show", help="Print merged user + project config.")
 
+    config_sub.add_parser("help", help="Print configuration reference with examples.")
+
     p_config_set_python = config_sub.add_parser(
         "set-python",
         help="Set runtime.python_bin in project config. Uses current interpreter by default.",
@@ -232,6 +234,19 @@ def _build_parser() -> argparse.ArgumentParser:
     p_sync = sub.add_parser("sync", help="Sync workspace: auto-discover code/lib libraries, register in codio.")
     p_sync.add_argument("-C", "--root", default=".", help="Project root (default: .).")
     p_sync.add_argument("--dry-run", action="store_true", help="Show what would change without writing.")
+    p_sync_index = p_sync.add_mutually_exclusive_group()
+    p_sync_index.add_argument(
+        "--index", action="store_true", default=None, dest="index",
+        help="Force incremental index rebuild (even without automation.index.on_sync).",
+    )
+    p_sync_index.add_argument(
+        "--no-index", action="store_false", dest="index",
+        help="Skip index rebuild (even if automation.index.on_sync is set).",
+    )
+    p_sync.add_argument(
+        "--install-hooks", action="store_true",
+        help="Install projio-managed git hooks (post-commit for index rebuild).",
+    )
 
     p_mcp = sub.add_parser("mcp", help="Start the FastMCP server (stdio).")
     p_mcp.add_argument("-C", "--root", default=".", help="Project root (default: .).")
@@ -242,6 +257,73 @@ def _build_parser() -> argparse.ArgumentParser:
     p_mcp_config.add_argument("--yes", action="store_true", help="Write the file (default: preview only).")
 
     return parser
+
+
+_CONFIG_HELP = """\
+projio configuration reference
+==============================
+
+Config files (project overrides user):
+  ~/.config/projio/config.yml    user defaults (all projects)
+  .projio/config.yml             project-specific overrides
+
+Use 'projio config show' to see the merged effective config.
+Use 'projio config init-user' to scaffold the user config.
+
+Environment resolution (code.envs)
+----------------------------------
+Controls which conda env runs each tool. Set in .projio/config.yml:
+
+  code:
+    conda_prefix: /path/to/anaconda3       # conda installation root
+    envs:
+      default: myenv        # PYTHON — project code, snakemake, etc.
+      projio: projio        # PROJIO, NOTIO — projio CLI + MCP server
+      docs: projio          # MKDOCS — site builds (falls back to projio)
+      datalad: labpy        # DATALAD, PANDOC — datalad + pandoc binary
+
+Fallback: projio <-> docs (both need projio + mkdocs installed).
+If neither is set, PROJIO/MKDOCS use the default env (likely wrong).
+
+Legacy alternative (in user config):
+
+  runtime:
+    projio_python: /path/to/env/bin/python
+    docs_python: /path/to/env/bin/python     # falls back to projio_python
+    datalad_bin: /path/to/env/bin/datalad
+
+Site config
+-----------
+  site:
+    framework: mkdocs          # mkdocs | sphinx | vite (auto-detected)
+    base_port: 8000            # starting port for site serve
+    mkdocs:
+      config_file: mkdocs.yml
+      site_dir: site
+
+Push target
+-----------
+  push_sibling: github         # datalad push --to <this>
+
+Subsystem toggles
+-----------------
+  biblio:
+    enabled: true
+    config: .projio/biblio/biblio.yml
+
+  notio:
+    enabled: true
+    notes_dir: docs/log/
+
+  codio:
+    enabled: true
+
+  pipeio:
+    enabled: true
+    pipelines_dir: code/pipelines
+
+Run 'projio config show' to see all resolved values.
+"""
 
 
 def main(argv: Iterable[str] | None = None) -> None:
@@ -291,6 +373,8 @@ def main(argv: Iterable[str] | None = None) -> None:
             config_mod.scaffold_user_config(force=args.force)
         elif args.config_command == "show":
             config_mod.print_effective_config(args.root)
+        elif args.config_command == "help":
+            print(_CONFIG_HELP)
         elif args.config_command == "set-python":
             config_mod.set_python(
                 args.root,
@@ -453,7 +537,12 @@ def main(argv: Iterable[str] | None = None) -> None:
 
     if args.command == "sync":
         from .sync import sync_workspace
-        sync_workspace(args.root, dry_run=args.dry_run)
+        sync_workspace(
+            args.root,
+            dry_run=args.dry_run,
+            index=args.index,
+            install_hooks=args.install_hooks,
+        )
         return
 
     if args.command == "mcp":

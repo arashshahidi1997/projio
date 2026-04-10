@@ -312,6 +312,15 @@ except Exception:
 def _pid_alive(pid: int) -> bool:
     """Check whether a process with the given PID is still running."""
     import os
+    import sys
+    if sys.platform == "win32":
+        import ctypes
+        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+        handle = kernel32.OpenProcess(0x100000, False, pid)  # SYNCHRONIZE
+        if handle:
+            kernel32.CloseHandle(handle)
+            return True
+        return False
     try:
         os.kill(pid, 0)
         return True

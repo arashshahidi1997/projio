@@ -1,7 +1,22 @@
 ---
 name: questio-ground
-description: "Gather literature, code, and project context before starting work on a milestone or question"
-tools: [paper_context, codio_discover, rag_query, questio_status, questio_gap]
+description: >
+  Gather literature, code, and project context before starting work on a
+  milestone or question. Produces a grounding brief with expected approach,
+  results, quality criteria, and available code.
+metadata:
+  short-description: literature and code grounding before milestone work
+  tags: [questio, ground, research, literature]
+  tooling:
+    mcp:
+      - server: projio
+        tools:
+          - paper_context
+          - codio_discover
+          - codio_get
+          - rag_query
+          - questio_status
+          - questio_gap
 ---
 
 # Questio Ground

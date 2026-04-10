@@ -139,12 +139,33 @@ def _servers_path(root: Path) -> Path:
 
 
 def _pid_alive(pid: int) -> bool:
-    """Check whether a process is still running (Unix)."""
+    """Check whether a process is still running (cross-platform)."""
+    if sys.platform == "win32":
+        import ctypes
+        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+        handle = kernel32.OpenProcess(0x100000, False, pid)  # SYNCHRONIZE
+        if handle:
+            kernel32.CloseHandle(handle)
+            return True
+        return False
     try:
         os.kill(pid, 0)
         return True
     except (ProcessLookupError, PermissionError):
         return False
+
+
+def _terminate_pid(pid: int) -> None:
+    """Send SIGTERM (Unix) or TerminateProcess (Windows)."""
+    if sys.platform == "win32":
+        import ctypes
+        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+        handle = kernel32.OpenProcess(1, False, pid)  # PROCESS_TERMINATE
+        if handle:
+            kernel32.TerminateProcess(handle, 1)
+            kernel32.CloseHandle(handle)
+    else:
+        os.kill(pid, signal.SIGTERM)
 
 
 def _prune_dead(servers: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -629,7 +650,7 @@ def stop(
     if target is None:
         return {"stopped": False, "error": "No matching server found"}
     try:
-        os.kill(target["pid"], signal.SIGTERM)
+        _terminate_pid(target["pid"])
     except ProcessLookupError:
         pass
     servers = [s for s in servers if s is not target]
@@ -650,7 +671,7 @@ def stop_all(root: str | Path) -> dict[str, Any]:
     count = 0
     for s in servers:
         try:
-            os.kill(s["pid"], signal.SIGTERM)
+            _terminate_pid(s["pid"])
             count += 1
         except ProcessLookupError:
             pass

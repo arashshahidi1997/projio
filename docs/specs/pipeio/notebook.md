@@ -6,8 +6,32 @@ Research pipeline flows produce notebooks that serve two roles with distinct lif
 
 1. **Exploratory** (`kind: investigate` or `explore`) — prototype analysis, test parameters, validate approaches before absorbing into mod scripts. End state: `status: archived` once code is promoted to Snakemake rules.
 2. **Demo** (`kind: demo` or `validate`) — showcase mod outputs in narrative form, generate QC reports for publication. End state: `status: promoted` with `publish_html: true`, published to the project site.
+3. **Interactive** (`kind: interactive`) — marimo-backed live exploration with reactive parameter tuning. Not intended for batch execution or promotion. Persists by design.
 
-Both types are linked to a flow mod via the `mod` field in `notebook.yml`.
+Both exploratory and demo types are linked to a flow mod via the `mod` field in `notebook.yml`.
+
+## Multi-Backend Architecture
+
+pipeio supports multiple notebook formats through a **backend abstraction** (`NotebookBackend` protocol). Each backend handles format-specific operations: detection, sync, execution, validation, export, cell splitting, and template generation. Higher-level lifecycle operations (audit, status, lab, scan) compose these primitives and remain format-agnostic.
+
+### Supported backends
+
+| Backend | Format | Source | Human UI | Execution | Validation |
+|---------|--------|--------|----------|-----------|------------|
+| `percent` | jupytext percent-format | `.py` with `# %%` markers | Jupyter Lab via `.ipynb` | papermill / nbconvert | AST syntax + import isolation |
+| `marimo` | marimo reactive | `.py` with `@app.cell` | marimo editor (`--watch`) | `marimo run` | `marimo check` |
+
+### Backend resolution
+
+Format is resolved per-notebook: `entry.format > config.default_format > auto-detect`. Auto-detection checks marimo first (more specific `import marimo` + `marimo.App()` signature), then percent-format (`# %%`). Default fallback: `percent`.
+
+### Key differences
+
+- **Sync**: Percent-format needs bidirectional `.py` ↔ `.ipynb` sync. Marimo is single-file (sync is a no-op).
+- **Execution**: Percent uses papermill on `.ipynb`. Marimo uses `marimo run` directly on `.py`.
+- **Pairing**: Percent creates `.ipynb` and `.myst` pairs. Marimo has no paired outputs.
+- **Kernels**: Percent uses Jupyter kernelspecs. Marimo uses its own runtime (kernel field ignored).
+- **Export**: Percent uses nbconvert. Marimo uses `marimo export html/md/ipynb`.
 
 pipeio manages the notebook lifecycle: scan, pair, sync (bidirectional), execute, audit, publish. `nb_audit` detects lifecycle mismatches (e.g., exploratory notebook still active after mod has scripts, demo notebook not set to publish).
 
@@ -78,6 +102,14 @@ entries:
     pair_ipynb: true          # inherits kernel: cogpy from flow level
     pair_myst: true
     publish_myst: true
+
+  # Marimo-format notebook (reactive, single-file)
+  - path: notebooks/explore/.src/interactive_explorer.py
+    format: marimo            # explicit format declaration
+    kind: interactive         # live exploration, not batch-executable
+    description: "Interactive ECoG signal explorer with reactive tuning"
+    status: active
+    publish_html: true        # exported via marimo export html
 ```
 
 ### Kernel Resolution
@@ -98,12 +130,14 @@ When set, the kernel name is:
 ```python
 class NotebookEntry(BaseModel):
     path: str
-    kind: str = ""                # investigate | explore | demo | validate
+    kind: str = ""                # investigate | explore | demo | validate | interactive
     description: str = ""         # human-readable description
     status: str = "active"        # draft | active | stale | promoted | archived
-    kernel: str = ""              # Jupyter kernelspec name (overrides flow default)
-    pair_ipynb: bool = False
-    pair_myst: bool = False
+    format: str = ""              # "" (auto-detect) | "percent" | "marimo"
+    kernel: str = ""              # Jupyter kernelspec name (percent-only; ignored for marimo)
+    mod: str = ""
+    pair_ipynb: bool = False      # (percent-only) create .ipynb pairing
+    pair_myst: bool = False       # (percent-only) create .md pairing
     publish_myst: bool = False
     publish_html: bool = False
 
@@ -114,9 +148,24 @@ class PublishConfig(BaseModel):
 
 class NotebookConfig(BaseModel):
     kernel: str = ""              # flow-level default kernel
+    default_format: str = ""      # flow-level default format ("percent" | "marimo" | "")
     publish: PublishConfig = PublishConfig()
     entries: list[NotebookEntry] = []
 ```
+
+### Format resolution
+
+```
+entry.format > config.default_format > auto-detect from file content
+```
+
+### Kernel resolution
+
+```
+entry.kernel > config.kernel > (no override)
+```
+
+For marimo-format notebooks, `resolve_kernel()` always returns empty string (marimo uses its own runtime).
 
 ## Lifecycle Stages
 

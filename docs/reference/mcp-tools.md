@@ -282,12 +282,15 @@ The projio MCP server exposes tools across eight categories. Optional tools requ
 | `agent_instructions()` | Tool routing table, workflow conventions, enabled packages |
 | `module_context(doc_path)` | Extract structured sections from a markdown document |
 | `skill_read(name)` | Read a skill's full content by name |
+| `ecosystem_status()` | One-shot health check across all subsystems with staleness detection |
 
 `agent_instructions` returns the dynamic equivalent of the CLAUDE.md tool routing section. Cross-project orchestrators (e.g. worklog) should call this to get project-aware agent instructions before generating or executing prompts. The response includes enabled packages, a tool routing table (intent → MCP tool → anti-pattern), and workflow conventions.
 
 `module_context` extracts goal, assumptions, parameters, I/O, and limitations sections from a markdown document. Useful for reading pipeline doc stubs without loading the full file.
 
 `skill_read` returns metadata and the full markdown body for a named skill. Use `agent_instructions()` first to see available skill names.
+
+`ecosystem_status` checks all enabled subsystems (biblio, codio, notio, pipeio, figio, indexio) and returns per-subsystem health. For indexio, it reports `built_at` timestamp, `stale` flag, and `stale_sources` list by comparing the status manifest against current file states. Stale sources set `overall_healthy` to false.
 
 ## Site tools
 

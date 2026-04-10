@@ -1,7 +1,25 @@
 ---
 name: questio-session
-description: "Structure a full research session: orient, plan, ground, execute, record, report"
-tools: [questio_status, questio_gap, pipeio_flow_status, paper_context, codio_discover, rag_query, note_create, questio_docs_collect, note_search]
+description: >
+  Structure a full research session: orient (status), plan (next work),
+  ground (literature + code), execute (iterate loop), record (evidence),
+  and close (summary report).
+metadata:
+  short-description: full research session from orientation to reporting
+  tags: [questio, session, research, workflow]
+  tooling:
+    mcp:
+      - server: projio
+        tools:
+          - questio_status
+          - questio_gap
+          - questio_docs_collect
+          - pipeio_flow_status
+          - paper_context
+          - codio_discover
+          - rag_query
+          - note_create
+          - note_search
 ---
 
 # Questio Session
@@ -80,6 +98,12 @@ The session skill does not prescribe what happens here — it depends on the
 milestone. The agent should use the grounding brief to guide quality
 assessments during execution.
 
+When executing, follow the `questio-iterate` pattern: modify → execute →
+assess → report → receive human feedback → next cycle.
+
+When something goes wrong, follow the `questio-investigate` pattern: scope →
+inspect → compare → narrow → report.
+
 ### Phase 5: Record
 
 After the user indicates work is complete (or at a natural stopping point),
@@ -89,7 +113,7 @@ apply the `questio-record` logic:
 2. Create a `result` note via `note_create(note_type="result")`
 3. Fill in structured frontmatter (question, milestone, metric, value,
    confidence, subjects)
-4. Update `docs/plan/milestones.yml` evidence list
+4. Update `plan/milestones.yml` evidence list
 5. If milestone appears complete, ask about status update
 6. Call `questio_docs_collect()` to regenerate plan docs
 
@@ -127,7 +151,9 @@ Present as a brief session summary:
   insist, but note it.
 - The session does not need to complete all phases in one sitting. If the
   user stops mid-session, that's fine — summarize progress so far.
-- If `docs/plan/questions.yml` doesn't exist, orient the user to set up the
+- If `plan/questions.yml` doesn't exist, orient the user to set up the
   questio data model before running a full session.
 - Never auto-execute pipelines or notebooks without user awareness —
   always confirm before running compute-intensive operations.
+- Reference `questio-iterate` and `questio-investigate` skills during Phase 4
+  rather than reinventing the loop logic.

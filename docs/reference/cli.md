@@ -18,6 +18,7 @@
 | `projio auth` | Authentication diagnostics |
 | `projio claude` | Claude Code project settings |
 | `projio skill` | Manage project skills |
+| `projio sync` | Sync workspace: code libraries, filters, config, index |
 | `projio mcp` | Start the FastMCP server (stdio) |
 | `projio mcp-config` | Generate `.mcp.json` for Claude Code |
 
@@ -87,6 +88,13 @@ projio claude -C . update-permissions --dry-run
 # skill
 projio skill -C . list
 projio skill -C . new my-analysis
+
+# sync
+projio sync -C .
+projio sync -C . --dry-run
+projio sync -C . --index            # force incremental index rebuild
+projio sync -C . --no-index         # skip index even if configured
+projio sync -C . --install-hooks    # install post-commit git hook
 
 # mcp
 projio mcp -C .
@@ -214,7 +222,7 @@ Sets `runtime.python_bin` in the project `.projio/config.yml`.
 ```bash
 projio config -C . set-python                      # use current interpreter
 projio config -C . set-python /path/to/python      # explicit path
-projio config -C . set-python --env rag            # resolve conda env name
+projio config -C . set-python --env projio          # resolve conda env name
 ```
 
 This is used by `projio mcp-config` to generate the correct `.mcp.json`.
@@ -249,6 +257,23 @@ projio skill -C . new my-analysis    # scaffold a new skill
 ```
 
 Skills are markdown prompts that agents can load via `skill_read()`. The `new` subcommand creates `.projio/skills/<name>/SKILL.md` with a template.
+
+### `projio sync`
+
+Runs all workspace sync operations: code library discovery, filter/CSL sync, pandoc defaults generation, mkdocs nav, VS Code settings, agent configs, and optionally index rebuild.
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Show what would change without writing |
+| `--index` | Force incremental index rebuild (even without `automation.index.on_sync`) |
+| `--no-index` | Skip index rebuild (even if `automation.index.on_sync` is set) |
+| `--install-hooks` | Install projio-managed git hooks (post-commit for index rebuild) |
+
+Without `--index` or `--no-index`, the index step reads `automation.index.on_sync` from `.projio/config.yml` (default: `false`).
+
+The `--install-hooks` flag writes a `.git/hooks/post-commit` hook that runs `projio sync --index` in the background after each commit. It will not overwrite an existing non-projio hook.
 
 ### `projio list`
 

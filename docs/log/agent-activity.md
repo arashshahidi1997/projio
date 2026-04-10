@@ -366,3 +366,20 @@ Session: `01628669` | Task: `task-arash-20260408-051007-scenario-index.md`
 5. **`packages/pipeio/tests/test_matlab.py`** (new) — 10 tests covering binary resolution, env fallback, prelude options, Snakemake pattern, and package import
 
 Session: `7d277ab5` | Task: `task-arash-20260408-191715-378765.md`
+
+## 2026-04-09 03:47 | projio | sonnet | 1 steps
+
+The underlying `create_note()` in `notio/core.py` already supported `body` and `extra_frontmatter` — this was purely a tool-layer exposure gap.
+
+Session: `6719b9a6` | Task: `task-arash-20260409-034513-135295.md`
+
+## 2026-04-10 15:11 | projio | opus | 1 steps
+
+Both skills encode all five friction points from the issue:
+- Don't overwrite scaffolded Makefile (step 2 hard rules)
+- Keep `configfile: "config.yml"` (step 4 key patterns)
+- Call `pipeio_registry_scan` after `pipeio_flow_new` (step 2)
+- Use `pipeio_run` MCP tool, not manual conda (step 7 + guardrails)
+- Pipeline env is `cogpy` (pixecog skill, conventions section)
+
+Session: `e3933927` | Task: `task-arash-20260410-150459-158814.md`

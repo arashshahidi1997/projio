@@ -1,0 +1,15 @@
+# Conda environment for running projio and its MCP server.
+# Usage:
+#   conda env create -f environment.yml
+#   conda activate projio
+#   pip install projio[all]   # or projio[indexio,biblio] for selective install
+name: projio
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.11
+  - pip
+  # Optional: uncomment if you need DataLad integration
+  # - datalad
+  # - git-annex

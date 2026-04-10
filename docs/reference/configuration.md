@@ -66,6 +66,11 @@ site:
     title: "Docs Assistant"
     storage_key: "my-project_chat_v1"
 
+automation:
+  index:
+    on_sync: false           # rebuild stale index sources during projio sync
+    background: true         # run index rebuild in background (default: true)
+
 helpers:
   sibling:
     github:
@@ -115,6 +120,29 @@ Credential names (e.g., `github`, `gitlab-lrz`) can safely live in `.projio/conf
 - for `projio site serve`, MkDocs sites can auto-start an `indexio` backend locally if `backend_url` is unset
 - for `projio site build`, set `backend_url` to the deployed chatbot server URL if you want the static site to include the widget
 - MkDocs chatbot injection is supported today; Sphinx and Vite do not currently get chatbot injection
+
+## Automation config
+
+The `automation` section controls automatic maintenance tasks during `projio sync`.
+
+### `automation.index`
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `on_sync` | bool | `false` | Run `indexio_build(update=True)` during `projio sync` to rebuild stale sources |
+| `background` | bool | `true` | Run the index rebuild in a background process (non-blocking) |
+
+When `on_sync` is `true`, each `projio sync` invocation checks which indexio sources have changed files (by comparing mtime and size against the last build manifest) and only re-indexes those sources. Sources that are up to date are skipped.
+
+The CLI flags `--index` and `--no-index` override this config for a single invocation.
+
+To automatically rebuild the index after every git commit, run:
+
+```bash
+projio sync --install-hooks
+```
+
+This installs a lightweight `.git/hooks/post-commit` that runs `projio sync --index` in the background.
 
 ## Managed ignores
 

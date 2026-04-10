@@ -22,10 +22,12 @@ extra:
 plugins:
   - search
   - monorepo
+  - ezlinks
 
 markdown_extensions:
   - admonition
   - attr_list
+  - pymdownx.details
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
@@ -33,6 +35,9 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
   - toc:
       permalink: true
+
+extra_css:
+  - stylesheets/cards.css
 
 extra_javascript:
   - https://unpkg.com/mermaid@10/dist/mermaid.min.js
@@ -86,6 +91,7 @@ nav:
           - Contracts: specs/pipeio/contracts.md
           - CLI: specs/pipeio/cli.md
           - MCP Tools: specs/pipeio/mcp-tools.md
+      - Deliverables: specs/deliverables.md
       - Research Orchestration (Questio):
           - specs/research-orchestration/design.md
           - Loop Mechanisms: specs/research-orchestration/loop-mechanisms.md

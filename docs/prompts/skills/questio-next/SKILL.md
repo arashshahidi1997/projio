@@ -1,7 +1,18 @@
 ---
 name: questio-next
-description: "Recommend highest-impact research work based on questio status and evidence gaps"
-tools: [questio_status, questio_gap, pipeio_flow_status]
+description: >
+  Recommend highest-impact research work based on questio status, evidence
+  gaps, dependency depth, and pipeline readiness.
+metadata:
+  short-description: recommend highest-impact unblocked research work
+  tags: [questio, planning, research, prioritization]
+  tooling:
+    mcp:
+      - server: projio
+        tools:
+          - questio_status
+          - questio_gap
+          - pipeio_flow_status
 ---
 
 # Questio Next
@@ -88,7 +99,7 @@ data, or reviewing literature for alternative approaches).
 - Never recommend work that has unresolved dependency blockers without
   flagging them explicitly.
 - Always check pipeline readiness before recommending execution work.
-- If the project has no `docs/plan/questions.yml`, tell the user to set up the
+- If the project has no `plan/questions.yml`, tell the user to set up the
   questio data model first.
 - Do not recommend manuscript writing unless explicitly asked — use the
   `questio-ready` workflow for that.

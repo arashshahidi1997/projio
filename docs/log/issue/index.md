@@ -1,156 +1,82 @@
 # Issue
 
-## done
+## open (55)
 
-[**Monorepo `**](issue-arash-20260407-205536-605319.md){ .note-card-title }
+[**pipeio_docs_collect produces duplicate notebook HTMLs alongside pipeio_nb_pub**](issue-arash-20260410-152106-067627.md){ .note-card-title }
 
-<small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
-
----
-
-[**Monorepo `**](issue-arash-20260407-205521-274925.md){ .note-card-title }
-
-<small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
+<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**Move runtime env configuration into**](issue-arash-20260407-162859-574826.md){ .note-card-title }
+[**Retro skill should offer to dispatch follow-up tasks**](issue-arash-20260410-150323-441517.md){ .note-card-title }
 
-<small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
-
----
-
-[**pipeio_nb_exec: python_bin as string breaks subprocess**](issue-arash-20260407-040507-512890.md){ .note-card-title }
-
-<small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
+<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**pipeio_nb_exec: add kernel/env option and fix papermill resolution**](issue-arash-20260407-033705-872924.md){ .note-card-title }
+[**pipeio_flow_new should auto-register flow (or prompt for registry_scan)**](issue-arash-20260410-145955-796957.md){ .note-card-title }
 
-<small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
-
----
-
-[**Study: biblio-glutton — high-performance bibliographic matching for reference**](issue-arash-20260404-021642-474901.md){ .note-card-title }
-
-<small>**created:** 2026-04-04 · **status:** done · **confidence:** 1.0</small>
+<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**Study: Unpaywall/oadoi internals — improve biblio's OA PDF cascade**](issue-arash-20260404-021628-584751.md){ .note-card-title }
+[**pipeio_dag_export SVG: dot binary permission/PATH issues after install**](issue-arash-20260410-142442-901446.md){ .note-card-title }
 
-<small>**created:** 2026-04-04 · **status:** done · **confidence:** 1.0</small>
-
----
-
-[**Spec: GROBID citation context — beyond simple citation networks**](issue-arash-20260404-021609-691872.md){ .note-card-title }
-
-<small>**created:** 2026-04-04 · **status:** done · **confidence:** 1.0</small>
+<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**Implement: biblio GUI — OpenAlex outbound links in corpus table**](issue-arash-20260403-210033-704498.md){ .note-card-title }
+[**pipeio_dag_export SVG fails with Permission denied on dot**](issue-arash-20260410-134708-801684.md){ .note-card-title }
 
-<small>**created:** 2026-04-03 · **status:** done · **confidence:** 1.0</small>
-
----
-
-[**Spec: biblio ↔ Zotero integration model**](issue-arash-20260403-201609-055675.md){ .note-card-title }
-
-<small>**created:** 2026-04-03 · **status:** done · **confidence:** 1.0</small>
+<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**Spec: biblio enrichment pipeline redesign**](issue-arash-20260403-193112-105596.md){ .note-card-title }
+[**`_work_to_minimal()` in openalex_resolve**](issue-arash-20260410-034308-266853.md){ .note-card-title }
 
-<small>**created:** 2026-04-03 · **status:** done · **confidence:** 1.0</small>
-
----
-
-[**Audit: biblio concept tagging vs OpenAlex topic classification — overlap anal**](issue-arash-20260403-193037-589959.md){ .note-card-title }
-
-<small>**created:** 2026-04-03 · **status:** done · **confidence:** 1.0</small>
+<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**Audit: biblio OpenAlex API usage vs actual API capabilities**](issue-arash-20260403-193002-484673.md){ .note-card-title }
+[**biblio_extract: YAML parsing fails when LLM output contains colons in summary**](issue-arash-20260410-015122-436271.md){ .note-card-title }
 
-<small>**created:** 2026-04-03 · **status:** done · **confidence:** 1.0</small>
-
----
-
-[**Update agent-safety**](issue-arash-20260331-172325-785765.md){ .note-card-title }
-
-<small>**created:** 2026-03-31 · **status:** done · **confidence:** 1.0</small>
+<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**Update CLI reference docs — 4 subcommands missing**](issue-arash-20260331-172307-095605.md){ .note-card-title }
+[**Citekey generation mangles diacritics in author names**](issue-arash-20260409-231703-392876.md){ .note-card-title }
 
-<small>**created:** 2026-03-31 · **status:** done · **confidence:** 1.0</small>
-
----
-
-[**Update MCP tools reference docs — 61 of 95 tools undocumented**](issue-arash-20260331-172245-820267.md){ .note-card-title }
-
-<small>**created:** 2026-03-31 · **status:** done · **confidence:** 1.0</small>
+<small>**created:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**Implement notio reindex — generate/update index**](issue-arash-20260326-232746-941302.md){ .note-card-title }
+[**`biblio_pdf_fetch_oa` reports "html_fallback: 15" but downloads 0 files**](issue-arash-20260409-231641-242830.md){ .note-card-title }
 
-<small>**created:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
-
----
-
-[**pipeio_mod_resolve: fill doc_path gap and add modkey**](issue-arash-20260326-191057-730671.md){ .note-card-title }
-
-<small>**created:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
+<small>**created:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**MCP tools missing for index setup and source registration**](issue-arash-20260326-174001-720656.md){ .note-card-title }
+[**`biblio_enrich` silently returns 0 when resolution is missing**](issue-arash-20260409-231618-516346.md){ .note-card-title }
 
-<small>**created:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
-
----
-
-## open
-
-[**Add pipeio**](issue-arash-20260408-191633-549705.md){ .note-card-title }
-
-<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
+<small>**created:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**pipeio docs_collect: scripts**](issue-arash-20260408-042020-224344.md){ .note-card-title }
+[**Missing MCP tool: `biblio_openalex_resolve`**](issue-arash-20260409-231546-838942.md){ .note-card-title }
 
-<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**pipeio docs_collect: mod docs collected but not included in nav YAML**](issue-arash-20260408-041954-573205.md){ .note-card-title }
-
-<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
+<small>**created:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**pipeio docs_collect: no index**](issue-arash-20260408-041929-434391.md){ .note-card-title }
+[**questio docs_collect: cross-sub-site relative links break in monorepo layout**](issue-arash-20260409-175820-024269.md){ .note-card-title }
 
-<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**pipeio docs_collect: index**](issue-arash-20260408-041909-523276.md){ .note-card-title }
-
-<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
+<small>**created:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**pipeio registry_scan: has_docs always false despite flow-local docs/ existing**](issue-arash-20260408-041843-212992.md){ .note-card-title }
+[**pipeio docs_collect: top-level pipelines index should include architecture me**](issue-arash-20260409-145340-604198.md){ .note-card-title }
 
-<small>**created:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
+<small>**created:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
@@ -406,59 +332,7 @@
 
 ---
 
-## partial
-
-[**Notio manuscript: dual-render master files and mkdocs transclusion setup**](issue-arash-20260402-121445-694073.md){ .note-card-title }
-
-<small>**created:** 2026-04-02 · **status:** partial · **confidence:** 1.0</small>
-
----
-
-## resolved
-
-[**Bug: pipeio_run doesn't pass --configfile or --directory to snakemake**](issue-arash-20260331-130712-185688.md){ .note-card-title }
-
-<small>**created:** 2026-03-31 · **status:** resolved · **confidence:** 1.0</small>
-
----
-
-[**pipeio_run does not activate cogpy conda env — snakemake not found**](issue-arash-20260331-125628-712113.md){ .note-card-title }
-
-<small>**created:** 2026-03-31 · **status:** resolved</small>
-
----
-
-[**Two pipeio bugs discovered during ttl_removal mod creation:**](issue-arash-20260330-031350-558222.md){ .note-card-title }
-
-<small>**created:** 2026-03-30 · **status:** resolved · **confidence:** 1.0</small>
-
----
-
-[**Issue: pipeio_config_patch apply=True destroys YAML comments, anchors, and forma**](issue-arash-20260329-223209-991822.md){ .note-card-title }
-
-<small>**created:** 2026-03-29 · **status:** resolved · **confidence:** 1.0</small>
-
----
-
-[**Bug: projio note_read tool requires `path` param but note_list only returns m**](issue-arash-20260328-011416-121323.md){ .note-card-title }
-
-<small>**created:** 2026-03-28 · **status:** resolved · **confidence:** 1.0</small>
-
----
-
-[**codio: three bugs in `codio_rag_sync` + unclear MCP docs**](issue-arash-20260327-155921-977015.md){ .note-card-title }
-
-<small>**created:** 2026-03-27 · **status:** resolved · **confidence:** 1.0</small>
-
----
-
-[****Feature request: biblio-gui should resolve git-annex symlinks when serving fil**](issue-arash-20260326-142709-728239.md){ .note-card-title }
-
-<small>**created:** 2026-03-26 · **status:** resolved · **confidence:** 1.0</small>
-
----
-
-## scheduled
+## scheduled (1)
 
 [**Add hook scaffolding support to `projio add claude` and a new `projio claude upd**](issue-arash-20260331-171537-647473.md){ .note-card-title }
 
@@ -466,3 +340,285 @@
 
 ---
 
+## partial (1)
+
+[**Notio manuscript: dual-render master files and mkdocs transclusion setup**](issue-arash-20260402-121445-694073.md){ .note-card-title }
+
+<small>**created:** 2026-04-02 · **status:** partial · **confidence:** 1.0</small>
+
+---
+
+??? note "done (20)"
+
+    [**Create pipeio-flow-create skill and pixecog-flow-setup skill**](issue-arash-20260410-150432-267829.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-10 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Monorepo `**](issue-arash-20260407-205536-605319.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Monorepo `**](issue-arash-20260407-205521-274925.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Move runtime env configuration into**](issue-arash-20260407-162859-574826.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio_nb_exec: python_bin as string breaks subprocess**](issue-arash-20260407-040507-512890.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio_nb_exec: add kernel/env option and fix papermill resolution**](issue-arash-20260407-033705-872924.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Study: biblio-glutton — high-performance bibliographic matching for reference**](issue-arash-20260404-021642-474901.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-04 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Study: Unpaywall/oadoi internals — improve biblio's OA PDF cascade**](issue-arash-20260404-021628-584751.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-04 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Spec: GROBID citation context — beyond simple citation networks**](issue-arash-20260404-021609-691872.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-04 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Implement: biblio GUI — OpenAlex outbound links in corpus table**](issue-arash-20260403-210033-704498.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-03 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Spec: biblio ↔ Zotero integration model**](issue-arash-20260403-201609-055675.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-03 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Spec: biblio enrichment pipeline redesign**](issue-arash-20260403-193112-105596.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-03 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Audit: biblio concept tagging vs OpenAlex topic classification — overlap anal**](issue-arash-20260403-193037-589959.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-03 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Audit: biblio OpenAlex API usage vs actual API capabilities**](issue-arash-20260403-193002-484673.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-03 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Update agent-safety**](issue-arash-20260331-172325-785765.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-31 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Update CLI reference docs — 4 subcommands missing**](issue-arash-20260331-172307-095605.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-31 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Update MCP tools reference docs — 61 of 95 tools undocumented**](issue-arash-20260331-172245-820267.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-31 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Implement notio reindex — generate/update index**](issue-arash-20260326-232746-941302.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio_mod_resolve: fill doc_path gap and add modkey**](issue-arash-20260326-191057-730671.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**MCP tools missing for index setup and source registration**](issue-arash-20260326-174001-720656.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+??? note "resolved (25)"
+
+    [**pipeio_nb_exec output convention unclear — `_executed**](issue-arash-20260410-000908-908952.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-10 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio_nb_update cannot move notebooks between flows**](issue-arash-20260410-000346-439918.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-10 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio_run passes unrecognized --filter-* flags to snakemake**](issue-arash-20260409-232128-727233.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio_run_status crashes with `name 'pipe' is not defined`**](issue-arash-20260409-232102-577698.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio_nb_exec runs papermill from MCP server env, not notebook kernel env**](issue-arash-20260409-232034-115590.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio docs: two navigation/embedding issues**](issue-arash-20260409-202912-445526.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**questio docs_collect generates both README**](issue-arash-20260409-170135-349173.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio docs_collect generates bare directory links instead of dir/index**](issue-arash-20260409-163158-458231.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**questio docs_collect generates wrong relative path depth and missing**](issue-arash-20260409-163119-529002.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**notio note_resolve generates malformed cross-references (missing dot before**](issue-arash-20260409-163040-853469.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio docs_collect does not collect overview**](issue-arash-20260409-135103-976167.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**note_create MCP tool requires 3 round-trips for agent use: create empty template**](issue-arash-20260409-034440-983440.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Add pipeio**](issue-arash-20260408-191633-549705.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-08 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio docs_collect: scripts**](issue-arash-20260408-042020-224344.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-08 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio docs_collect: mod docs collected but not included in nav YAML**](issue-arash-20260408-041954-573205.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-08 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio docs_collect: no index**](issue-arash-20260408-041929-434391.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-08 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio docs_collect: index**](issue-arash-20260408-041909-523276.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-08 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio registry_scan: has_docs always false despite flow-local docs/ existing**](issue-arash-20260408-041843-212992.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-08 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Bug: pipeio_run doesn't pass --configfile or --directory to snakemake**](issue-arash-20260331-130712-185688.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-31 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio_run does not activate cogpy conda env — snakemake not found**](issue-arash-20260331-125628-712113.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-31 · **status:** resolved</small>
+    
+    ---
+    
+    [**Two pipeio bugs discovered during ttl_removal mod creation:**](issue-arash-20260330-031350-558222.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-30 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Issue: pipeio_config_patch apply=True destroys YAML comments, anchors, and forma**](issue-arash-20260329-223209-991822.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-29 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Bug: projio note_read tool requires `path` param but note_list only returns m**](issue-arash-20260328-011416-121323.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-28 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**codio: three bugs in `codio_rag_sync` + unclear MCP docs**](issue-arash-20260327-155921-977015.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-27 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [****Feature request: biblio-gui should resolve git-annex symlinks when serving fil**](issue-arash-20260326-142709-728239.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-26 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    

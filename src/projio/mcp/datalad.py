@@ -13,20 +13,32 @@ def _conda_wrap(binary: str) -> list[str] | None:
     """If *binary* lives inside a conda env, return ``conda run -n <env> <name>``.
 
     Returns ``None`` when the binary is not inside a recognisable conda env.
+    Supports both Unix (``envs/<env>/bin/<cmd>``) and Windows
+    (``envs\\<env>\\Scripts\\<cmd>.exe``) layouts.
     """
     import re as _re
-    m = _re.search(r"/envs/([^/]+)/bin/([^/]+)$", binary)
+    import shutil
+    from pathlib import Path
+
+    # Match Unix or Windows conda env layout
+    m = _re.search(
+        r"[/\\]envs[/\\]([^/\\]+)[/\\](?:bin|Scripts)[/\\]([^/\\]+?)(?:\.exe)?$",
+        binary,
+    )
     if not m:
         return None
     env_name = m.group(1)
     cmd_name = m.group(2)
-    # Find the conda binary relative to the envs dir
-    envs_dir = binary[: m.start() + len("/envs/") - len("/envs/")]
-    for candidate in ("condabin/conda", "bin/conda"):
-        conda_bin = f"{envs_dir}/{candidate}"
-        from pathlib import Path
-        if Path(conda_bin).is_file():
-            return [conda_bin, "run", "-n", env_name, cmd_name]
+
+    # Find conda: first relative to the envs dir, then on PATH
+    envs_dir = Path(binary[: m.start()])
+    for candidate in ("condabin/conda", "bin/conda", "condabin/conda.bat"):
+        conda_bin = envs_dir / candidate
+        if conda_bin.is_file():
+            return [str(conda_bin), "run", "-n", env_name, cmd_name]
+    conda_bin_path = shutil.which("conda")
+    if conda_bin_path:
+        return [conda_bin_path, "run", "-n", env_name, cmd_name]
     return None
 
 

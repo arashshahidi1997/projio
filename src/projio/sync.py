@@ -331,6 +331,10 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
     )
     has_log = (root / "docs" / "log").is_dir()
     has_manuscript = (root / "docs" / "manuscript").is_dir()
+    has_plan = (
+        (root / "plan" / "questions.yml").exists()
+        or (root / "plan" / "milestones.yml").exists()
+    )
 
     # Discover master doc sections (docs/*/master.md, excluding managed dirs)
     master_sections: list[str] = []
@@ -344,7 +348,7 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
     except Exception:
         pass
 
-    if not (has_pipeio or has_log or has_manuscript or master_sections):
+    if not (has_pipeio or has_log or has_manuscript or has_plan or master_sections):
         return {"action": "skipped", "reason": "no subsystems with docs"}
 
     text = mkdocs_path.read_text(encoding="utf-8")
@@ -368,10 +372,50 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
                 text += "\nplugins:\n  - search\n  - monorepo\n"
         changed = True
 
+    # --- Ensure ezlinks in plugins ---
+    if "ezlinks" not in text:
+        text = re.sub(
+            r"(^plugins:\n(?:  - .+\n)*)",
+            r"\g<1>  - ezlinks\n",
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        changed = True
+
+    # --- Ensure bibtex in plugins (when bibliography exists) ---
+    has_bib = (
+        (root / ".projio" / "render" / "compiled.bib").exists()
+        or (root / ".projio" / "render.yml").exists()
+    )
+    if has_bib and "bibtex" not in text:
+        from projio.render import RenderConfig, RENDER_CONFIG_PATH
+        render_yml = root / RENDER_CONFIG_PATH
+        if render_yml.exists():
+            render_cfg = RenderConfig.from_dict(
+                yaml.safe_load(render_yml.read_text(encoding="utf-8")) or {},
+            )
+        else:
+            render_cfg = RenderConfig()
+        bib_path = render_cfg.bibliography
+        bibtex_block = (
+            f"  - bibtex:\n"
+            f"      bib_file: {bib_path}\n"
+        )
+        text = re.sub(
+            r"(^plugins:\n(?:  - .+\n)*)",
+            r"\g<1>" + bibtex_block,
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        changed = True
+
     # --- Ensure !include lines in nav ---
     # Fixed subsystems: (label, include path, detection flag, insert-before hint)
     includes: list[tuple[str, str, bool, str | None]] = [
         ("Pipelines", "docs/pipelines/mkdocs.yml", has_pipeio, "Log"),
+        ("Plan", "docs/plan/mkdocs.yml", has_plan, "Log"),
         ("Manuscript", "docs/manuscript/mkdocs.yml", has_manuscript, "Log"),
     ]
     # Master doc sections (inserted before Log)
@@ -586,11 +630,61 @@ def _sync_vscode_settings(root: Path, render_cfg: Any, *, dry_run: bool = False)
     return {"action": "updated"}
 
 
+def _sync_agent_configs(root: Path, *, dry_run: bool = False) -> dict[str, dict[str, Any]]:
+    """Regenerate MCP configs for enabled agent packages (codex, copilot).
+
+    Checks packages.yml for ``codex.enabled`` / ``copilot.enabled`` and
+    regenerates their config files using the current server definitions.
+    """
+    from .config import load_effective_config, get_nested
+
+    results: dict[str, dict[str, Any]] = {}
+    packages_path = root / ".projio" / "packages.yml"
+    if not packages_path.exists():
+        return results
+
+    try:
+        import yaml
+        data = yaml.safe_load(packages_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return results
+
+    packages = data.get("packages", {})
+
+    # Resolve python binary (same logic as CLI mcp-config)
+    try:
+        cfg = load_effective_config(root)
+    except FileNotFoundError:
+        cfg = {}
+    python_bin = get_nested(cfg, "runtime", "projio_python", default=None) or \
+                 get_nested(cfg, "runtime", "python_bin", default=None)
+
+    # Codex
+    if packages.get("codex", {}).get("enabled"):
+        try:
+            from .mcp.config_gen import write_codex_config
+            write_codex_config(root, python_bin=python_bin, dry_run=dry_run)
+            results["codex"] = {"action": "would_update" if dry_run else "updated"}
+        except Exception as exc:
+            results["codex"] = {"action": "error", "reason": str(exc)}
+
+    # Copilot
+    if packages.get("copilot", {}).get("enabled"):
+        try:
+            from .mcp.config_gen import write_copilot_config
+            write_copilot_config(root, python_bin=python_bin, dry_run=dry_run)
+            results["copilot"] = {"action": "would_update" if dry_run else "updated"}
+        except Exception as exc:
+            results["copilot"] = {"action": "error", "reason": str(exc)}
+
+    return results
+
+
 def _sync_questio_docs(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
-    """Regenerate questio plan docs if docs/plan/questions.yml exists."""
-    questions_path = root / "docs" / "plan" / "questions.yml"
+    """Regenerate questio plan docs if plan/questions.yml exists."""
+    questions_path = root / "plan" / "questions.yml"
     if not questions_path.exists():
-        return {"action": "skipped", "reason": "no docs/plan/questions.yml"}
+        return {"action": "skipped", "reason": "no plan/questions.yml"}
     if dry_run:
         return {"action": "would_generate"}
     try:
@@ -603,7 +697,186 @@ def _sync_questio_docs(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
         return {"action": "error", "reason": str(exc)}
 
 
-def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]:
+_CLAUDE_CMD_HEADER = "<!-- projio:skill-sync — regenerated by projio sync -->\n"
+
+
+def _sync_claude_commands(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
+    """Generate .claude/commands/ wrappers for projio skills.
+
+    Discovers project and ecosystem skills via the same logic as skill_read(),
+    then writes a thin command file for each so they appear as /slash-commands
+    in Claude Code.  Stale command files (previously generated but no longer
+    matching a skill) are removed.
+    """
+    import os
+
+    old_root = os.environ.get("PROJIO_ROOT")
+    os.environ["PROJIO_ROOT"] = str(root)
+    try:
+        from projio.mcp.context import _discover_skills
+        skills = _discover_skills(root)
+    finally:
+        if old_root is None:
+            os.environ.pop("PROJIO_ROOT", None)
+        else:
+            os.environ["PROJIO_ROOT"] = old_root
+
+    if not skills:
+        return {"action": "skipped", "reason": "no skills found"}
+
+    cmd_dir = root / ".claude" / "commands"
+
+    # Identify existing projio-managed command files
+    existing_managed: set[str] = set()
+    if cmd_dir.is_dir():
+        for f in cmd_dir.iterdir():
+            if f.suffix == ".md" and f.is_file():
+                try:
+                    head = f.read_text(encoding="utf-8")[:len(_CLAUDE_CMD_HEADER)]
+                    if head == _CLAUDE_CMD_HEADER:
+                        existing_managed.add(f.stem)
+                except OSError:
+                    pass
+
+    written: list[str] = []
+    removed: list[str] = []
+
+    if not dry_run:
+        cmd_dir.mkdir(parents=True, exist_ok=True)
+
+    desired_names: set[str] = set()
+    for skill in skills:
+        name = skill["name"]
+        desired_names.add(name)
+        cmd_path = cmd_dir / f"{name}.md"
+        content = (
+            _CLAUDE_CMD_HEADER
+            + f"\n"
+            f"Load the projio skill **{name}** and follow its instructions.\n"
+            f"\n"
+            f'Call the MCP tool `skill_read` with name="{name}", read the returned\n'
+            f"content carefully, then execute the skill workflow. Pass the user's\n"
+            f"input below as the task context.\n"
+            f"\n"
+            f"User input: $ARGUMENTS\n"
+        )
+        if cmd_path.exists():
+            try:
+                if cmd_path.read_text(encoding="utf-8") == content:
+                    continue  # up to date
+            except OSError:
+                pass
+        if dry_run:
+            written.append(name)
+            continue
+        cmd_path.write_text(content, encoding="utf-8")
+        written.append(name)
+
+    # Remove stale managed files (skill was removed/renamed)
+    stale = existing_managed - desired_names
+    for name in sorted(stale):
+        stale_path = cmd_dir / f"{name}.md"
+        if stale_path.exists():
+            if not dry_run:
+                stale_path.unlink()
+            removed.append(name)
+
+    action = "would_update" if dry_run else "updated"
+    if not written and not removed:
+        action = "skipped"
+        return {"action": action, "reason": "all commands up to date"}
+    return {"action": action, "written": written, "removed": removed, "total": len(desired_names)}
+
+
+_PROJIO_HOOK_MARKER = "# projio-managed"
+
+
+def _install_git_hooks(root: Path, *, dry_run: bool = False) -> dict[str, str]:
+    """Install a projio-managed post-commit hook that runs ``projio sync --index``.
+
+    Only writes if the hook doesn't exist or is already projio-managed.
+    On Windows (outside WSL), hooks are skipped — use WSL for full support.
+    """
+    import sys
+
+    if sys.platform == "win32":
+        return {"action": "skipped", "reason": "git hooks not supported on Windows (use WSL)"}
+
+    hook_path = root / ".git" / "hooks" / "post-commit"
+
+    hook_content = f"""\
+#!/bin/sh
+{_PROJIO_HOOK_MARKER}
+# Auto-rebuild stale indexio sources after commit
+projio sync --index -C "$(git rev-parse --show-toplevel)" &
+"""
+
+    if hook_path.exists():
+        existing = hook_path.read_text(encoding="utf-8")
+        if _PROJIO_HOOK_MARKER not in existing:
+            return {"action": "skipped", "reason": "existing non-projio hook"}
+        if existing == hook_content:
+            return {"action": "skipped", "reason": "up to date"}
+        if dry_run:
+            return {"action": "would_update"}
+        hook_path.write_text(hook_content, encoding="utf-8")
+        hook_path.chmod(0o755)
+        return {"action": "updated"}
+
+    if dry_run:
+        return {"action": "would_install"}
+    hook_path.parent.mkdir(parents=True, exist_ok=True)
+    hook_path.write_text(hook_content, encoding="utf-8")
+    hook_path.chmod(0o755)
+    return {"action": "installed"}
+
+
+def _sync_index_rebuild(
+    root: Path, cfg: dict[str, Any], *, force: bool = False, dry_run: bool = False,
+) -> dict[str, Any]:
+    """Incrementally rebuild stale indexio sources.
+
+    Args:
+        root: Project root.
+        cfg: Effective projio config.
+        force: If True, rebuild regardless of ``automation.index.on_sync`` config.
+        dry_run: If True, report what would happen without rebuilding.
+    """
+    indexio_cfg = cfg.get("indexio", {}) or {}
+    if not indexio_cfg.get("config"):
+        return {"action": "skipped", "reason": "indexio not configured"}
+
+    auto_cfg = (cfg.get("automation", {}) or {}).get("index", {}) or {}
+    if not force and not auto_cfg.get("on_sync", False):
+        return {"action": "skipped", "reason": "automation.index.on_sync not enabled"}
+
+    background = auto_cfg.get("background", True)
+
+    try:
+        import os
+        os.environ.setdefault("PROJIO_ROOT", str(root))
+        from projio.mcp.rag import _resolve_update_sources, indexio_build
+    except ImportError:
+        return {"action": "skipped", "reason": "indexio not installed"}
+
+    if dry_run:
+        try:
+            stale = _resolve_update_sources()
+        except Exception:
+            stale = []
+        if stale:
+            return {"action": "would_rebuild", "stale_sources": stale}
+        return {"action": "skipped", "reason": "all sources up to date"}
+
+    try:
+        result = indexio_build(update=True, background=background)
+    except Exception as exc:
+        return {"action": "error", "reason": str(exc)}
+
+    return {"action": "rebuilt", "result": result}
+
+
+def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | None = None, install_hooks: bool = False) -> dict[str, Any]:
     """Run all sync operations on a projio workspace.
 
     1. Discover code/lib/*/ → register in codio with role=core
@@ -615,11 +888,17 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
     7. Regenerate projio.mk
     8. Ensure mkdocs.yml has monorepo plugin + pipeio !include
     9. Sync VS Code settings (PandocCiter + watcher excludes) via managed block
-    10. Regenerate questio plan docs if docs/plan/questions.yml exists
+    10. Sync agent MCP configs (codex, copilot)
+    11. Generate .claude/commands/ from projio skills
+    12. Regenerate questio plan docs if plan/questions.yml exists
+    13. Incrementally rebuild stale indexio sources (if --index or config)
+    14. Install git hooks (if --install-hooks)
 
     Args:
         root: Project root directory.
         dry_run: If True, show what would change without writing.
+        index: If True, force index rebuild; if False, skip; if None, check config.
+        install_hooks: If True, install projio-managed git hooks.
 
     Returns:
         Summary of actions taken.
@@ -730,13 +1009,79 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
         if "no .vscode" in reason:
             print(f"[!] {reason} — PandocCiter autocompletion won't work without it")
 
-    # 10. Regenerate questio plan docs if questions.yml exists
+    # 10. Sync agent MCP configs (codex, copilot) if enabled in packages.yml
+    agent_actions = _sync_agent_configs(root_path, dry_run=dry_run)
+    for agent_name, action in agent_actions.items():
+        if action["action"] in ("updated", "would_update"):
+            print(f"{prefix}[~] {agent_name}: MCP config regenerated")
+        elif action["action"] == "error":
+            print(f"[!] {agent_name}: {action.get('reason', '')}")
+
+    # 11. Generate .claude/commands/ from projio skills
+    cmd_action = _sync_claude_commands(root_path, dry_run=dry_run)
+    if cmd_action["action"] in ("updated", "would_update"):
+        written = cmd_action.get("written", [])
+        removed = cmd_action.get("removed", [])
+        total = cmd_action.get("total", 0)
+        parts = []
+        if written:
+            parts.append(f"{len(written)} written")
+        if removed:
+            parts.append(f"{len(removed)} removed")
+        print(f"{prefix}[+] .claude/commands/: {', '.join(parts)} ({total} skills total)")
+    elif cmd_action["action"] == "skipped":
+        reason = cmd_action.get("reason", "")
+        if reason != "no skills found" and reason != "all commands up to date":
+            print(f"[=] .claude/commands/: {reason}")
+
+    # 12. Regenerate questio plan docs if questions.yml exists
     questio_action = _sync_questio_docs(root_path, dry_run=dry_run)
     if questio_action["action"] in ("generated", "would_generate"):
         count = questio_action.get("files", 0)
         print(f"{prefix}[+] questio: regenerated {count} plan docs")
     elif questio_action["action"] == "skipped":
         pass  # silent if no questions.yml
+
+    # 13. Incrementally rebuild stale indexio sources
+    try:
+        from projio.init import load_projio_config
+        cfg = load_projio_config(root_path)
+    except FileNotFoundError:
+        cfg = {}
+    index_force = index if index is not None else False
+    index_action = _sync_index_rebuild(root_path, cfg, force=index_force, dry_run=dry_run)
+    if index_action["action"] == "rebuilt":
+        result_data = index_action.get("result", {})
+        if result_data.get("status") == "up_to_date":
+            print(f"[=] indexio: all sources up to date")
+        elif result_data.get("background"):
+            print(f"{prefix}[+] indexio: rebuild started (background, job {result_data.get('job_id', '?')})")
+        else:
+            print(f"{prefix}[+] indexio: index rebuilt")
+    elif index_action["action"] == "would_rebuild":
+        stale = index_action.get("stale_sources", [])
+        print(f"{prefix}[~] indexio: would rebuild {len(stale)} stale source(s): {', '.join(stale)}")
+    elif index_action["action"] == "error":
+        print(f"[!] indexio: {index_action.get('reason', 'unknown error')}")
+    elif index_action["action"] == "skipped":
+        reason = index_action.get("reason", "")
+        if reason not in ("indexio not configured", "automation.index.on_sync not enabled"):
+            print(f"[=] indexio: {reason}")
+
+    # 14. Install git hooks if requested
+    hooks_action: dict[str, str] = {"action": "skipped", "reason": "not requested"}
+    if install_hooks:
+        hooks_action = _install_git_hooks(root_path, dry_run=dry_run)
+        if hooks_action["action"] in ("installed", "would_install"):
+            print(f"{prefix}[+] git hook: post-commit installed")
+        elif hooks_action["action"] in ("updated", "would_update"):
+            print(f"{prefix}[~] git hook: post-commit updated")
+        elif hooks_action["action"] == "skipped":
+            reason = hooks_action.get("reason", "")
+            if "non-projio" in reason:
+                print(f"[!] git hook: skipped (existing non-projio post-commit hook)")
+            elif reason != "up to date":
+                print(f"[=] git hook: {reason}")
 
     return {
         "libraries": lib_actions,
@@ -748,5 +1093,9 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False) -> dict[str, Any]
         "projio_mk": mk_action,
         "mkdocs": mkdocs_action,
         "vscode": vscode_action,
+        "agents": agent_actions,
+        "claude_commands": cmd_action,
         "questio": questio_action,
+        "index": index_action,
+        "hooks": hooks_action,
     }

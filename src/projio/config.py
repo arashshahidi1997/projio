@@ -20,18 +20,18 @@ helpers:
       sibling: gitlab
       credential: gitlab
       project_template: "{project_name}"
-    ria:
-      sibling: origin
-      alias_strategy: basename
-      storage_url: ria+file:///storage/share/git/ria-store
-      shared: group
+    # ria:
+    #   sibling: origin
+    #   alias_strategy: basename
+    #   storage_url: ria+file:///path/to/ria-store
+    #   shared: group
 
 # claude code permissions (synced to .claude/settings.json)
 # claude:
 #   extra_permissions:
-#     - "Read(/storage/share/codelib/**)"
+#     - "Read(/path/to/shared/codelib/**)"
 #   extra_mcp_wildcards:
-#     - "mcp__sirocampus__*"
+#     - "mcp__myserver__*"
 """
 
 
@@ -105,7 +105,7 @@ def resolve_env_python(
 
     Args:
         root: Project root directory.
-        purpose: Environment purpose key (``default``, ``docs``, ``rag``,
+        purpose: Environment purpose key (``default``, ``docs``, ``projio``,
             ``datalad``).
         binary: Binary name to resolve inside the env (default ``python``).
     """
@@ -121,7 +121,10 @@ def resolve_env_python(
     if not env_name or not conda_prefix:
         return None
 
-    path = Path(conda_prefix) / "envs" / env_name / "bin" / binary
+    import sys
+    # Unix: envs/<name>/bin/<binary>; Windows: envs/<name>/Scripts/<binary>.exe
+    bin_dir = "Scripts" if sys.platform == "win32" else "bin"
+    path = Path(conda_prefix) / "envs" / env_name / bin_dir / binary
     return str(path)
 
 
@@ -129,12 +132,18 @@ def resolve_env_all(root: str | Path) -> dict[str, str | None]:
     """Resolve all standard env binaries from ``code.envs`` config.
 
     Returns a dict with keys: ``python``, ``projio``, ``docs``, ``datalad``,
-    ``pandoc``.  Values are absolute paths or ``None`` if not configured.
+    ``pandoc``, ``matlab``.  Values are absolute paths or ``None`` if not
+    configured.
+
+    Fallback: ``projio`` and ``docs`` share the same requirements (projio +
+    mkdocs), so each falls back to the other when not explicitly set.
     """
+    projio = resolve_env_python(root, "projio") or resolve_env_python(root, "docs")
+    docs = resolve_env_python(root, "docs") or resolve_env_python(root, "projio")
     return {
         "python": resolve_env_python(root, "default"),
-        "projio": resolve_env_python(root, "rag"),
-        "docs": resolve_env_python(root, "docs"),
+        "projio": projio,
+        "docs": docs,
         "datalad": resolve_env_python(root, "datalad", binary="datalad"),
         "pandoc": resolve_env_python(root, "datalad", binary="pandoc"),
         "matlab": resolve_env_python(root, "matlab", binary="matlab"),

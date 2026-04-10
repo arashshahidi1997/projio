@@ -49,8 +49,8 @@ questio_status()
 ```
 
 Verify that:
-- The question ID(s) exist in `docs/plan/questions.yml`
-- The milestone ID exists in `docs/plan/milestones.yml`
+- The question ID(s) exist in `plan/questions.yml`
+- The milestone ID exists in `plan/milestones.yml`
 
 If an ID doesn't exist, tell the user and ask for correction. Do not create
 result notes with invalid references.
@@ -96,7 +96,7 @@ confidence: preliminary
 
 ### 4) Update milestone evidence
 
-Read `docs/plan/milestones.yml` and add the result note's filename (stem) to
+Read `plan/milestones.yml` and add the result note's filename (stem) to
 the milestone's `evidence` list:
 
 ```yaml
@@ -119,7 +119,7 @@ evidence to be considered complete:
 If sufficient:
 - Ask the user: "Milestone `<id>` now appears to have sufficient evidence.
   Should I update its status to `complete`?"
-- If approved, update `status: complete` in `docs/plan/milestones.yml`
+- If approved, update `status: complete` in `plan/milestones.yml`
 - Check if this completion unblocks any downstream milestones
 
 If not yet sufficient:
@@ -206,7 +206,7 @@ don't reference them.
 - Always ask for confirmation before changing a milestone status to `complete`.
 - Result notes must have a `metric` and `value` — qualitative-only results
   use `metric: qualitative` with `confidence: preliminary`.
-- Never modify `docs/plan/questions.yml` — only `docs/plan/milestones.yml`
+- Never modify `plan/questions.yml` — only `plan/milestones.yml`
   is updated by this skill (evidence list and status).
 - Always call `questio_docs_collect()` after creating a result note.
 - Never call `questio_docs_collect()` after creating an observation note.

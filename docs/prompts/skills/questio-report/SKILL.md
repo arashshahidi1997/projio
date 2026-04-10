@@ -1,18 +1,34 @@
 ---
 name: questio-report
-description: "Generate a supervisor-ready progress summary with milestones, results, blockers, and next steps"
-tools: [questio_status, note_search, pipeio_flow_status]
+description: >
+  Generate a supervisor-ready progress summary with milestones hit, key
+  results, blockers, and next steps. Persists the report to
+  docs/deliverables/reports/ for sharing and archival.
+metadata:
+  short-description: supervisor-ready research progress summary
+  tags: [questio, report, research, progress, deliverables]
+  tooling:
+    mcp:
+      - server: projio
+        tools:
+          - questio_status
+          - questio_docs_collect
+          - note_search
+          - pipeio_flow_status
 ---
 
 # Questio Report
 
-Use this skill to generate a concise, supervisor-ready progress summary.
-Suitable for weekly updates, session wrap-ups, or on-demand status checks.
+Use this skill to generate a concise, supervisor-ready progress summary and
+persist it to `docs/deliverables/reports/`. Suitable for weekly updates,
+session wrap-ups, or on-demand status checks.
 
 ## Inputs
 
 - `PERIOD` (optional): time window for recent activity. Default: `7d` (last
   7 days). Accepts: `1d`, `7d`, `14d`, `30d`.
+- `AUDIENCE` (optional): who the report is for. Default: `supervisor`.
+  Accepts: `supervisor`, `team`, `conference`, `public`.
 
 ## Workflow
 
@@ -71,7 +87,7 @@ If no timelines are tracked, skip this section.
 
 ### 7) Format the report
 
-Output as clean markdown:
+Format the report body as clean markdown:
 
 ```markdown
 # Research Progress Report
@@ -106,6 +122,38 @@ Output as clean markdown:
 <assessment or "On track — no delays identified.">
 ```
 
+### 8) Persist the report
+
+Save the report to `docs/deliverables/reports/`. Create the directory if it
+doesn't exist.
+
+**Filename:** `report-YYYY-MM-DD.md` using today's date. If a report with
+that filename already exists, append a sequence suffix:
+`report-YYYY-MM-DD-2.md`.
+
+**Frontmatter:** prepend YAML frontmatter to the report body:
+
+```yaml
+---
+title: "Research Progress Report — <start_date> to <end_date>"
+date: <today's date>
+type: report
+audience: <AUDIENCE input, default: supervisor>
+period: "<start_date> to <end_date>"
+questions: [<list of question IDs referenced in Key Results>]
+tags: [report, <AUDIENCE>]
+---
+```
+
+### 9) Regenerate deliverables index
+
+```
+questio_docs_collect()
+```
+
+This regenerates the index pages in `docs/deliverables/` so the new report
+appears in the overview.
+
 ## Hard rules
 
 - Keep the report concise — this is for a supervisor who wants a 2-minute read.
@@ -114,5 +162,8 @@ Output as clean markdown:
 - If there are no recent results, say so explicitly — don't pad with filler.
 - Do not include implementation details (code, notebook names, script paths)
   in the report — keep it at the research level.
-- If `docs/plan/questions.yml` doesn't exist, tell the user the project doesn't
+- Always persist the report to `docs/deliverables/reports/` — do not output
+  it only as ephemeral text.
+- Always call `questio_docs_collect()` after persisting the report.
+- If `plan/questions.yml` doesn't exist, tell the user the project doesn't
   have a questio data model set up yet.

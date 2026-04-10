@@ -4,6 +4,21 @@ This tutorial walks through installing the full projio ecosystem, initializing a
 
 By the end you will have a working project with semantic search, bibliography management, structured notes, and code intelligence — all accessible to AI agents via MCP.
 
+## Platform support
+
+| Platform | Support level | Notes |
+|----------|--------------|-------|
+| **Linux** | Full | Primary development platform |
+| **macOS** | Full | Requires Xcode CLI tools for `make` (`xcode-select --install`) |
+| **Windows (WSL)** | Full | Recommended for Windows users — everything works inside WSL |
+| **Windows (native)** | Core | MCP server, search, bibliography, notes, code intelligence, docs, manuscript all work. Pipeline execution (`pipeio run`) and DataLad require WSL. Git hooks are skipped. |
+
+For Windows native, install with `pip` directly (no `make` needed):
+
+```bash
+pip install "projio[all]"
+```
+
 ## Prerequisites
 
 - Python 3.11+
@@ -140,7 +155,7 @@ If your projio ecosystem lives in a specific conda/venv environment, set the bin
 ```yaml
 # ~/.config/projio/config.yml
 runtime:
-  python_bin: /path/to/envs/rag/bin/python
+  python_bin: /path/to/envs/projio/bin/python
 ```
 
 ## Step 5: Configure agent permissions

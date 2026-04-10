@@ -43,8 +43,8 @@ codio   = ["codio-tools>=0.1.1"]
 pipeio  = ["pipeio>=0.1.0", "papermill>=2.4"]
 figio   = ["figio-tools>=0.1.0"]
 all     = ["indexio>=0.1.1", "biblio-tools>=0.1.5", "notio>=0.1.1", "codio-tools>=0.1.1", "pipeio>=0.1.0", "papermill>=2.4", "figio-tools>=0.1.0"]
-docs    = ["mkdocs>=1.6", "mkdocs-material>=9.5", "mkdocs-monorepo-plugin>=1.1"]
-dev     = ["pytest", "twine", "build", "mkdocs>=1.6", "mkdocs-material>=9.5", "mkdocs-monorepo-plugin>=1.1"]
+docs    = ["mkdocs>=1.6", "mkdocs-material>=9.5", "mkdocs-monorepo-plugin>=1.1", "mkdocs-ezlinks-plugin>=0.1.14", "mkdocs-bibtex>=2.16"]
+dev     = ["pytest", "twine", "build", "mkdocs>=1.6", "mkdocs-material>=9.5", "mkdocs-monorepo-plugin>=1.1", "mkdocs-ezlinks-plugin>=0.1.14", "mkdocs-bibtex>=2.16"]
 
 [project.scripts]
 projio = "projio.cli:main"

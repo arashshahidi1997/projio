@@ -1288,6 +1288,45 @@ def pipeio_nb_promote_tool(
     )
 
 
+@server.tool("pipeio_nb_validate")
+def pipeio_nb_validate_tool(
+    flow: str,
+    name: str,
+):
+    """Validate notebook structure. For percent-format: syntax + import isolation check.
+    For marimo: runs marimo check for DAG validation (cycles, undefined names)."""
+    return pipeio.pipeio_nb_validate(flow=flow, name=name)
+
+
+@server.tool("pipeio_nb_watch")
+def pipeio_nb_watch_tool(
+    flow: str,
+    name: str,
+    port: int = 0,
+):
+    """Launch marimo edit --watch for live human oversight of agent edits.
+    Only supported for marimo-format notebooks. Returns URL and PID.
+    For percent-format, use nb_lab instead."""
+    return pipeio.pipeio_nb_watch(flow=flow, name=name, port=port)
+
+
+@server.tool("pipeio_nb_report")
+def pipeio_nb_report_tool(
+    flow: str,
+    name: str,
+    overwrite: bool = False,
+    tags_only: bool = False,
+):
+    """Extract figures, markdown, and text outputs from an executed notebook.
+    Saves figures to {flow}/docs/reports/{name}/ and returns structured payload
+    for the agent to write a curated report. Use overwrite=True to refresh
+    figures after re-execution. Use tags_only=True to extract only tagged cells."""
+    return pipeio.pipeio_nb_report(
+        flow=flow, name=name,
+        overwrite=overwrite, tags_only=tags_only,
+    )
+
+
 @server.tool("pipeio_mod_doc_refresh")
 def pipeio_mod_doc_refresh_tool(
     flow: str,

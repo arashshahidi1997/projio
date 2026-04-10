@@ -7,6 +7,7 @@ MKDOCS  ?= /storage/share/python/environments/Anaconda3/envs/labpy/bin/python -m
 PROJIO  ?= /storage/share/python/environments/Anaconda3/envs/rag/bin/python -m projio
 NOTIO   ?= /storage/share/python/environments/Anaconda3/envs/rag/bin/python -m notio
 PANDOC  ?= /storage/share/python/environments/Anaconda3/envs/labpy/bin/pandoc
+MATLAB  ?= matlab
 PUBLISH ?= /storage2/arash/infra/bin/publish_pypi.sh
 MSG     ?= Update
 

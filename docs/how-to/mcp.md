@@ -26,7 +26,7 @@ If your projio ecosystem is installed in a specific conda environment, set the b
 ```bash
 # ~/.config/projio/config.yml
 runtime:
-  python_bin: /path/to/envs/rag/bin/python
+  python_bin: /path/to/envs/projio/bin/python
 ```
 
 This avoids needing `conda activate` — the MCP server is invoked directly with the correct Python binary.
@@ -41,7 +41,7 @@ If `runtime.python_bin` is not set, `projio mcp-config` falls back to the curren
 {
   "mcpServers": {
     "projio": {
-      "command": "/path/to/envs/rag/bin/python",
+      "command": "/path/to/envs/projio/bin/python",
       "args": ["-m", "projio.mcp.server"],
       "env": { "PROJIO_ROOT": "/absolute/path/to/project" }
     }

@@ -497,6 +497,23 @@ def ecosystem_status() -> JsonDict:
             indexio_status["corpus_count"] = len(cl["corpora"])
     except Exception:
         pass
+    # Staleness detection via status manifest + source snapshots
+    try:
+        from projio.mcp.rag import _resolve_update_sources
+        from indexio.build import load_status_manifest
+        if persist_dir:
+            manifest = load_status_manifest(root / persist_dir)
+            if manifest is not None:
+                indexio_status["built_at"] = manifest.get("built_at", "")
+            stale_sources = _resolve_update_sources()
+            indexio_status["stale"] = len(stale_sources) > 0
+            if stale_sources:
+                indexio_status["stale_sources"] = stale_sources
+                overall_healthy = False
+            else:
+                indexio_status["stale"] = False
+    except Exception:
+        pass
     subsystems["indexio"] = indexio_status
 
     return json_dict({

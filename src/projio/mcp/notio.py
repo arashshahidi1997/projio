@@ -99,28 +99,48 @@ def note_resolve(note_id: str) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
-def note_create(note_type: str, owner: str = "", title: str = "", date: str = "") -> JsonDict:
-    """Create a new note of the given type.
+def note_create(
+    note_type: str,
+    owner: str = "",
+    title: str = "",
+    date: str = "",
+    body: str = "",
+    frontmatter: str = "",
+) -> JsonDict:
+    """Create a new note of the given type, optionally fully populated in one call.
+
+    Pass *body* and/or *frontmatter* to skip the template read-then-write
+    round-trips that are otherwise required when creating notes as an agent.
 
     Args:
-        note_type: Note type (e.g. 'daily', 'weekly', 'idea', 'meeting').
+        note_type: Note type (e.g. 'daily', 'weekly', 'idea', 'meeting', 'result').
         owner: Note owner/author.
         title: Note title (for event-mode types).
         date: Date override (YYYY-MM-DD).
+        body: Markdown body to use instead of the template body.  Everything
+            below the frontmatter closing ``---`` is replaced with this text.
+        frontmatter: JSON string of frontmatter fields to set/override,
+            e.g. '{"tags": ["result"], "series": "preprocess", "confidence": "confirmed"}'.
     """
     if not _notio_available():
         return _unavailable("note_create")
     root = get_project_root()
     try:
+        import json as _json
         from notio.config import load_config  # type: ignore[import]
         from notio.core import create_note  # type: ignore[import]
         config = load_config(root)
+
+        extra_fm: dict | None = _json.loads(frontmatter) if frontmatter else None
+
         path = create_note(
             config,
             note_type,
             owner=owner or None,
             title=title or None,
             note_date=date or None,
+            body=body or None,
+            extra_frontmatter=extra_fm,
         )
         return json_dict({"path": str(path.relative_to(root)), "type": note_type})
     except Exception as exc:
@@ -220,6 +240,119 @@ def notio_log_nav() -> JsonDict:
             "path": "docs/log/mkdocs.yml",
             "yaml": yaml_str,
         })
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def note_promote(
+    note_path: str,
+    labels: str = "",
+    assignee: str = "",
+    milestone: str = "",
+    dry_run: bool = False,
+) -> JsonDict:
+    """Promote a local note to a GitHub/GitLab issue.
+
+    Creates a platform issue from the note title and body, then writes the
+    ``remote`` reference back into the note frontmatter.
+
+    Args:
+        note_path: Relative path to the note file.
+        labels: Comma-separated labels (default: derived from note tags).
+        assignee: Issue assignee username.
+        milestone: Issue milestone name.
+        dry_run: Preview what would be created without calling the API.
+    """
+    if not _notio_available():
+        return _unavailable("note_promote")
+    root = get_project_root()
+    try:
+        from notio.remote import promote  # type: ignore[import]
+        label_list = [l.strip() for l in labels.split(",") if l.strip()] if labels else None
+        result = promote(
+            root, note_path,
+            labels=label_list,
+            assignee=assignee,
+            milestone=milestone,
+            dry_run=dry_run,
+        )
+        return json_dict(result)
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def note_capture(
+    remote: str,
+    note_type: str = "issue",
+    owner: str = "",
+) -> JsonDict:
+    """Create a local note from a GitHub/GitLab issue.
+
+    Fetches the issue via ``gh``/``glab`` CLI, creates a note with mapped
+    fields, and pulls the comment thread into the note.
+
+    Args:
+        remote: Remote reference, e.g. ``github#42`` or ``gitlab#15``.
+        note_type: Note type to create (default: ``issue``).
+        owner: Note owner (default: git user).
+    """
+    if not _notio_available():
+        return _unavailable("note_capture")
+    root = get_project_root()
+    try:
+        from notio.remote import capture  # type: ignore[import]
+        result = capture(root, remote, note_type=note_type, owner=owner)
+        return json_dict(result)
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def note_pull(
+    note_path: str = "",
+    note_type: str = "",
+    all_notes: bool = False,
+    dry_run: bool = False,
+) -> JsonDict:
+    """Fetch remote thread updates for linked notes.
+
+    Replaces the ``## Remote Thread`` section with current platform comments.
+    Pull is idempotent — running twice with no new comments produces no diff.
+
+    Args:
+        note_path: Pull a specific note by relative path.
+        note_type: Pull all linked notes of this type.
+        all_notes: Pull all linked notes across all types.
+        dry_run: Preview what would be updated without writing.
+    """
+    if not _notio_available():
+        return _unavailable("note_pull")
+    root = get_project_root()
+    try:
+        from notio.remote import pull  # type: ignore[import]
+        result = pull(
+            root,
+            note_path=note_path,
+            note_type=note_type,
+            all_notes=all_notes,
+            dry_run=dry_run,
+        )
+        return json_dict(result)
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def note_remote_status() -> JsonDict:
+    """List all notes linked to platform issues.
+
+    Shows note type, path, remote reference, and current status for every
+    note that has a ``remote`` frontmatter field.
+    """
+    if not _notio_available():
+        return _unavailable("note_remote_status")
+    root = get_project_root()
+    try:
+        from notio.remote import remote_status  # type: ignore[import]
+        return json_dict(remote_status(root))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 

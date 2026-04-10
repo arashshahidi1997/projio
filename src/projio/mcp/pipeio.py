@@ -1251,6 +1251,88 @@ def pipeio_nb_promote(
         return json_dict({"error": str(exc)})
 
 
+def pipeio_nb_validate(
+    flow: str,
+    name: str,
+) -> JsonDict:
+    """Validate notebook structure.
+
+    For percent-format: syntax-checks each cell, validates import isolation,
+    checks for variable shadowing.
+    For marimo: runs ``marimo check`` for DAG validation (cycle detection,
+    missing dependencies, undefined names).
+
+    Args:
+        flow: Flow name.
+        name: Notebook basename (without extension).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_validate")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_validate  # type: ignore[import]
+        return json_dict(mcp_nb_validate(root, flow=flow, name=name))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_nb_watch(
+    flow: str,
+    name: str,
+    port: int = 0,
+) -> JsonDict:
+    """Launch marimo edit with --watch for live human oversight.
+
+    Only supported for marimo-format notebooks. Returns the URL
+    for the browser UI and the PID for later termination.
+
+    For percent-format notebooks, returns an error suggesting nb_lab instead.
+
+    Args:
+        flow: Flow name.
+        name: Notebook basename (without extension).
+        port: Optional port for the marimo server (0 = auto).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_watch")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_watch  # type: ignore[import]
+        return json_dict(mcp_nb_watch(root, flow=flow, name=name, port=port))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_nb_report(
+    flow: str,
+    name: str,
+    overwrite: bool = False,
+    tags_only: bool = False,
+) -> JsonDict:
+    """Extract figures, markdown, and text outputs from an executed notebook.
+
+    Saves extracted figures to ``{flow}/docs/reports/{name}/`` and returns
+    a structured payload for the agent to write a curated report.
+
+    Args:
+        flow: Flow name.
+        name: Notebook basename (without extension).
+        overwrite: Re-extract figures even if directory exists.
+        tags_only: Only extract cells tagged with ``# REPORT:`` marker.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_report")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_report  # type: ignore[import]
+        return json_dict(mcp_nb_report(
+            root, flow=flow, name=name,
+            overwrite=overwrite, tags_only=tags_only,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_dag_export(
     flow: str = "",
     graph_type: str = "rulegraph",
