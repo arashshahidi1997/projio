@@ -1324,6 +1324,7 @@ def pipeio_nb_snapshot(
     flow: str,
     name: str,
     timeout: int = 120,
+    python_bin: str = "",
 ) -> JsonDict:
     """Capture a marimo session snapshot: execute all cells and return outputs.
 
@@ -1340,13 +1341,19 @@ def pipeio_nb_snapshot(
         flow: Flow name.
         name: Notebook basename (without extension).
         timeout: Execution timeout in seconds (default 120).
+        python_bin: Python binary where marimo + compute libraries are installed.
+            Use when the notebook needs a different env than the MCP server,
+            e.g. ``"conda run -n cogpy python"``. Empty = MCP server's Python.
     """
     if not _pipeio_available():
         return _unavailable("pipeio_nb_snapshot")
     root = get_project_root()
     try:
         from pipeio.mcp import mcp_nb_snapshot  # type: ignore[import]
-        return json_dict(mcp_nb_snapshot(root, flow=flow, name=name, timeout=timeout))
+        return json_dict(mcp_nb_snapshot(
+            root, flow=flow, name=name,
+            timeout=timeout, python_bin=python_bin,
+        ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 

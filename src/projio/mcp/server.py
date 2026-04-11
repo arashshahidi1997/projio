@@ -1319,12 +1319,16 @@ def pipeio_nb_snapshot_tool(
     flow: str,
     name: str,
     timeout: int = 120,
+    python_bin: str = "",
 ):
     """Execute a marimo notebook and return cell outputs (prints, errors, data).
     This is the agent's 'eyes' for marimo notebooks -- see what the human sees.
     Returns structured cell summaries with console output, errors, and text data.
-    Binary outputs (images) are noted but not included."""
-    return pipeio.pipeio_nb_snapshot(flow=flow, name=name, timeout=timeout)
+    Binary outputs (images) are noted but not included.
+    Use python_bin to run in a specific env, e.g. 'conda run -n cogpy python'."""
+    return pipeio.pipeio_nb_snapshot(
+        flow=flow, name=name, timeout=timeout, python_bin=python_bin,
+    )
 
 
 @server.tool("pipeio_nb_report")

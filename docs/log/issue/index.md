@@ -1,6 +1,78 @@
 # Issue
 
-## open (58)
+## open (70)
+
+[**Test coverage audit + expansion: figio package (via projio MCP wrappers)**](issue-arash-20260412-013614-359946.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Test coverage audit + expansion: indexio package**](issue-arash-20260412-013602-246185.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Test coverage audit + expansion: codio package (via projio MCP wrappers)**](issue-arash-20260412-013549-344882.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Test coverage audit + expansion: notio package (via projio MCP wrappers)**](issue-arash-20260412-013536-544891.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Test coverage audit + expansion: biblio package (via projio MCP wrappers)**](issue-arash-20260412-013523-657926.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Test coverage audit + expansion: pipeio package**](issue-arash-20260412-013511-941571.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Test coverage: site**](issue-arash-20260412-013445-863352.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Test coverage: mcp/pipeio**](issue-arash-20260412-013432-321867.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Test coverage: cli**](issue-arash-20260412-013422-048012.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Test coverage: render**](issue-arash-20260412-013412-040281.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Test coverage: sync**](issue-arash-20260412-013402-247547.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Test coverage: config**](issue-arash-20260412-013344-955432.md){ .note-card-title }
+
+<small>**created:** 2026-04-12 · **status:** open · **confidence:** 1.0</small>
+
+---
 
 [**Cross-project biblio sharing: no way to import papers with processed derivati**](issue-arash-20260411-173902-670919.md){ .note-card-title }
 
