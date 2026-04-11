@@ -17,9 +17,11 @@ from projio.site import (
     _prune_dead,
     _read_servers,
     _write_servers,
+    build,
     detect_framework,
     find_free_port,
     list_servers,
+    publish,
     serve,
     stop,
     stop_all,
@@ -289,3 +291,105 @@ class TestStopAndList:
             result = stop_all(tmp_path)
         assert result["stopped"] == 1
         assert list_servers(tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# build()
+# ---------------------------------------------------------------------------
+
+
+class TestBuild:
+    def _mkdocs_site(self, tmp_path: Path) -> None:
+        (tmp_path / "mkdocs.yml").write_text("site_name: test\n")
+
+    def test_build_mkdocs_calls_subprocess(self, tmp_path: Path) -> None:
+        self._mkdocs_site(tmp_path)
+        run_result = mock.MagicMock()
+        run_result.returncode = 0
+        with mock.patch("projio.site.subprocess.run", return_value=run_result) as run_mock, \
+             mock.patch(
+                 "projio.site._load_site_config",
+                 return_value={"framework": None, "base_port": 8000, "host": "127.0.0.1",
+                               "chatbot": {}, "mkdocs": {"config_file": "mkdocs.yml", "site_dir": "site"}},
+             ):
+            build(tmp_path)
+        cmd = run_mock.call_args.args[0] if run_mock.call_args.args else run_mock.call_args.kwargs["args"]
+        assert "mkdocs" in " ".join(str(c) for c in cmd)
+
+    def test_build_strict_flag(self, tmp_path: Path) -> None:
+        self._mkdocs_site(tmp_path)
+        run_result = mock.MagicMock()
+        run_result.returncode = 0
+        with mock.patch("projio.site.subprocess.run", return_value=run_result) as run_mock, \
+             mock.patch(
+                 "projio.site._load_site_config",
+                 return_value={"framework": None, "base_port": 8000, "host": "127.0.0.1",
+                               "chatbot": {}, "mkdocs": {"config_file": "mkdocs.yml", "site_dir": "site"}},
+             ):
+            build(tmp_path, strict=True)
+        cmd = run_mock.call_args.args[0] if run_mock.call_args.args else run_mock.call_args.kwargs["args"]
+        assert "--strict" in cmd
+
+    def test_build_unknown_framework_raises(self, tmp_path: Path) -> None:
+        with mock.patch(
+            "projio.site._load_site_config",
+            return_value={"framework": None, "base_port": 8000, "host": "127.0.0.1", "chatbot": {}},
+        ):
+            with pytest.raises(RuntimeError, match="Could not detect"):
+                build(tmp_path)
+
+    def test_build_explicit_framework_override(self, tmp_path: Path) -> None:
+        self._mkdocs_site(tmp_path)
+        run_result = mock.MagicMock()
+        run_result.returncode = 0
+        with mock.patch("projio.site.subprocess.run", return_value=run_result) as run_mock, \
+             mock.patch(
+                 "projio.site._load_site_config",
+                 return_value={"framework": None, "base_port": 8000, "host": "127.0.0.1",
+                               "chatbot": {}, "mkdocs": {"config_file": "mkdocs.yml", "site_dir": "site"}},
+             ):
+            build(tmp_path, framework="mkdocs")
+        assert run_mock.called
+
+
+# ---------------------------------------------------------------------------
+# publish()
+# ---------------------------------------------------------------------------
+
+
+class TestPublish:
+    def test_publish_mkdocs_calls_gh_deploy(self, tmp_path: Path) -> None:
+        (tmp_path / "mkdocs.yml").write_text("site_name: test\n")
+        run_result = mock.MagicMock()
+        run_result.returncode = 0
+        with mock.patch("projio.site.subprocess.run", return_value=run_result) as run_mock, \
+             mock.patch(
+                 "projio.site._load_site_config",
+                 return_value={"framework": None, "base_port": 8000, "host": "127.0.0.1", "chatbot": {}},
+             ):
+            publish(tmp_path)
+        cmd = run_mock.call_args.args[0] if run_mock.call_args.args else run_mock.call_args.kwargs["args"]
+        assert "gh-deploy" in cmd
+
+    def test_publish_non_mkdocs_raises(self, tmp_path: Path) -> None:
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "conf.py").write_text("")  # sphinx
+        with mock.patch(
+            "projio.site._load_site_config",
+            return_value={"framework": None, "base_port": 8000, "host": "127.0.0.1", "chatbot": {}},
+        ):
+            with pytest.raises(RuntimeError, match="only supported for mkdocs"):
+                publish(tmp_path)
+
+    def test_publish_uses_python_bin_override(self, tmp_path: Path) -> None:
+        (tmp_path / "mkdocs.yml").write_text("site_name: test\n")
+        run_result = mock.MagicMock()
+        run_result.returncode = 0
+        with mock.patch("projio.site.subprocess.run", return_value=run_result) as run_mock, \
+             mock.patch(
+                 "projio.site._load_site_config",
+                 return_value={"framework": None, "base_port": 8000, "host": "127.0.0.1", "chatbot": {}},
+             ):
+            publish(tmp_path, python_bin="/custom/python")
+        cmd = run_mock.call_args.args[0] if run_mock.call_args.args else run_mock.call_args.kwargs["args"]
+        assert cmd[0] == "/custom/python"
