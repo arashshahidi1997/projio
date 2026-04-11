@@ -960,11 +960,15 @@ def pipeio_nb_create_tool(
     name: str,
     kind: str = "investigate",
     description: str = "",
+    format: str = "",
 ):
-    """Scaffold a new notebook for a flow with bootstrap cells."""
+    """Scaffold a new notebook for a flow. Percent-format goes in .src/ (Jupyter);
+    marimo goes in workspace dir directly (the .py IS the human interface).
+    kind='interactive' defaults to marimo format."""
     return pipeio.pipeio_nb_create(
         flow=flow, name=name,
         kind=kind, description=description,
+        format=format,
     )
 
 
@@ -1308,6 +1312,19 @@ def pipeio_nb_watch_tool(
     Only supported for marimo-format notebooks. Returns URL and PID.
     For percent-format, use nb_lab instead."""
     return pipeio.pipeio_nb_watch(flow=flow, name=name, port=port)
+
+
+@server.tool("pipeio_nb_snapshot")
+def pipeio_nb_snapshot_tool(
+    flow: str,
+    name: str,
+    timeout: int = 120,
+):
+    """Execute a marimo notebook and return cell outputs (prints, errors, data).
+    This is the agent's 'eyes' for marimo notebooks -- see what the human sees.
+    Returns structured cell summaries with console output, errors, and text data.
+    Binary outputs (images) are noted but not included."""
+    return pipeio.pipeio_nb_snapshot(flow=flow, name=name, timeout=timeout)
 
 
 @server.tool("pipeio_nb_report")

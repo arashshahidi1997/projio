@@ -20,11 +20,13 @@ def _build_parser() -> argparse.ArgumentParser:
         default="generic",
         help="Project scaffold kind (default: generic).",
     )
+    from .init import PROFILES
+    profile_help = "; ".join(f"{k}: {v.get('description', '')}" for k, v in PROFILES.items())
     p_init.add_argument(
         "-c", "--profile",
-        choices=("research", "full", "sirota"),
+        choices=list(PROFILES),
         default=None,
-        help="Activate a preset bundle of components (research: notio+biblio+indexio, full: all, sirota: full + lab defaults).",
+        help=f"Activate a preset bundle of components ({profile_help}).",
     )
     p_init.add_argument("--force", action="store_true", help="Overwrite existing files.")
     p_init.add_argument(

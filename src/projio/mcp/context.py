@@ -5,9 +5,13 @@ import re
 from pathlib import Path
 from typing import Any
 
+from projio.config import Layout, load_layout
 from .common import JsonDict, get_project_root, json_dict, resolve_makefile_vars
 
 _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?\n)---\s*\n", re.DOTALL)
+
+# Bundled skills shipped with the projio package
+_BUNDLED_SKILLS_DIR = Path(__file__).resolve().parent.parent / "data" / "skills"
 
 _ASSIGN_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(\?=|:=|=)\s*(.*?)\s*$")
 _VAR_REF_RE = re.compile(r"\$\(([A-Za-z_][A-Za-z0-9_]*)\)")
@@ -166,26 +170,19 @@ def skill_read(name: str) -> JsonDict:
     bundled with projio. Returns the skill's metadata and full markdown body.
     """
     root = get_project_root()
+    layout = load_layout(root)
 
-    # Search project skills first, then ecosystem
-    candidates: list[Path] = []
-    project_dir = root / ".projio" / "skills" / name / "SKILL.md"
-    if project_dir.exists():
-        candidates.append(project_dir)
+    # Search project skills first, then bundled package skills
+    project_path = layout.resolve(root, "skills") / name / "SKILL.md"
+    bundled_path = _BUNDLED_SKILLS_DIR / name / "SKILL.md"
+
+    if project_path.exists():
+        skill_path = project_path
+    elif bundled_path.exists():
+        skill_path = bundled_path
     else:
-        try:
-            import projio
-            pkg_root = Path(projio.__file__).resolve().parent.parent.parent
-            eco_path = pkg_root / "docs" / "prompts" / "skills" / name / "SKILL.md"
-            if eco_path.exists():
-                candidates.append(eco_path)
-        except Exception:
-            pass
-
-    if not candidates:
         return json_dict({"error": f"Skill not found: {name!r}"})
 
-    skill_path = candidates[0]
     text = skill_path.read_text(encoding="utf-8", errors="ignore")
     fm = _parse_yaml_frontmatter(text)
 
@@ -221,13 +218,15 @@ def _parse_skill_md(skill_md: Path, root: Path | None) -> dict[str, Any] | None:
     return {"name": name, "description": short or desc, "path": path}
 
 
-def _discover_skills(root: Path) -> list[dict[str, Any]]:
-    """Scan .projio/skills/ and projio ecosystem skills for SKILL.md files."""
+def _discover_skills(root: Path, layout: Layout | None = None) -> list[dict[str, Any]]:
+    """Scan project skills directory and projio ecosystem skills for SKILL.md files."""
+    if layout is None:
+        layout = load_layout(root)
     seen_names: set[str] = set()
     skills: list[dict[str, Any]] = []
 
     # 1. Project-level skills (take precedence)
-    project_dir = root / ".projio" / "skills"
+    project_dir = layout.resolve(root, "skills")
     if project_dir.is_dir():
         for skill_md in sorted(project_dir.glob("*/SKILL.md")):
             entry = _parse_skill_md(skill_md, root)
@@ -235,29 +234,25 @@ def _discover_skills(root: Path) -> list[dict[str, Any]]:
                 seen_names.add(entry["name"])
                 skills.append(entry)
 
-    # 2. Ecosystem-level skills bundled with projio (skip if project overrides)
-    try:
-        import projio
-        pkg_root = Path(projio.__file__).resolve().parent.parent.parent
-        eco_dir = pkg_root / "docs" / "prompts" / "skills"
-        if eco_dir.is_dir() and eco_dir != project_dir:
-            for skill_md in sorted(eco_dir.glob("*/SKILL.md")):
-                entry = _parse_skill_md(skill_md, root if skill_md.is_relative_to(root) else None)
-                if entry and entry["name"] not in seen_names:
-                    entry["source"] = "projio"
-                    skills.append(entry)
-    except Exception:
-        pass
+    # 2. Bundled skills shipped with the projio package (skip if project overrides)
+    if _BUNDLED_SKILLS_DIR.is_dir():
+        for skill_md in sorted(_BUNDLED_SKILLS_DIR.glob("*/SKILL.md")):
+            entry = _parse_skill_md(skill_md, None)
+            if entry and entry["name"] not in seen_names:
+                entry["source"] = "bundled"
+                skills.append(entry)
 
     return skills
 
 
-def _discover_workflow_prompts(root: Path) -> list[dict[str, Any]]:
+def _discover_workflow_prompts(root: Path, layout: Layout | None = None) -> list[dict[str, Any]]:
     """Scan for projio workflow prompts shipped with the package."""
+    if layout is None:
+        layout = load_layout(root)
     prompts: list[dict[str, Any]] = []
     # Check for workflow prompts in project docs (projio itself or a project
     # that copied them in)
-    workflows_dir = root / "docs" / "prompts" / "workflows"
+    workflows_dir = layout.resolve(root, "docs") / "prompts" / "workflows"
     if not workflows_dir.is_dir():
         # Try the installed projio package location
         try:
@@ -344,6 +339,8 @@ def ecosystem_status() -> JsonDict:
     except FileNotFoundError:
         return json_dict({"error": "No .projio/config.yml found"})
 
+    layout = Layout.from_config(cfg)
+
     subsystems: dict[str, Any] = {}
     overall_healthy = True
 
@@ -418,10 +415,10 @@ def ecosystem_status() -> JsonDict:
         note_count = 0
         if notes_dir.exists():
             note_count = sum(1 for _ in notes_dir.rglob("*.md"))
-        # Also count docs/log notes
-        docs_log = root / "docs" / "log"
-        if docs_log.exists():
-            note_count += sum(1 for _ in docs_log.rglob("*.md") if _.name != "index.md")
+        # Also count notes from layout.notes (if different from notes_dir)
+        layout_notes = layout.resolve(root, "notes")
+        if layout_notes != notes_dir and layout_notes.exists():
+            note_count += sum(1 for _ in layout_notes.rglob("*.md") if _.name != "index.md")
         notio_status["note_count"] = note_count
         subsystems["notio"] = notio_status
     else:
@@ -663,12 +660,13 @@ def agent_instructions() -> JsonDict:
     }
 
     # Discover project skills
-    skills = _discover_skills(root)
+    layout = load_layout(root)
+    skills = _discover_skills(root, layout)
     if skills:
         payload["skills"] = skills
 
     # Discover workflow prompts
-    workflow_prompts = _discover_workflow_prompts(root)
+    workflow_prompts = _discover_workflow_prompts(root, layout)
     if workflow_prompts:
         payload["workflow_prompts"] = workflow_prompts
 

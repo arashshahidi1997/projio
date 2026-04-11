@@ -1,3 +1,20 @@
-# Codio project profiles — local policy for each library
-# See: codio vocab --field priority  for allowed values
-profiles: {}
+profiles:
+  marimo:
+    priority: tier2
+    runtime_import: pip_only
+    decision_default: wrap
+    capabilities:
+    - artificial-intelligence
+    - dag
+    - data-science
+    - data-visualization
+    - dataflow
+    - developer-tools
+    - machine-learning
+    - notebooks
+    - pipeline
+    - python
+    - reactive
+    - sql
+    - web-app
+    status: candidate

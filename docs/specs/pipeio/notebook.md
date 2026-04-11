@@ -37,31 +37,38 @@ pipeio manages the notebook lifecycle: scan, pair, sync (bidirectional), execute
 
 ## Notebook Directory Convention
 
-Notebooks use a split layout that separates human-facing files from agent/build artifacts:
+Notebooks use a split layout that separates human-facing files from agent/build artifacts. Marimo notebooks live alongside `.ipynb` files in the workspace dir (the `.py` IS the human interface):
 
 ```
-code/pipelines/preprocess/ieeg/
+code/pipelines/{flow}/
 └── notebooks/
     ├── notebook.yml                              # lifecycle config
-    ├── investigate_noise.ipynb                    # human-facing (Jupyter Lab)
-    ├── explore_params.ipynb
-    ├── .src/                                     # agent territory
-    │   ├── investigate_noise.py                  # source of truth (percent-format)
-    │   └── explore_params.py
-    └── .myst/                                    # build artifacts (generated)
-        ├── investigate_noise.md
-        └── explore_params.md
+    ├── explore/
+    │   ├── investigate_noise.ipynb               # human-facing (Jupyter Lab)
+    │   ├── interactive_explorer.py               # human-facing (marimo edit)
+    │   ├── .src/                                 # agent territory (percent-format)
+    │   │   └── investigate_noise.py              # source of truth
+    │   └── .myst/                                # build artifacts (generated)
+    │       └── investigate_noise.md
+    └── demo/
+        ├── demo_filter.ipynb
+        ├── .src/
+        │   └── demo_filter.py
+        └── .myst/
+            └── demo_filter.md
 ```
 
-- **`notebooks/`** — human territory: `.ipynb` files visible in Jupyter Lab
-- **`.src/`** — agent territory: `.py` percent-format files (source of truth)
+- **Workspace dir** (`explore/`, `demo/`) — human territory: `.ipynb` (Jupyter) and `.py` (marimo) files
+- **`.src/`** — agent territory: `.py` percent-format files (source of truth for jupytext)
 - **`.myst/`** — generated MyST markdown for docs pipeline
+
+**Why marimo files are NOT in `.src/`:** The `.src/` convention exists because percent-format has two faces — the `.py` is the agent source and the `.ipynb` is the human interface. Marimo doesn't have this split: the `.py` IS both the agent file and the human file. Placing it in `.src/` would hide it from humans.
 
 Legacy layouts (flat `notebooks/name.py` or subdirectory `notebooks/name/name.py`) are still supported. Use `pipeio nb migrate --yes` to convert to the `.src/` layout.
 
 ### Source of Truth
 
-The `.py` file (percent format) is always the source of truth. The `.ipynb` and `.md` files are generated/synced artifacts.
+The `.py` file is always the source of truth for both formats. For percent-format, `.ipynb` and `.md` are generated/synced artifacts. For marimo, the `.py` is the only file.
 
 ### Notebook Header Convention
 
@@ -104,7 +111,9 @@ entries:
     publish_myst: true
 
   # Marimo-format notebook (reactive, single-file)
-  - path: notebooks/explore/.src/interactive_explorer.py
+  # Note: marimo files live in the workspace dir (not .src/) because the .py
+  # IS the human interface — no .ipynb pairing needed.
+  - path: notebooks/explore/interactive_explorer.py
     format: marimo            # explicit format declaration
     kind: interactive         # live exploration, not batch-executable
     description: "Interactive ECoG signal explorer with reactive tuning"

@@ -260,7 +260,6 @@ pipeio_nb_publish(flow, name)           # publish to docs (nbconvert or marimo e
 pipeio_nb_pipeline(flow, name)          # sync → publish → collect → nav
 pipeio_nb_validate(flow, name)          # structural validation (AST or marimo check)
 pipeio_nb_watch(flow, name)             # marimo edit --watch (marimo-only)
-pipeio_nb_snapshot(flow, name)          # execute marimo, return cell outputs (agent's "eyes")
 ```
 
 ## CLI Quick Reference

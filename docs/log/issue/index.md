@@ -1,10 +1,28 @@
 # Issue
 
-## open (55)
+## open (58)
 
-[**pipeio_docs_collect produces duplicate notebook HTMLs alongside pipeio_nb_pub**](issue-arash-20260410-152106-067627.md){ .note-card-title }
+[**Cross-project biblio sharing: no way to import papers with processed derivati**](issue-arash-20260411-173902-670919.md){ .note-card-title }
 
-<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
+<small>**created:** 2026-04-11 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**projio_init study profile should pre-configure pixecog-like layout**](issue-arash-20260411-173854-577193.md){ .note-card-title }
+
+<small>**created:** 2026-04-11 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**pipeio_run wildcards parameter doesn't filter snakebids sessions**](issue-arash-20260411-155019-000942.md){ .note-card-title }
+
+<small>**created:** 2026-04-11 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**pipeio_registry_scan should support mod grouping hints**](issue-arash-20260411-155000-964485.md){ .note-card-title }
+
+<small>**created:** 2026-04-11 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
@@ -348,8 +366,14 @@
 
 ---
 
-??? note "done (20)"
+??? note "done (21)"
 
+    [**pipeio_docs_collect produces duplicate notebook HTMLs alongside pipeio_nb_pub**](issue-arash-20260410-152106-067627.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-10 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
     [**Create pipeio-flow-create skill and pixecog-flow-setup skill**](issue-arash-20260410-150432-267829.md){ .note-card-title }
     
     <small>**created:** 2026-04-10 · **status:** done · **confidence:** 1.0</small>

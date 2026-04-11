@@ -1,6 +1,7 @@
 """MCP tools: pipeio pipeline management, notebook lifecycle, Snakemake execution."""
 from __future__ import annotations
 
+from projio.config import load_layout
 from .common import JsonDict, get_project_root, json_dict, resolve_makefile_vars
 from .context import _expand
 
@@ -205,9 +206,10 @@ def pipeio_flow_new(flow: str) -> JsonDict:
     if not _pipeio_available():
         return _unavailable("pipeio_flow_new")
     root = get_project_root()
+    layout = load_layout(root)
     try:
         from pipeio.mcp import mcp_flow_new  # type: ignore[import]
-        return json_dict(mcp_flow_new(root, flow=flow))
+        return json_dict(mcp_flow_new(root, flow=flow, pipelines_dir=layout.resolve(root, "pipelines")))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -367,9 +369,10 @@ def pipeio_registry_scan() -> JsonDict:
     if not _pipeio_available():
         return _unavailable("pipeio_registry_scan")
     root = get_project_root()
+    layout = load_layout(root)
     try:
         from pipeio.mcp import mcp_registry_scan  # type: ignore[import]
-        return json_dict(mcp_registry_scan(root))
+        return json_dict(mcp_registry_scan(root, pipelines_dir=layout.resolve(root, "pipelines")))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -423,9 +426,11 @@ def pipeio_docs_collect() -> JsonDict:
     if not _pipeio_available():
         return _unavailable("pipeio_docs_collect")
     root = get_project_root()
+    layout = load_layout(root)
+    docs_base = layout.resolve(root, "docs") / "pipelines"
     try:
         from pipeio.mcp import mcp_docs_collect  # type: ignore[import]
-        return json_dict(mcp_docs_collect(root))
+        return json_dict(mcp_docs_collect(root, docs_base=docs_base))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -435,9 +440,11 @@ def pipeio_docs_nav() -> JsonDict:
     if not _pipeio_available():
         return _unavailable("pipeio_docs_nav")
     root = get_project_root()
+    layout = load_layout(root)
+    docs_base = layout.resolve(root, "docs") / "pipelines"
     try:
         from pipeio.mcp import mcp_docs_nav  # type: ignore[import]
-        return json_dict(mcp_docs_nav(root))
+        return json_dict(mcp_docs_nav(root, docs_base=docs_base))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -466,17 +473,24 @@ def pipeio_nb_create(
     name: str,
     kind: str = "investigate",
     description: str = "",
+    format: str = "",
 ) -> JsonDict:
     """Scaffold a new notebook for a flow.
 
-    Creates a percent-format .py script with bootstrap cells and registers
-    it in notebook.yml.
+    Creates a .py notebook (percent-format or marimo) with bootstrap cells
+    and registers it in notebook.yml.
+
+    Percent-format notebooks go in .src/ (agent territory).
+    Marimo notebooks go directly in the workspace dir (the .py IS the
+    human interface — opened via ``marimo edit``).
 
     Args:
         flow: Flow name.
         name: Notebook name (e.g. 'investigate_noise').
-        kind: Prefix convention (investigate, explore, demo).
+        kind: Notebook kind (investigate, explore, demo, validate, interactive).
+            ``interactive`` defaults to marimo format.
         description: One-line purpose for the notebook header.
+        format: Notebook format ("percent", "marimo", or "" for auto-select).
     """
     if not _pipeio_available():
         return _unavailable("pipeio_nb_create")
@@ -486,6 +500,7 @@ def pipeio_nb_create(
         return json_dict(mcp_nb_create(
             root, flow=flow, name=name,
             kind=kind, description=description,
+            format=format,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
@@ -777,11 +792,13 @@ def pipeio_mkdocs_nav_patch() -> JsonDict:
         return _unavailable("pipeio_mkdocs_nav_patch")
 
     root = get_project_root()
+    layout = load_layout(root)
+    docs_base = layout.resolve(root, "docs") / "pipelines"
 
     # Write the sub-mkdocs.yml via docs_nav
     try:
         from pipeio.mcp import mcp_docs_nav
-        nav_result = mcp_docs_nav(root, write=True)
+        nav_result = mcp_docs_nav(root, write=True, docs_base=docs_base)
     except Exception as exc:
         return json_dict({"error": f"docs_nav failed: {exc}"})
 
@@ -1299,6 +1316,37 @@ def pipeio_nb_watch(
     try:
         from pipeio.mcp import mcp_nb_watch  # type: ignore[import]
         return json_dict(mcp_nb_watch(root, flow=flow, name=name, port=port))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_nb_snapshot(
+    flow: str,
+    name: str,
+    timeout: int = 120,
+) -> JsonDict:
+    """Capture a marimo session snapshot: execute all cells and return outputs.
+
+    Runs ``marimo export session``, parses the JSON, and returns structured
+    cell outputs (prints, errors, data summaries). This is the agent's
+    "eyes" for marimo notebooks -- it sees what the human sees in the browser.
+
+    Large binary MIME data (images) is replaced with a size placeholder.
+    Text outputs are truncated to keep the response manageable.
+
+    Only supported for marimo-format notebooks.
+
+    Args:
+        flow: Flow name.
+        name: Notebook basename (without extension).
+        timeout: Execution timeout in seconds (default 120).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_snapshot")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_snapshot  # type: ignore[import]
+        return json_dict(mcp_nb_snapshot(root, flow=flow, name=name, timeout=timeout))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
