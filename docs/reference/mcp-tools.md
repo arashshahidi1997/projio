@@ -167,26 +167,32 @@ The projio MCP server exposes tools across eight categories. Optional tools requ
 
 ### Notebook lifecycle
 
+Notebook tools support multiple backends via the `NotebookBackend` protocol. Each notebook declares `format:` in `notebook.yml` (`"percent"` for jupytext, `"marimo"` for reactive; auto-detected when empty).
+
 | Tool | Description |
 |------|-------------|
-| `pipeio_nb_status(pipe="", flow="", name="")` | Show notebook sync and publication status |
-| `pipeio_nb_create(pipe, flow, name, kind="investigate", description="")` | Scaffold a new notebook with bootstrap cells |
-| `pipeio_nb_update(pipe, flow, name, status="", description="", kind="", mod="", kernel="")` | Update notebook metadata in notebook.yml |
-| `pipeio_nb_sync(pipe, flow, name, formats=[], direction="py2nb", force=false)` | Sync notebook via jupytext |
-| `pipeio_nb_sync_flow(pipe, flow, direction="py2nb", force=false)` | Batch-sync all notebooks in a flow |
-| `pipeio_nb_diff(pipe, flow, name)` | Show sync state between .py and .ipynb; recommends sync direction |
-| `pipeio_nb_read(pipe, flow, name)` | Read .py content with metadata and structural analysis |
-| `pipeio_nb_analyze(pipe, flow, name)` | Analyze imports, RunCard fields, section headers, and cogpy calls |
+| `pipeio_nb_status(flow="", name="")` | Show notebook sync and publication status (includes format) |
+| `pipeio_nb_create(flow, name, kind="investigate", description="", format="")` | Scaffold a new notebook (format selects percent or marimo template) |
+| `pipeio_nb_update(flow, name, status="", description="", kind="", mod="", kernel="")` | Update notebook metadata in notebook.yml |
+| `pipeio_nb_sync(flow, name, formats=[], direction="py2nb", force=false)` | Sync notebook via jupytext (no-op for marimo) |
+| `pipeio_nb_sync_flow(flow, direction="py2nb", force=false)` | Batch-sync all notebooks in a flow |
+| `pipeio_nb_diff(flow, name)` | Show sync state between .py and .ipynb (always synced for marimo) |
+| `pipeio_nb_read(flow, name)` | Read .py content with metadata and structural analysis |
+| `pipeio_nb_analyze(flow, name)` | Analyze imports, RunCard fields, section headers (format-aware cell splitting) |
 | `pipeio_nb_audit()` | Audit all notebooks for staleness, config gaps, and mod coverage |
-| `pipeio_nb_scan(register=false)` | Scan for unregistered .py notebooks; optionally auto-register |
-| `pipeio_nb_lab(pipe="", flow="", sync=false)` | Build/refresh Jupyter Lab symlink manifest in .projio/pipeio/lab/ |
-| `pipeio_nb_publish(pipe, flow, name)` | Publish a notebook's myst markdown to the docs tree |
-| `pipeio_nb_exec(pipe, flow, name, params={}, timeout=600)` | Execute a notebook via papermill with RunCard parameter overrides |
-| `pipeio_nb_pipeline(pipe, flow, name, formats=[], build_site=false)` | Composite: sync → publish → docs_collect → docs_nav in one call |
+| `pipeio_nb_scan(register=false)` | Scan for unregistered .py notebooks (detects both formats) |
+| `pipeio_nb_lab(flow="", sync=false)` | Build/refresh Jupyter Lab symlink manifest (percent-format only) |
+| `pipeio_nb_publish(flow, name)` | Publish notebook to docs (nbconvert for percent, marimo export for marimo) |
+| `pipeio_nb_exec(flow, name, params={}, timeout=600)` | Execute notebook (papermill for percent, marimo run for marimo) |
+| `pipeio_nb_pipeline(flow, name, formats=[], build_site=false)` | Composite: sync → publish → docs_collect → docs_nav in one call |
+| `pipeio_nb_promote(flow, name, mod, rule_name="", description="", apply=false)` | Promote notebook to pipeline mod: analyze → script → rule stub → docs |
+| `pipeio_nb_report(flow, name, overwrite=false, tags_only=false)` | Extract figures/markdown/text from executed notebook for reporting |
+| `pipeio_nb_validate(flow, name)` | Structural validation (percent: AST + import isolation; marimo: `marimo check`) |
+| `pipeio_nb_watch(flow, name, port=0)` | Launch `marimo edit --watch` for live human oversight (marimo-only) |
 
-`pipeio_nb_sync` direction `"py2nb"` (default) regenerates `.ipynb`/`.myst.md` from the source `.py`; use `"nb2py"` after human edits in JupyterLab to push changes back to the tracked `.py` file.
+**Percent-format (jupytext):** `pipeio_nb_sync` direction `"py2nb"` (default) regenerates `.ipynb`/`.myst.md` from the source `.py`; use `"nb2py"` after human edits in JupyterLab. `pipeio_nb_exec` syncs `.py` → `.ipynb` first, then runs via papermill. `params` overrides RunCard fields.
 
-`pipeio_nb_exec` syncs `.py` → `.ipynb` first, then runs the notebook via papermill. `params` overrides RunCard fields. Returns status, errors, output path, and elapsed time.
+**Marimo-format:** Single-file `.py` format — sync is a no-op, execution runs `marimo run` directly, validation runs `marimo check` for DAG integrity. Use `pipeio_nb_watch` to launch live editing with `--watch` for agent-human collaboration.
 
 ### Mod authoring
 

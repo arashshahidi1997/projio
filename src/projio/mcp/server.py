@@ -1435,17 +1435,23 @@ def pipeio_run_tool(
     targets: list[str] = [],
     cores: int = 1,
     dryrun: bool = False,
+    keep_going: bool = True,
+    forcerun: list[str] = [],
+    forceall: bool = False,
+    touch: bool = False,
+    retries: int = 0,
     use_conda: bool = False,
     extra_args: list[str] = [],
     wildcards: dict[str, str] | None = None,
 ):
-    """Launch Snakemake in a detached screen session. State tracked in .pipeio/runs.json.
-    Returns run_id and screen session name for later status queries.
-    use_conda: pass --use-conda to snakemake (use conda envs defined in rules).
-    wildcards: entity filters for scoping (e.g. {"subject": "01", "session": "04"})."""
+    """Launch Snakemake in a detached screen session.
+    Always-on: --keep-going, --rerun-incomplete, --latency-wait 15, --printshellcmds, --show-failed-logs.
+    wildcards: snakebids --filter-{key} scoping. forcerun: re-execute specific rules. touch: mark done without running."""
     return pipeio.pipeio_run(
         flow=flow,
         targets=targets or None, cores=cores, dryrun=dryrun,
+        keep_going=keep_going, forcerun=forcerun or None,
+        forceall=forceall, touch=touch, retries=retries,
         use_conda=use_conda,
         extra_args=extra_args or None,
         wildcards=wildcards,

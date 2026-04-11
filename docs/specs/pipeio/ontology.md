@@ -70,7 +70,11 @@ Notebooks live in two parallel workspaces within a flow, separated by purpose:
 - **`explore/`** — prototypes, investigations, parameter sweeps. Never published. Findings feed into `theory.md`. Absorbed into mod scripts when done.
 - **`demo/`** — showcases mod outputs in narrative form. Published to the project site as rendered HTML.
 
-Both workspaces share the same internal structure (`.src/`, `.myst/`, `.ipynb`). The directory determines the default publish behavior — no need to set `publish_html` per notebook unless overriding.
+Both workspaces share the same internal structure (`.src/`, `.myst/`, `.ipynb` for percent-format). The directory determines the default publish behavior.
+
+**Notebook kinds:** `investigate`, `explore` → explore workspace; `demo`, `validate` → demo workspace; `interactive` → explore workspace (marimo-only, persists by design, not promoted).
+
+**Multi-backend support:** Each notebook declares `format:` in `notebook.yml` (`"percent"` for jupytext or `"marimo"` for reactive; auto-detected when empty). Percent-format uses `.py` ↔ `.ipynb` sync + papermill execution. Marimo is single-file (no pairing), executed via `marimo run`, validated via `marimo check`. The `NotebookBackend` protocol abstracts format-specific operations.
 
 ### Rule
 
@@ -164,7 +168,9 @@ registry:
 
 ```yaml
 kernel: cogpy                      # flow-level default kernel
+default_format: ""                 # flow-level default format ("percent" | "marimo" | "")
 entries:
+  # Percent-format (jupytext) — traditional Jupyter workflow
   - path: notebooks/explore/.src/investigate_noise.py
     kind: investigate              # implied by explore/ dir, but explicit for tools
     mod: filter
@@ -181,6 +187,14 @@ entries:
     status: promoted
     pair_ipynb: true
     publish_html: true             # default for demo/, explicit for clarity
+
+  # Marimo-format — reactive, single-file
+  - path: notebooks/explore/.src/interactive_explorer.py
+    format: marimo                 # explicit format declaration
+    kind: interactive              # live exploration, persists by design
+    description: "Interactive signal explorer with reactive parameter tuning"
+    status: active
+    publish_html: true             # exported via marimo export html
 ```
 
 ### `publish.yml` — flow-level publish config
@@ -391,7 +405,7 @@ Referenced in pandoc markdown as `[@preprocess_ieeg_mod-filter]`.
 |----------|-------|---------|
 | Flow discovery | `flow_list`, `flow_status`, `registry_scan`, `registry_validate` | Find and inspect flows |
 | Flow management | `flow_fork`, `flow_deregister` | Create variants, remove from registry |
-| Notebook lifecycle | `nb_status`, `nb_create`, `nb_update`, `nb_sync`, `nb_sync_flow`, `nb_diff`, `nb_scan`, `nb_read`, `nb_audit`, `nb_lab`, `nb_publish`, `nb_analyze`, `nb_exec`, `nb_pipeline` | Full notebook workflow |
+| Notebook lifecycle | `nb_status`, `nb_create`, `nb_update`, `nb_move`, `nb_sync`, `nb_sync_flow`, `nb_diff`, `nb_scan`, `nb_read`, `nb_audit`, `nb_lab`, `nb_publish`, `nb_analyze`, `nb_exec`, `nb_pipeline`, `nb_promote`, `nb_report`, `nb_validate`, `nb_watch` | Full notebook workflow (multi-backend: percent + marimo) |
 | Mod management | `mod_list`, `mod_context`, `mod_resolve`, `mod_create` | Discover and scaffold mods |
 | Rule authoring | `rule_list`, `rule_stub`, `rule_insert`, `rule_update` | Safe Snakefile editing |
 | Config authoring | `config_read`, `config_patch`, `config_init` | Flow config management |

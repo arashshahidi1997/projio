@@ -1492,6 +1492,11 @@ def pipeio_run(
     targets: list[str] | None = None,
     cores: int = 1,
     dryrun: bool = False,
+    keep_going: bool = True,
+    forcerun: list[str] | None = None,
+    forceall: bool = False,
+    touch: bool = False,
+    retries: int = 0,
     use_conda: bool = False,
     extra_args: list[str] | None = None,
     wildcards: dict[str, str] | None = None,
@@ -1503,9 +1508,14 @@ def pipeio_run(
         targets: Snakemake target rules (optional).
         cores: Number of cores (default 1).
         dryrun: If True, do a dry run.
-        use_conda: Pass --use-conda to snakemake (use conda envs defined in rules).
+        keep_going: Continue with independent jobs after a failure (default True).
+        forcerun: Force re-execution of specific rules.
+        forceall: Force execution of all rules regardless of timestamps.
+        touch: Mark outputs as up-to-date without executing.
+        retries: Number of times to retry failing jobs (default 0).
+        use_conda: Pass --use-conda to snakemake.
         extra_args: Additional Snakemake CLI arguments.
-        wildcards: Entity filters for scoping runs (e.g. {"subject": "01", "session": "04"}).
+        wildcards: Entity filters for scoping (e.g. {"subject": "01"}).
             Maps to snakebids --filter-{key} {value} CLI flags.
     """
     if not _pipeio_available():
@@ -1519,6 +1529,8 @@ def pipeio_run(
         return json_dict(mcp_run(
             root, flow=flow or None,
             targets=targets, cores=cores, dryrun=dryrun,
+            keep_going=keep_going, forcerun=forcerun,
+            forceall=forceall, touch=touch, retries=retries,
             extra_args=run_extra or None,
             snakemake_cmd=_resolve_snakemake_cmd(),
             wildcards=wildcards,

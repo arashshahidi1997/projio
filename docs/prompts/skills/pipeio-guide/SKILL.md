@@ -128,9 +128,12 @@ Each mod has up to three docs in `{flow}/docs/{mod}/`:
 
 ## Notebook Workspaces
 
+Notebooks support multiple backends (`format:` in `notebook.yml`): jupytext percent-format and marimo reactive.
+
 Notebooks are routed by `kind`:
 - `investigate`, `explore` → `notebooks/explore/.src/`
 - `demo`, `validate` → `notebooks/demo/.src/`
+- `interactive` → `notebooks/explore/.src/` (marimo-only, persists by design)
 
 Explore notebooks are never published. Demo notebooks are published to the project site as HTML.
 
@@ -138,12 +141,21 @@ Explore notebooks are never published. Demo notebooks are published to the proje
 
 ```yaml
 kernel: cogpy
+default_format: ""                     # flow-level default ("percent" | "marimo")
 entries:
+  # Percent-format (jupytext) — traditional Jupyter workflow
   - path: notebooks/explore/.src/investigate_noise.py
     kind: investigate
     mod: filter
     status: active
     pair_ipynb: true
+
+  # Marimo-format — reactive, single-file
+  - path: notebooks/explore/.src/interactive_explorer.py
+    format: marimo
+    kind: interactive
+    status: active
+    publish_html: true
 ```
 
 ## publish.yml
@@ -240,10 +252,12 @@ and next steps for review. Use `apply=True` to also scaffold doc stubs.
 ### Notebook lifecycle
 
 ```
-pipeio_nb_sync(flow, name)              # py → ipynb/myst
-pipeio_nb_lab(flow)                     # build Jupyter symlink manifest
-pipeio_nb_publish(flow, name)           # publish to docs
+pipeio_nb_sync(flow, name)              # py → ipynb/myst (no-op for marimo)
+pipeio_nb_lab(flow)                     # build Jupyter symlink manifest (percent-only)
+pipeio_nb_publish(flow, name)           # publish to docs (nbconvert or marimo export)
 pipeio_nb_pipeline(flow, name)          # sync → publish → collect → nav
+pipeio_nb_validate(flow, name)          # structural validation (AST or marimo check)
+pipeio_nb_watch(flow, name)             # marimo edit --watch (marimo-only)
 ```
 
 ## CLI Quick Reference
