@@ -89,6 +89,15 @@ Server is run via `python -m projio.mcp.server` with `PROJIO_ROOT` env var point
 
 Projio promotes **search before creation**: discover existing implementations, consult notes and literature, then make an explicit engineering decision (reuse, wrap, depend, or implement new). The MCP tools support this workflow by providing structured queries rather than raw file inspection.
 
+### Skills
+
+Skills are prompt-based workflow templates discoverable via `agent_instructions()` and readable via `skill_read(name)`. Two locations, project overrides ecosystem:
+
+- **Ecosystem skills** (bundled): `src/projio/data/skills/{name}/SKILL.md`
+- **Project skills** (per-project): `.projio/skills/{name}/SKILL.md` (or via `docs/prompts/skills/`)
+
+**To create a new ecosystem skill:** create `src/projio/data/skills/{name}/SKILL.md` with YAML frontmatter (`name`, `description`, `metadata.short-description`, `metadata.tags`, `metadata.tooling.mcp[].server`, `metadata.tooling.mcp[].tools`) followed by markdown body with sections: When to use, Workflow (numbered steps with MCP tool examples), Hard rules. Copy to `docs/prompts/skills/{name}/SKILL.md` for documentation site. Run `projio sync` to regenerate skill index. See `pipeio-report` or `marimo-session` skills as templates.
+
 ### Runtime Environment Convention
 
 Projio-managed projects use two distinct environments, configured in `~/.config/projio/config.yml` under `runtime:`:
