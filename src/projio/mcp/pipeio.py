@@ -1,6 +1,7 @@
 """MCP tools: pipeio pipeline management, notebook lifecycle, Snakemake execution."""
 from __future__ import annotations
 
+from projio.config import load_layout
 from .common import JsonDict, get_project_root, json_dict, resolve_makefile_vars
 from .context import _expand
 
@@ -205,9 +206,10 @@ def pipeio_flow_new(flow: str) -> JsonDict:
     if not _pipeio_available():
         return _unavailable("pipeio_flow_new")
     root = get_project_root()
+    layout = load_layout(root)
     try:
         from pipeio.mcp import mcp_flow_new  # type: ignore[import]
-        return json_dict(mcp_flow_new(root, flow=flow))
+        return json_dict(mcp_flow_new(root, flow=flow, pipelines_dir=layout.resolve(root, "pipelines")))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -367,9 +369,10 @@ def pipeio_registry_scan() -> JsonDict:
     if not _pipeio_available():
         return _unavailable("pipeio_registry_scan")
     root = get_project_root()
+    layout = load_layout(root)
     try:
         from pipeio.mcp import mcp_registry_scan  # type: ignore[import]
-        return json_dict(mcp_registry_scan(root))
+        return json_dict(mcp_registry_scan(root, pipelines_dir=layout.resolve(root, "pipelines")))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -423,9 +426,11 @@ def pipeio_docs_collect() -> JsonDict:
     if not _pipeio_available():
         return _unavailable("pipeio_docs_collect")
     root = get_project_root()
+    layout = load_layout(root)
+    docs_base = layout.resolve(root, "docs") / "pipelines"
     try:
         from pipeio.mcp import mcp_docs_collect  # type: ignore[import]
-        return json_dict(mcp_docs_collect(root))
+        return json_dict(mcp_docs_collect(root, docs_base=docs_base))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -435,9 +440,11 @@ def pipeio_docs_nav() -> JsonDict:
     if not _pipeio_available():
         return _unavailable("pipeio_docs_nav")
     root = get_project_root()
+    layout = load_layout(root)
+    docs_base = layout.resolve(root, "docs") / "pipelines"
     try:
         from pipeio.mcp import mcp_docs_nav  # type: ignore[import]
-        return json_dict(mcp_docs_nav(root))
+        return json_dict(mcp_docs_nav(root, docs_base=docs_base))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -785,11 +792,13 @@ def pipeio_mkdocs_nav_patch() -> JsonDict:
         return _unavailable("pipeio_mkdocs_nav_patch")
 
     root = get_project_root()
+    layout = load_layout(root)
+    docs_base = layout.resolve(root, "docs") / "pipelines"
 
     # Write the sub-mkdocs.yml via docs_nav
     try:
         from pipeio.mcp import mcp_docs_nav
-        nav_result = mcp_docs_nav(root, write=True)
+        nav_result = mcp_docs_nav(root, write=True, docs_base=docs_base)
     except Exception as exc:
         return json_dict({"error": f"docs_nav failed: {exc}"})
 

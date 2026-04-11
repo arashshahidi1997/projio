@@ -117,6 +117,20 @@ PROFILES: dict[str, dict] = {
         "description": "All subsystems: notes, bibliography, code intelligence, pipelines, figures, search",
         "packages": ("notio", "biblio", "codio", "indexio", "pipeio", "figio"),
     },
+    "flat": {
+        "description": "Flat layout: pipelines/, lib/, utils/ at repo root (no code/ prefix)",
+        "packages": ("notio", "biblio", "codio", "indexio", "pipeio", "figio"),
+        "config": {
+            "layout": {
+                "pipelines": "pipelines",
+                "libraries": "lib",
+                "utils": "utils",
+            },
+            "pipeio": {
+                "pipelines_dir": "pipelines",
+            },
+        },
+    },
     # --- lab profiles (site-specific conventions) ---
     "sirota": {
         "description": "Sirota lab: full stack with conda envs (cogpy/projio/labpy) and GitLab push",
