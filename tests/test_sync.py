@@ -8,6 +8,8 @@ import yaml
 from projio.sync import (
     _detect_project_utils,
     _discover_code_libs,
+    _get_bundled_filter,
+    _sync_lua_filter,
     _sync_project_utils_config,
 )
 
@@ -158,3 +160,69 @@ def test_sync_utils_config_no_utils_found(tmp_path: Path) -> None:
     result = _sync_project_utils_config(tmp_path, None)
     assert result["action"] == "skipped"
     assert "utils" in result["reason"]
+
+
+# ---------------------------------------------------------------------------
+# _get_bundled_filter
+# ---------------------------------------------------------------------------
+
+
+def test_get_bundled_filter_returns_bytes() -> None:
+    content = _get_bundled_filter()
+    assert isinstance(content, bytes)
+    assert len(content) > 0
+
+
+def test_get_bundled_filter_contains_lua_content() -> None:
+    content = _get_bundled_filter()
+    # The bundled Lua filter should contain Lua code
+    text = content.decode("utf-8", errors="replace")
+    assert "function" in text or "--" in text  # Lua function or comment
+
+
+# ---------------------------------------------------------------------------
+# _sync_lua_filter
+# ---------------------------------------------------------------------------
+
+
+def test_sync_lua_filter_copies_to_new_target(tmp_path: Path) -> None:
+    result = _sync_lua_filter(tmp_path)
+    assert result["action"] == "copied"
+    target = tmp_path / ".projio" / "filters" / "include.lua"
+    assert target.is_file()
+    assert target.read_bytes() == _get_bundled_filter()
+
+
+def test_sync_lua_filter_skips_if_up_to_date(tmp_path: Path) -> None:
+    # First copy
+    _sync_lua_filter(tmp_path)
+    # Second call should skip
+    result = _sync_lua_filter(tmp_path)
+    assert result["action"] == "skipped"
+    assert "up to date" in result["reason"]
+
+
+def test_sync_lua_filter_updates_if_content_changed(tmp_path: Path) -> None:
+    target = tmp_path / ".projio" / "filters" / "include.lua"
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"old content")
+    result = _sync_lua_filter(tmp_path)
+    assert result["action"] == "updated"
+    assert target.read_bytes() == _get_bundled_filter()
+
+
+def test_sync_lua_filter_dry_run_would_copy(tmp_path: Path) -> None:
+    result = _sync_lua_filter(tmp_path, dry_run=True)
+    assert result["action"] == "would_copy"
+    # Nothing should be written
+    assert not (tmp_path / ".projio" / "filters" / "include.lua").exists()
+
+
+def test_sync_lua_filter_dry_run_would_update(tmp_path: Path) -> None:
+    target = tmp_path / ".projio" / "filters" / "include.lua"
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"stale content")
+    result = _sync_lua_filter(tmp_path, dry_run=True)
+    assert result["action"] == "would_update"
+    # File should remain unchanged
+    assert target.read_bytes() == b"stale content"
