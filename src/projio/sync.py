@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 
 def _discover_code_libs(root: Path, lib_rel: str = "code/lib") -> list[dict[str, Any]]:
     """Scan library directory for Python packages.
