@@ -112,13 +112,14 @@ code/pipelines/{flow}/
 └── notebooks/                     # notebook workspace
     ├── notebook.yml               #   config: entries, kernel, per-notebook publish
     ├── explore/                   #   exploratory notebooks (never published)
-    │   ├── .src/                  #     agent territory
+    │   ├── .src/                  #     agent territory (percent-format)
     │   │   ├── investigate_noise.py
     │   │   └── investigate_tfspace.py
     │   ├── .myst/                 #     generated MyST
     │   │   └── ...
-    │   ├── investigate_noise.ipynb    # human-facing
-    │   └── investigate_tfspace.ipynb
+    │   ├── investigate_noise.ipynb    # human-facing (Jupyter Lab)
+    │   ├── investigate_tfspace.ipynb
+    │   └── interactive_explorer.py    # human-facing (marimo edit)
     └── demo/                      #   demo notebooks (published to site)
         ├── .src/
         │   └── demo_filter.py
@@ -189,7 +190,8 @@ entries:
     publish_html: true             # default for demo/, explicit for clarity
 
   # Marimo-format — reactive, single-file
-  - path: notebooks/explore/.src/interactive_explorer.py
+  # Lives in workspace dir (not .src/) — the .py IS the human interface
+  - path: notebooks/explore/interactive_explorer.py
     format: marimo                 # explicit format declaration
     kind: interactive              # live exploration, persists by design
     description: "Interactive signal explorer with reactive parameter tuning"

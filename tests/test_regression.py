@@ -148,7 +148,22 @@ def test_study_kind_scaffolds_thin_study_overlay(tmp_path: Path) -> None:
     assert not (tmp_path / "pyproject.toml").exists()
     config_text = (tmp_path / ".projio" / "config.yml").read_text(encoding="utf-8")
     assert "project_kind: study" in config_text
-    assert "biblio:\n  enabled: false" in config_text
+    # Study projects enable biblio, notio, codio, pipeio by default
+    assert "biblio:\n  enabled: true" in config_text
+    assert "notio:\n  enabled: true" in config_text
+    assert "codio:\n  enabled: true" in config_text
+    assert "pipeio:\n  enabled: true" in config_text
+    # Study scaffold creates docs subsections, code tiers, questio stubs
+    for subdir in ("log", "plan", "pipelines", "manuscript", "infra", "deliverables", "assets"):
+        assert (tmp_path / "docs" / subdir / "index.md").exists()
+    for subdir in ("pipelines", "lib", "scripts", "utils"):
+        assert (tmp_path / "code" / subdir).is_dir()
+    assert (tmp_path / "plan" / "questions.yml").exists()
+    assert (tmp_path / "plan" / "milestones.yml").exists()
+    # Study mkdocs has full plugin stack
+    mkdocs_text = (tmp_path / "mkdocs.yml").read_text(encoding="utf-8")
+    assert "monorepo" in mkdocs_text
+    assert "bibtex" in mkdocs_text
 
 
 def test_tool_kind_does_not_overwrite_existing_pyproject_without_force(tmp_path: Path) -> None:

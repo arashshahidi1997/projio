@@ -12,19 +12,118 @@ SITE_FRAMEWORK_CHOICES = ("mkdocs", "sphinx", "vite")
 
 KNOWN_PACKAGES = ("biblio", "notio", "codio", "indexio", "pipeio", "figio", "claude", "codex", "copilot")
 
+SIROTA_README = """\
+# {name}
+
+> Scaffolded with `projio init . --kind study --profile sirota`
+
+## Project structure
+
+```
+{name}/
+  .projio/          # projio workspace config, render settings, subsystem state
+  bib/              # bibliography: srcbib/ (Zotero exports), articles/ (PDFs)
+  code/
+    lib/            # shared code libraries (datalad subdatasets)
+    pipelines/      # Snakemake flows (one dir per flow)
+    scripts/        # standalone scripts
+    utils/          # project-specific cross-flow utilities
+  docs/             # MkDocs site source
+    log/            # project notes (ideas, issues, decisions)
+    plan/           # research questions and milestones (generated from plan/)
+    pipelines/      # auto-generated pipeline documentation
+    manuscript/     # paper sections
+    infra/          # infrastructure notes
+    deliverables/   # final outputs
+  plan/             # questio YAML sources (questions.yml, milestones.yml)
+```
+
+## Next steps
+
+### 1. Install your dataset
+
+```bash
+# Install an existing datalad dataset as input data
+datalad install -d . -s <source_url> data/<dataset_name>
+```
+
+### 2. Set up shared code libraries
+
+```bash
+# Clone shared libraries as datalad subdatasets
+datalad install -d . -s <lab_gitlab>/cogpy code/lib/cogpy
+datalad install -d . -s <lab_gitlab>/labpy code/lib/labpy
+```
+
+### 3. Set up the project Python environment
+
+Create a `.venv` overlay on top of the shared conda base:
+
+```bash
+conda activate cogpy
+python -m venv .venv --system-site-packages
+source .venv/bin/activate
+pip install -e code/lib/cogpy -e code/lib/labpy
+python -m ipykernel install --user --name {name}
+```
+
+### 4. Register code libraries
+
+```bash
+projio sync   # auto-discovers code/lib/* and code/utils/
+```
+
+### 5. Define research questions
+
+Edit `plan/questions.yml` and `plan/milestones.yml`, then ask the agent:
+- "What are my open research questions?" (`questio_status`)
+- "What's the next step?" (use `/questio-next` skill)
+
+## Working with projio
+
+Projio is designed to be used through an AI agent (Claude Code). The agent has
+access to all projio tools via MCP. Common workflows:
+
+| Task | What to ask the agent |
+|------|----------------------|
+| Add a paper | "ingest this DOI into the bibliography" |
+| Create a pipeline | "create a new flow called preprocessing" |
+| Write a notebook | "create a notebook in the preprocessing flow" |
+| Run a pipeline | "run the preprocessing flow" |
+| Build docs | "build and serve the docs site" |
+| Capture a note | "log an issue about X" |
+| Search the project | "search for references about Y" |
+
+## Conda environments
+
+This project uses three conda environments:
+
+| Environment | Purpose |
+|-------------|---------|
+| `cogpy` | Data analysis, Snakemake, notebooks |
+| `projio` | Projio tools, MkDocs, MCP server |
+| `labpy` | DataLad and git-annex operations |
+
+The Makefile includes `.projio/projio.mk` which maps these automatically.
+"""
+
 PROFILES: dict[str, dict] = {
+    # --- shipped profiles (no lab-specific paths or env names) ---
     "research": {
+        "description": "Notes, bibliography, and semantic search",
         "packages": ("notio", "biblio", "indexio"),
     },
     "full": {
+        "description": "All subsystems: notes, bibliography, code intelligence, pipelines, figures, search",
         "packages": ("notio", "biblio", "codio", "indexio", "pipeio", "figio"),
     },
+    # --- lab profiles (site-specific conventions) ---
     "sirota": {
+        "description": "Sirota lab: full stack with conda envs (cogpy/projio/labpy) and GitLab push",
         "packages": ("notio", "biblio", "codio", "indexio", "pipeio", "figio"),
+        "readme": SIROTA_README,
         "config": {
             "push_sibling": "gitlab",
-            "biblio": {"enabled": True},
-            "notio": {"enabled": True},
             "code": {
                 "conda_prefix": "",
                 "envs": {
@@ -47,6 +146,15 @@ BASE_PROJIO_CONFIG = """\
 project_name: {name}
 project_kind: {kind}
 description: ""
+
+layout:
+  docs: docs
+  notes: docs/log
+  pipelines: code/pipelines
+  libraries: code/lib
+  utils: code/utils
+  skills: .projio/skills
+  plan: plan
 
 indexio:
   config: .projio/indexio/config.yaml
@@ -124,18 +232,41 @@ project_name: {name}
 project_kind: study
 description: ""
 
+layout:
+  docs: docs
+  notes: docs/log
+  pipelines: code/pipelines
+  libraries: code/lib
+  utils: code/utils
+  skills: .projio/skills
+  plan: plan
+
 indexio:
   config: .projio/indexio/config.yaml
   persist_dir: .projio/indexio/index
 
 biblio:
-  enabled: false
+  enabled: true
   config: .projio/biblio/biblio.yml
 
 notio:
-  enabled: false
+  enabled: true
   notes_dir: docs/log/
   template_dir: .projio/notio/templates
+
+codio:
+  enabled: true
+  catalog_path: .projio/codio/catalog.yml
+  profiles_path: .projio/codio/profiles.yml
+  notes_dir: docs/reference/codelib/libraries/
+
+pipeio:
+  enabled: true
+  registry_path: .projio/pipeio/registry.yml
+  pipelines_dir: code/pipelines
+
+code:
+  project_utils: ""
 
 site:
   framework: {site_framework}
@@ -618,6 +749,65 @@ Keep this thin:
 - add domain-specific workflow structure only when the project actually needs it
 """
 
+STUDY_MKDOCS = """\
+site_name: {name}
+docs_dir: docs
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+plugins:
+  - search
+  - ezlinks
+  - include-markdown
+  - bibtex:
+      bib_file: .projio/render/compiled.bib
+  - monorepo
+  - mkdocs-jupyter:
+      include: ["*.ipynb"]
+      ignore: [".*"]
+      remove_tag_config:
+        remove_input_tags: [hide_input]
+
+markdown_extensions:
+  - footnotes
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.arithmatex:
+      generic: true
+
+nav:
+  - Home: index.md
+  - Pipelines: '!include ./docs/pipelines/mkdocs.yml'
+  - Plan: '!include ./docs/plan/mkdocs.yml'
+  - Log: '!include ./docs/log/mkdocs.yml'
+  - Infra: '!include ./docs/infra/mkdocs.yml'
+"""
+
+STUDY_QUESTIONS_YML = """\
+# Research questions — managed by questio
+# See: projio questio_status, questio_gap
+questions: []
+"""
+
+STUDY_MILESTONES_YML = """\
+# Project milestones — managed by questio
+# See: projio questio_status
+milestones: []
+"""
+
 GITLAB_PAGES_CI_TEMPLATE = """\
 # GitLab Pages CI — generated by projio init --gitlab-pages
 pages:
@@ -953,7 +1143,7 @@ def _scaffold_base(root: Path, *, kind: str, force: bool, vscode: bool, github_p
     _write_if_needed(proj_dir / "config.yml", _projio_config_for_kind(root, root.name, kind, site_framework=site_framework), root, force=force)
     # projio.mk is projio-managed — always overwrite to pick up new targets
     _write_if_needed(proj_dir / "projio.mk", _projio_mk(root), root, force=True)
-    if site_framework == "mkdocs":
+    if site_framework == "mkdocs" and kind != "study":
         _write_if_needed(root / "mkdocs.yml", DEFAULT_MKDOCS.format(name=root.name), root, force=force)
     _write_if_needed(root / "Makefile", _makefile_for_kind(kind), root, force=force)
     _ensure_makefile_include(root / "Makefile", root)
@@ -988,6 +1178,24 @@ def _scaffold_study(root: Path, *, force: bool) -> None:
     # Scaffold render.yml for study projects
     from .render import DEFAULT_RENDER_YML
     _write_if_needed(root / ".projio" / "render.yml", DEFAULT_RENDER_YML, root, force=force)
+    # Study mkdocs with monorepo nav, full plugin stack
+    _write_if_needed(root / "mkdocs.yml", STUDY_MKDOCS.format(name=root.name), root, force=force)
+    # Docs subsections with index stubs
+    for subdir in ("log", "plan", "pipelines", "manuscript", "infra", "deliverables", "assets"):
+        d = root / "docs" / subdir
+        d.mkdir(parents=True, exist_ok=True)
+        idx = d / "index.md"
+        if not idx.exists():
+            _write_if_needed(idx, f"# {subdir.title()}\n", root, force=force)
+    # Code tier directories
+    for subdir in ("pipelines", "lib", "scripts", "utils"):
+        (root / "code" / subdir).mkdir(parents=True, exist_ok=True)
+    print(f"[OK] created code/{{pipelines,lib,scripts,utils}}/")
+    # Questio stubs
+    plan_dir = root / "plan"
+    plan_dir.mkdir(exist_ok=True)
+    _write_if_needed(plan_dir / "questions.yml", STUDY_QUESTIONS_YML, root, force=force)
+    _write_if_needed(plan_dir / "milestones.yml", STUDY_MILESTONES_YML, root, force=force)
 
 
 def scaffold(
@@ -1020,6 +1228,9 @@ def scaffold(
         config_overlay = prof.get("config")
         if config_overlay:
             _apply_config_overlay(root_path, config_overlay)
+        readme_tpl = prof.get("readme")
+        if readme_tpl:
+            _write_if_needed(root_path / "README.md", readme_tpl.format(name=root_path.name), root_path, force=force)
 
 
 def load_projio_config(root: str | Path) -> dict:

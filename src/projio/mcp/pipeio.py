@@ -466,17 +466,24 @@ def pipeio_nb_create(
     name: str,
     kind: str = "investigate",
     description: str = "",
+    format: str = "",
 ) -> JsonDict:
     """Scaffold a new notebook for a flow.
 
-    Creates a percent-format .py script with bootstrap cells and registers
-    it in notebook.yml.
+    Creates a .py notebook (percent-format or marimo) with bootstrap cells
+    and registers it in notebook.yml.
+
+    Percent-format notebooks go in .src/ (agent territory).
+    Marimo notebooks go directly in the workspace dir (the .py IS the
+    human interface — opened via ``marimo edit``).
 
     Args:
         flow: Flow name.
         name: Notebook name (e.g. 'investigate_noise').
-        kind: Prefix convention (investigate, explore, demo).
+        kind: Notebook kind (investigate, explore, demo, validate, interactive).
+            ``interactive`` defaults to marimo format.
         description: One-line purpose for the notebook header.
+        format: Notebook format ("percent", "marimo", or "" for auto-select).
     """
     if not _pipeio_available():
         return _unavailable("pipeio_nb_create")
@@ -486,6 +493,7 @@ def pipeio_nb_create(
         return json_dict(mcp_nb_create(
             root, flow=flow, name=name,
             kind=kind, description=description,
+            format=format,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
@@ -1299,6 +1307,37 @@ def pipeio_nb_watch(
     try:
         from pipeio.mcp import mcp_nb_watch  # type: ignore[import]
         return json_dict(mcp_nb_watch(root, flow=flow, name=name, port=port))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def pipeio_nb_snapshot(
+    flow: str,
+    name: str,
+    timeout: int = 120,
+) -> JsonDict:
+    """Capture a marimo session snapshot: execute all cells and return outputs.
+
+    Runs ``marimo export session``, parses the JSON, and returns structured
+    cell outputs (prints, errors, data summaries). This is the agent's
+    "eyes" for marimo notebooks -- it sees what the human sees in the browser.
+
+    Large binary MIME data (images) is replaced with a size placeholder.
+    Text outputs are truncated to keep the response manageable.
+
+    Only supported for marimo-format notebooks.
+
+    Args:
+        flow: Flow name.
+        name: Notebook basename (without extension).
+        timeout: Execution timeout in seconds (default 120).
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_snapshot")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_nb_snapshot  # type: ignore[import]
+        return json_dict(mcp_nb_snapshot(root, flow=flow, name=name, timeout=timeout))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 

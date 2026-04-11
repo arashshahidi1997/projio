@@ -8,6 +8,13 @@
 ### Added
 
 **pipeio** (notebooks + pipelines)
+- Multi-backend notebook system — `NotebookBackend` protocol supporting jupytext percent-format and marimo reactive notebooks side by side, per-notebook `format:` field in `notebook.yml`
+- `pipeio_nb_validate` tool — structural validation (percent: AST + import isolation; marimo: `marimo check`)
+- `pipeio_nb_watch` tool — launch `marimo edit --watch` for live human oversight of agent edits
+- `pipeio_nb_snapshot` tool — execute marimo notebook and return cell outputs (prints, errors, data) — agent's "eyes" for the `--watch` workflow
+- `kind: interactive` notebook kind — marimo-only, persists by design, not promoted to scripts
+- Marimo notebooks placed in workspace dir (not `.src/`) — the `.py` IS the human interface
+- `pipeio_nb_create` accepts `format` param; `kind="interactive"` auto-selects marimo
 - `pipeio_nb_report` tool + `/report` skill — extract notebook results into flow-local reports with figures
 - `pipeio_nb_move` tool — move a notebook between flows (files + registry update)
 - `commit` note type in notio — structured change records with subsystem, commit_hash, files_created/modified fields

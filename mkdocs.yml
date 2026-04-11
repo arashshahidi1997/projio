@@ -58,6 +58,7 @@ nav:
       - Grand Routine: tutorials/grand-routine.md
       - Research Orchestration (Questio): tutorials/questio-setup.md
       - Site & Docs Workflow: tutorials/site-workflow.md
+      - Marimo Reactive Notebooks: tutorials/marimo-notebooks.md
   - How-To Guides:
       - how-to/index.md
       - Initialize A Workspace: how-to/init.md

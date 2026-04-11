@@ -7,12 +7,16 @@ from pathlib import Path
 from typing import Any
 
 
-def _discover_code_libs(root: Path) -> list[dict[str, Any]]:
-    """Scan code/lib/*/ for Python packages.
+def _discover_code_libs(root: Path, lib_rel: str = "code/lib") -> list[dict[str, Any]]:
+    """Scan library directory for Python packages.
+
+    Args:
+        root: Project root.
+        lib_rel: Relative path to the libraries directory (from Layout).
 
     Returns a list of dicts with keys: name, path, has_init.
     """
-    lib_dir = root / "code" / "lib"
+    lib_dir = root / lib_rel
     if not lib_dir.is_dir():
         return []
     libs = []
@@ -28,9 +32,14 @@ def _discover_code_libs(root: Path) -> list[dict[str, Any]]:
     return libs
 
 
-def _detect_project_utils(root: Path) -> str | None:
-    """Check if code/utils/ exists and contains Python code."""
-    utils_dir = root / "code" / "utils"
+def _detect_project_utils(root: Path, utils_rel: str = "code/utils") -> str | None:
+    """Check if the utils directory exists and contains Python code.
+
+    Args:
+        root: Project root.
+        utils_rel: Relative path to the utils directory (from Layout).
+    """
+    utils_dir = root / utils_rel
     if utils_dir.is_dir():
         return str(utils_dir.relative_to(root))
     return None
@@ -911,10 +920,14 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
 
     prefix = "[DRY RUN] " if dry_run else ""
 
+    # Load layout for path resolution
+    from projio.config import load_layout
+    layout = load_layout(root_path)
+
     # 1. Discover code libraries
-    libs = _discover_code_libs(root_path)
+    libs = _discover_code_libs(root_path, layout.libraries)
     if libs:
-        print(f"{prefix}Found {len(libs)} library(ies) in code/lib/: {', '.join(l['name'] for l in libs)}")
+        print(f"{prefix}Found {len(libs)} library(ies) in {layout.libraries}/: {', '.join(l['name'] for l in libs)}")
         lib_actions = _sync_codio_libraries(root_path, libs, dry_run=dry_run)
         for action in lib_actions:
             if action["action"] in ("added", "would_add"):
@@ -927,10 +940,10 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
                 print(f"  [!] {action.get('reason', 'unknown error')}")
     else:
         lib_actions = []
-        print(f"{prefix}No libraries found in code/lib/")
+        print(f"{prefix}No libraries found in {layout.libraries}/")
 
     # 2. Detect project utils
-    utils_path = _detect_project_utils(root_path)
+    utils_path = _detect_project_utils(root_path, layout.utils)
     utils_action = _sync_project_utils_config(root_path, utils_path, dry_run=dry_run)
     if utils_action["action"] in ("set", "would_set"):
         print(f"{prefix}[+] {utils_action['field']} = {utils_action['value']}")

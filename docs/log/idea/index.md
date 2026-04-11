@@ -1,5 +1,35 @@
 # Idea
 
+[**pipeio nb_snapshot: marimo session capture for agent-human shared output**](idea-arash-20260412-003010-543420.md){ .note-card-title }
+
+<small>**date:** 2026-04-12</small>
+
+---
+
+[**Bundled projio-feedback skill: agent-filed GitHub issues from any project**](idea-arash-20260411-194636-335174.md){ .note-card-title }
+
+<small>**date:** 2026-04-11</small>
+
+---
+
+[**Ship core skills as package data for self-documenting projio installations**](idea-arash-20260411-193811-128274.md){ .note-card-title }
+
+<small>**date:** 2026-04-11</small>
+
+---
+
+[**Centralize directory layout into config so profiles can customize paths**](idea-arash-20260411-193310-336553.md){ .note-card-title }
+
+<small>**date:** 2026-04-11</small>
+
+---
+
+[**Study project profiles — user preference for projio-native profiles over cook**](idea-arash-20260411-173908-283692.md){ .note-card-title }
+
+<small>**date:** 2026-04-11 · **status:** open · **confidence:** 1.0</small>
+
+---
+
 [**Skill: pipeio-flow-create — guided flow creation workflow**](idea-arash-20260410-150021-808875.md){ .note-card-title }
 
 <small>**date:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>

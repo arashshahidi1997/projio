@@ -1,11 +1,41 @@
 """Configuration loading for project and user-level projio settings."""
 from __future__ import annotations
 
+import dataclasses
 import os
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+
+@dataclasses.dataclass(frozen=True)
+class Layout:
+    """Project directory layout — single source of truth for path conventions.
+
+    All values are relative to the project root, no trailing slashes.
+    Defaults match the current hardcoded paths so existing projects
+    work unchanged without a ``layout:`` section in config.
+    """
+
+    docs: str = "docs"
+    notes: str = "docs/log"
+    pipelines: str = "code/pipelines"
+    libraries: str = "code/lib"
+    utils: str = "code/utils"
+    skills: str = ".projio/skills"
+    plan: str = "plan"
+
+    def resolve(self, root: Path, key: str) -> Path:
+        """Return absolute path for a layout key."""
+        return root / getattr(self, key)
+
+    @classmethod
+    def from_config(cls, cfg: dict[str, Any]) -> "Layout":
+        """Build a Layout from the merged effective config dict."""
+        raw = cfg.get("layout", {}) or {}
+        known = {f.name for f in dataclasses.fields(cls)}
+        return cls(**{k: v for k, v in raw.items() if k in known and isinstance(v, str)})
 
 
 DEFAULT_USER_CONFIG = """\
@@ -159,6 +189,18 @@ def scaffold_user_config(*, force: bool = False) -> Path:
     path.write_text(DEFAULT_USER_CONFIG, encoding="utf-8")
     print(f"[OK] wrote {path}")
     return path
+
+
+def load_layout(root: str | Path) -> Layout:
+    """Load the project Layout from effective config.
+
+    Returns defaults if config is missing or has no ``layout:`` section.
+    """
+    try:
+        cfg = load_effective_config(root)
+    except FileNotFoundError:
+        cfg = {}
+    return Layout.from_config(cfg)
 
 
 def print_effective_config(root: str | Path) -> None:

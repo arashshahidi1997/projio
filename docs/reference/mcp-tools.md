@@ -189,6 +189,7 @@ Notebook tools support multiple backends via the `NotebookBackend` protocol. Eac
 | `pipeio_nb_report(flow, name, overwrite=false, tags_only=false)` | Extract figures/markdown/text from executed notebook for reporting |
 | `pipeio_nb_validate(flow, name)` | Structural validation (percent: AST + import isolation; marimo: `marimo check`) |
 | `pipeio_nb_watch(flow, name, port=0)` | Launch `marimo edit --watch` for live human oversight (marimo-only) |
+| `pipeio_nb_snapshot(flow, name, timeout=120)` | Execute marimo notebook and return cell outputs — agent's "eyes" (marimo-only) |
 
 **Percent-format (jupytext):** `pipeio_nb_sync` direction `"py2nb"` (default) regenerates `.ipynb`/`.myst.md` from the source `.py`; use `"nb2py"` after human edits in JupyterLab. `pipeio_nb_exec` syncs `.py` → `.ipynb` first, then runs via papermill. `params` overrides RunCard fields.
 
