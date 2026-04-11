@@ -78,3 +78,147 @@ def test_cli_parses_site_and_auth_with_c_alias() -> None:
     auth_args = parser.parse_args(["auth", "-C", "/tmp/repo", "doctor"])
     assert site_args.root == "/tmp/repo"
     assert auth_args.root == "/tmp/repo"
+
+
+def test_cli_parses_sync_command() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["sync", "-C", "/tmp/repo", "--dry-run"])
+    assert args.command == "sync"
+    assert args.root == "/tmp/repo"
+    assert args.dry_run is True
+    assert args.index is None  # neither --index nor --no-index
+
+
+def test_cli_parses_sync_index_flag() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["sync", "--index"])
+    assert args.index is True
+
+
+def test_cli_parses_sync_no_index_flag() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["sync", "--no-index"])
+    assert args.index is False
+
+
+def test_cli_parses_sync_install_hooks() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["sync", "--install-hooks"])
+    assert args.install_hooks is True
+
+
+def test_cli_parses_render_sync_command() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["render", "sync"])
+    assert args.command == "render"
+    assert args.render_command == "sync"
+    assert args.output is None
+
+
+def test_cli_parses_render_sync_with_output() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["render", "sync", "--output", "/tmp/pandoc.yaml"])
+    assert args.output == "/tmp/pandoc.yaml"
+
+
+def test_cli_parses_render_show_command() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["render", "show"])
+    assert args.command == "render"
+    assert args.render_command == "show"
+
+
+def test_cli_parses_skill_new_command() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["skill", "new", "my-analysis"])
+    assert args.command == "skill"
+    assert args.skill_command == "new"
+    assert args.name == "my-analysis"
+
+
+def test_cli_parses_skill_list_command() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["skill", "list"])
+    assert args.command == "skill"
+    assert args.skill_command == "list"
+
+
+def test_cli_parses_git_untrack_command() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["git", "untrack", "--dry-run"])
+    assert args.command == "git"
+    assert args.git_command == "untrack"
+    assert args.dry_run is True
+
+
+def test_cli_parses_claude_update_permissions() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["claude", "update-permissions", "--dry-run"])
+    assert args.command == "claude"
+    assert args.claude_command == "update-permissions"
+    assert args.dry_run is True
+
+
+def test_cli_parses_claude_permissions_sync() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["claude", "permissions-sync"])
+    assert args.command == "claude"
+    assert args.claude_command == "permissions-sync"
+    assert args.dry_run is False
+
+
+def test_cli_parses_mcp_config_command() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["mcp-config", "-C", "/tmp/repo", "--yes"])
+    assert args.command == "mcp-config"
+    assert args.root == "/tmp/repo"
+    assert args.yes is True
+
+
+def test_cli_parses_config_set_python() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["config", "set-python", "/path/to/python"])
+    assert args.command == "config"
+    assert args.config_command == "set-python"
+    assert args.python_path == "/path/to/python"
+    assert args.conda_env is None
+
+
+def test_cli_parses_config_set_python_env() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["config", "set-python", "--env", "cogpy"])
+    assert args.conda_env == "cogpy"
+    assert args.python_path is None
+
+
+def test_cli_parses_site_serve_background() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["site", "serve", "--background", "--port", "9000"])
+    assert args.command == "site"
+    assert args.site_command == "serve"
+    assert args.background is True
+    assert args.port == 9000
+
+
+def test_cli_parses_site_stop_all() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["site", "stop", "--all"])
+    assert args.stop_all is True
+
+
+def test_cli_parses_manuscript_init() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["manuscript", "init", "my-paper"])
+    assert args.command == "manuscript"
+    assert args.manuscript_command == "init"
+    assert args.name == "my-paper"
+    assert args.path is None
+
+
+def test_cli_parses_master_init() -> None:
+    parser = _build_parser()
+    args = parser.parse_args(["master", "init", "my-plan", "--sections", "intro", "methods"])
+    assert args.command == "master"
+    assert args.master_command == "init"
+    assert args.name == "my-plan"
+    assert args.sections == ["intro", "methods"]
