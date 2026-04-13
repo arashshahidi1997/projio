@@ -383,3 +383,19 @@ Both skills encode all five friction points from the issue:
 - Pipeline env is `cogpy` (pixecog skill, conventions section)
 
 Session: `e3933927` | Task: `task-arash-20260410-150459-158814.md`
+
+## 2026-04-12 01:44 | projio | sonnet | 1 steps
+
+**Total: 204 tests passing (was 143 before).**
+
+Session: `bf8a344f` | Task: `issue-arash-20260412-013344-955432.md`
+
+## 2026-04-12 02:00 | projio | opus | 1 steps
+
+| Task | Test file | New tests | Coverage focus |
+|------|-----------|-----------|----------------|
+| 1. pipeio | `test_mcp_pipeio_wrappers.py` | ~85 | `_resolve_project_python`, all 56 wrapper unavailability, delegation for flow/nb/rule/run, exception handling |
+| 2. biblio | `test_mcp_biblio.py` | ~47 | All 36 wrapper unavailability, delegation for citekey/paper/grobid/status, exception handling |
+| 3. notio | `test_mcp_notio.py` | ~33 | All 13 wrapper unavailability, note_read validation, ...
+
+Session: `c618c2d5` | Task: `issue-arash-20260412-013511-941571.md`

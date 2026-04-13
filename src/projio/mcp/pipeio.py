@@ -145,6 +145,28 @@ def pipeio_flow_status(flow: str) -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
+def pipeio_flow_audit(flow: str) -> JsonDict:
+    """Audit a flow's compliance with the pipeline-docs.md spec.
+
+    Read-only diagnostic.  Reports which scaffolded files exist, which
+    canonical sections are present in docs/index.md, and which mod facet
+    dirs have theory/spec pairs.  Use before running pipeio_flow_new on
+    an existing flow to preview what will be added (flow_new is idempotent
+    and only writes missing files).
+
+    Args:
+        flow: Flow name.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_flow_audit")
+    root = get_project_root()
+    try:
+        from pipeio.mcp import mcp_flow_audit  # type: ignore[import]
+        return json_dict(mcp_flow_audit(root, flow=flow))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_flow_fork(
     flow: str,
     new_flow: str,
@@ -1358,7 +1380,7 @@ def pipeio_nb_snapshot(
         return json_dict({"error": str(exc)})
 
 
-def pipeio_nb_report(
+def pipeio_nb_extract(
     flow: str,
     name: str,
     overwrite: bool = False,
@@ -1376,11 +1398,11 @@ def pipeio_nb_report(
         tags_only: Only extract cells tagged with ``# REPORT:`` marker.
     """
     if not _pipeio_available():
-        return _unavailable("pipeio_nb_report")
+        return _unavailable("pipeio_nb_extract")
     root = get_project_root()
     try:
-        from pipeio.mcp import mcp_nb_report  # type: ignore[import]
-        return json_dict(mcp_nb_report(
+        from pipeio.mcp import mcp_nb_extract  # type: ignore[import]
+        return json_dict(mcp_nb_extract(
             root, flow=flow, name=name,
             overwrite=overwrite, tags_only=tags_only,
         ))
@@ -1414,10 +1436,13 @@ def pipeio_dag_export(
         return json_dict({"error": str(exc)})
 
 
-def pipeio_report(
+def pipeio_flow_report(
     flow: str = "",
     output_path: str = "",
     target: str = "",
+    max_embed_mb: float = 200.0,
+    warn_embed_mb: float = 50.0,
+    force: bool = False,
 ) -> JsonDict:
     """Generate a snakemake HTML report for a flow.
 
@@ -1425,16 +1450,23 @@ def pipeio_report(
         flow: Flow name (optional).
         output_path: Where to write the report (relative to root). Auto-generated if empty.
         target: Target rule to run before report (e.g. "report" for partial output flows).
+        max_embed_mb: Hard cap on summed target size. Snakemake base64-embeds every
+            target into the HTML, so dense SVGs produce GB-scale reports. Defaults to 200.
+        warn_embed_mb: Soft threshold for size warnings. Defaults to 50.
+        force: Bypass the hard cap when True.
     """
     if not _pipeio_available():
-        return _unavailable("pipeio_report")
+        return _unavailable("pipeio_flow_report")
     root = get_project_root()
     try:
-        from pipeio.mcp import mcp_report  # type: ignore[import]
-        return json_dict(mcp_report(
+        from pipeio.mcp import mcp_flow_report  # type: ignore[import]
+        return json_dict(mcp_flow_report(
             root, flow=flow or None,
             output_path=output_path, target=target,
             snakemake_cmd=_resolve_snakemake_cmd(),
+            max_embed_mb=max_embed_mb,
+            warn_embed_mb=warn_embed_mb,
+            force=force,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})

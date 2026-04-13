@@ -530,17 +530,22 @@ pipeio_dag_export(
 }
 ```
 
-#### `pipeio_report`
+#### `pipeio_flow_report`
 
-Generate a Snakemake HTML report with runtime stats, provenance, and annotated outputs. Supports `target` param for partial-output flows.
+Generate a Snakemake HTML report with runtime stats, provenance, and annotated outputs. Supports `target` param for partial-output flows. Includes a size pre-flight that sums resolved target bytes before invoking snakemake and refuses above `max_embed_mb` — snakemake base64-embeds every target into the HTML, so dense-SVG plot sets can produce GB-scale reports.
 
 ```
-pipeio_report(
-    pipe: str, flow: str = "",
+pipeio_flow_report(
+    flow: str = "",
     output_path: str = "",    # auto-generated if empty
     target: str = "",         # rule to run first, e.g. "report"
+    max_embed_mb: float = 200.0,  # hard cap on summed target size
+    warn_embed_mb: float = 50.0,  # soft threshold for warnings
+    force: bool = False,           # bypass the hard cap
 ) → dict
 ```
+
+*Renamed from `pipeio_report` to disambiguate from `pipeio_nb_extract`.*
 
 ### Logging
 
@@ -647,7 +652,7 @@ For agent instructions (CLAUDE.md / `agent_instructions` tool):
 | Patch an existing rule | `pipeio_rule_update(pipe, flow, name)` | Edit Snakefiles manually |
 | Resolve output paths | `pipeio_target_paths(pipe, flow, group, member, entities)` | Construct BIDS paths manually |
 | Export DAG | `pipeio_dag_export(pipe, flow, graph_type)` | Run snakemake --rulegraph manually |
-| Generate report | `pipeio_report(pipe, flow)` | Run snakemake --report manually |
+| Generate snakemake HTML report (size pre-flight) | `pipeio_flow_report(flow)` | Run snakemake --report manually |
 | Mod context (bundled read) | `pipeio_mod_context(pipe, flow, mod)` | Multiple reads manually |
 | Update notebook metadata | `pipeio_nb_update(pipe, flow, name, status)` | Edit notebook.yml directly |
 | Launch a run | `pipeio_run(pipe, flow, wildcards={"subject": "01"})` | Run snakemake in terminal |

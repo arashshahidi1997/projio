@@ -1,8 +1,20 @@
 # Idea
 
+[**Collect projio MCP tool usage stats per project**](idea-arash-20260413-163827-707584.md){ .note-card-title }
+
+<small>**date:** 2026-04-13</small>
+
+---
+
+[**Add per-flow CHANGELOG**](idea-arash-20260413-145305-923913.md){ .note-card-title }
+
+<small>**date:** 2026-04-13 · **status:** open · **confidence:** 1.0</small>
+
+---
+
 [**pipeio nb_snapshot: marimo session capture for agent-human shared output**](idea-arash-20260412-003010-543420.md){ .note-card-title }
 
-<small>**date:** 2026-04-12</small>
+<small>**date:** 2026-04-12 · **status:** open · **series:** notebook-research · **confidence:** 1.0</small>
 
 ---
 

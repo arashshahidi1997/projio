@@ -1483,8 +1483,8 @@ def pipeio_nb_snapshot_tool(
     )
 
 
-@server.tool("pipeio_nb_report")
-def pipeio_nb_report_tool(
+@server.tool("pipeio_nb_extract")
+def pipeio_nb_extract_tool(
     flow: str,
     name: str,
     overwrite: bool = False,
@@ -1493,8 +1493,12 @@ def pipeio_nb_report_tool(
     """Extract figures, markdown, and text outputs from an executed notebook.
     Saves figures to {flow}/docs/reports/{name}/ and returns structured payload
     for the agent to write a curated report. Use overwrite=True to refresh
-    figures after re-execution. Use tags_only=True to extract only tagged cells."""
-    return pipeio.pipeio_nb_report(
+    figures after re-execution. Use tags_only=True to extract only tagged cells.
+
+    NOTE: this is the notebook figure-extraction tool (renamed from
+    pipeio_nb_report to disambiguate from pipeio_flow_report, which
+    generates the snakemake HTML report)."""
+    return pipeio.pipeio_nb_extract(
         flow=flow, name=name,
         overwrite=overwrite, tags_only=tags_only,
     )
@@ -1549,8 +1553,8 @@ def pipeio_dag_export_tool(
     )
 
 
-@server.tool("pipeio_report")
-def pipeio_report_tool(
+@server.tool("pipeio_flow_report")
+def pipeio_flow_report_tool(
     flow: str = "",
     output_path: str = "",
     target: str = "",
@@ -1564,8 +1568,11 @@ def pipeio_report_tool(
     refuses above max_embed_mb (default 200), warns above warn_embed_mb
     (default 50). Set force=True to bypass the hard cap.
 
+    NOTE: renamed from pipeio_report to disambiguate from pipeio_nb_extract
+    (the notebook figure extraction tool).
+
     target: rule to run first (e.g. "report" for flows with partial outputs)."""
-    return pipeio.pipeio_report(
+    return pipeio.pipeio_flow_report(
         flow=flow,
         output_path=output_path, target=target,
         max_embed_mb=max_embed_mb,

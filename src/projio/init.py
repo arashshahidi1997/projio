@@ -1834,7 +1834,7 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Validate notebook structure | `pipeio_nb_validate(flow, name)` | Eyeball notebook formatting |")
         rows.append("| Live-edit marimo notebook | `pipeio_nb_watch(flow, name)` | Launch marimo CLI manually |")
         rows.append("| Execute marimo + read outputs | `pipeio_nb_snapshot(flow, name)` | Run marimo + parse output manually |")
-        rows.append("| Extract figures from executed notebook | `pipeio_nb_report(flow, name)` | Dig ipynb/marimo outputs by hand |")
+        rows.append("| Extract figures from executed notebook | `pipeio_nb_extract(flow, name)` | Dig ipynb/marimo outputs by hand |")
         # Contracts & validation
         rows.append("| Validate I/O contracts | `pipeio_contracts_validate()` | Check configs manually |")
         rows.append("| Cross-flow manifest chains | `pipeio_cross_flow(flow?)` | Compare configs manually |")
@@ -1842,7 +1842,7 @@ and `runtime_conventions()` to see available Makefile targets.
         # Paths & DAG
         rows.append("| Resolve output paths | `pipeio_target_paths(flow, group, member)` | Construct BIDS paths manually |")
         rows.append("| Export DAG | `pipeio_dag_export(flow, graph_type)` | Run snakemake --rulegraph |")
-        rows.append("| Generate snakemake HTML report (size pre-flight) | `pipeio_report(flow)` | Run snakemake --report directly |")
+        rows.append("| Generate snakemake HTML report (size pre-flight) | `pipeio_flow_report(flow)` | Run snakemake --report directly |")
         rows.append("| Parse logs | `pipeio_log_parse(flow)` | Read log files manually |")
         # Documentation
         rows.append("| Collect pipeline docs | `pipeio_docs_collect()` | Copy doc files manually |")

@@ -1,4 +1,14 @@
-# pipeio: Notebook Report Specification
+# pipeio: Notebook Extract (report) Specification
+
+> **Rename note (2026-04-13):** the MCP tool was renamed
+> `pipeio_nb_report` → `pipeio_nb_extract` and the skill
+> `pipeio-report` → `pipeio-nb-extract` to disambiguate from
+> `pipeio_flow_report` (the snakemake HTML report tool). The
+> artifact produced by this workflow is still called a "report"
+> (the curated `{name}.md` narrative); only the tool/skill names
+> changed. This spec describes the feature end-to-end under its
+> new name. The spec filename is retained as `nb-report.md` for
+> link stability.
 
 ## Problem
 
@@ -62,7 +72,7 @@ Result notes in `docs/log/result/` are project-wide, timestamped event records (
 
 A common pattern: run `/report` to produce the flow-local report, then capture the key finding as a result note that references it.
 
-## MCP Tool: `pipeio_nb_report(flow, name)`
+## MCP Tool: `pipeio_nb_extract(flow, name)`
 
 ### Purpose
 
@@ -71,7 +81,7 @@ Extract figures, markdown narrative, and text outputs from an executed notebook.
 ### Signature
 
 ```python
-def mcp_nb_report(
+def mcp_nb_extract(
     root: Path,
     flow: str,
     name: str,
@@ -191,25 +201,24 @@ When the tool detects these, it returns:
 | Figures dir exists, `overwrite=False` | Skip extraction, return payload with `figures_skipped` count |
 | All outputs are HTML widgets | `figures` empty, `html_outputs` populated, `html_outputs_hint` explains |
 
-## Slash Command: `/report`
+## Skill: `pipeio-nb-extract`
 
 ### Purpose
 
-Orchestrate the agent to produce a curated, human-readable report from a notebook's extracted outputs. The skill calls `pipeio_nb_report`, then guides the agent to write a narrative markdown file.
+Orchestrate the agent to produce a curated, human-readable report from a notebook's extracted outputs. The skill calls `pipeio_nb_extract`, then guides the agent to write a narrative markdown file.
 
 ### Skill Definition
 
 ```yaml
-# .projio/skills/pipeio-report/SKILL.md
-name: pipeio-report
-trigger: /report
+# .projio/skills/pipeio-nb-extract/SKILL.md
+name: pipeio-nb-extract
 description: Extract notebook results and write a flow-local report
 ```
 
 ### Skill Prompt (summary)
 
 1. Ask the user which flow and notebook to report on (or infer from context).
-2. Call `pipeio_nb_report(flow, name)` to extract figures and outputs.
+2. Call `pipeio_nb_extract(flow, name)` to extract figures and outputs.
 3. Write `{flow}/docs/reports/{name}.md` with this structure:
 
 ```markdown
@@ -269,7 +278,7 @@ tags: [report]
 ### Behavior on Re-run
 
 If `{flow}/docs/reports/{name}.md` already exists, the skill should:
-1. Call `pipeio_nb_report(flow, name, overwrite=True)` to refresh figures.
+1. Call `pipeio_nb_extract(flow, name, overwrite=True)` to refresh figures.
 2. Read the existing report.
 3. Ask the user whether to update the existing report or create a fresh one.
 
@@ -293,7 +302,7 @@ ax.set_title("PSD across channels")
 plt.show()
 ```
 
-When `tags_only=True`, `pipeio_nb_report` filters to tagged cells only. This produces a curated subset — useful for long notebooks where the author knows which cells matter.
+When `tags_only=True`, `pipeio_nb_extract` filters to tagged cells only. This produces a curated subset — useful for long notebooks where the author knows which cells matter.
 
 Tags are a convention, not a requirement. Without tags, the tool extracts everything and the agent curates during report writing.
 
@@ -329,15 +338,15 @@ This is informational, not an error — not every notebook needs a report.
 
 ### Result notes
 
-The `/report` skill may optionally prompt the user to also capture a result note (`note_create(type="result")`) that cross-references the flow report. The result note's `figure` field can point to the report, and `refs` can link the flow report path. This bridges flow-local reports with the project-wide result log.
+The `pipeio-nb-extract` skill may optionally prompt the user to also capture a result note (`note_create(type="result")`) that cross-references the flow report. The result note's `figure` field can point to the report, and `refs` can link the flow report path. This bridges flow-local reports with the project-wide result log.
 
 ## Implementation Plan
 
 | Step | Component | Change |
 |------|-----------|--------|
-| 1 | `pipeio/mcp.py` | New `mcp_nb_report` function |
-| 2 | `projio/mcp/pipeio.py` | Register `pipeio_nb_report` tool |
-| 3 | `.projio/skills/pipeio-report/SKILL.md` | New `/report` skill |
+| 1 | `pipeio/mcp.py` | New `mcp_nb_extract` function (was `mcp_nb_report`) |
+| 2 | `projio/mcp/pipeio.py` | Register `pipeio_nb_extract` tool (was `pipeio_nb_report`) |
+| 3 | `src/projio/data/skills/pipeio-nb-extract/SKILL.md` | New extract skill (was `pipeio-report`) |
 | 4 | `pipeio/docs.py` | Add `reports` filtering to `DocsCollector` (gated by `publish.yml`) |
 | 5 | `pipeio/docs.py` | Add `reports` field to `PublishConfig` (default `True`) |
 | 6 | `pipeio/notebook/analyze.py` | Cell tag detection helpers |
@@ -347,8 +356,8 @@ Steps 1-3 deliver the core feature. Steps 4-5 add publish gating. Step 6 adds ta
 
 ## Non-Goals
 
-- **Auto-generating the report narrative.** The tool extracts raw material; the agent (or human) writes the interpretation. `pipeio_nb_report` is an extractor, not a summarizer.
-- **Replacing Snakemake reports.** `pipeio_report` generates provenance-rich HTML from Snakemake metadata. `pipeio_nb_report` extracts findings from notebook cell outputs. Different tools for different purposes.
+- **Auto-generating the report narrative.** The tool extracts raw material; the agent (or human) writes the interpretation. `pipeio_nb_extract` is an extractor, not a summarizer.
+- **Replacing Snakemake reports.** `pipeio_flow_report` generates provenance-rich HTML from Snakemake metadata. `pipeio_nb_extract` extracts findings from notebook cell outputs. Different tools for different purposes — the name disambiguation was the entire motivation for the `pipeio_report` → `pipeio_flow_report` and `pipeio_nb_report` → `pipeio_nb_extract` rename.
 - **Notebook-to-documentation conversion.** This is not nbconvert-to-docs. The report is a curated, interpreted subset of notebook outputs — not a full notebook rendering.
 - **Version-stamped reports.** Reports evolve with notebooks. Git history provides versioning. No dated copies or report archives.
 - **Cross-flow report aggregation.** Each report is scoped to one notebook in one flow. Project-wide synthesis belongs in result notes or manuscript sections.

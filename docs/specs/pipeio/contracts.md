@@ -169,7 +169,7 @@ pipeio should **surface** snakemake's unit test capability without reimplementin
 }
 ```
 
-#### Generation hint: `pipeio_report`
+#### Generation hint: `pipeio_flow_report`
 
 After a successful `pipeio_run`, the report or status output can suggest generating unit tests if `.tests/` doesn't exist:
 

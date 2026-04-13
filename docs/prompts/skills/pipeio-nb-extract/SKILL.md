@@ -1,32 +1,40 @@
 ---
-name: pipeio-report
+name: pipeio-nb-extract
 description: >
-  Extract notebook results via pipeio_nb_report and write a curated
-  flow-local report with figures, metrics, and interpretation.
+  Extract notebook results via pipeio_nb_extract and write a curated
+  flow-local report with figures, metrics, and interpretation. NOTE:
+  this is the notebook figure-extraction skill — for the snakemake
+  HTML report, see pipeio_flow_report.
 metadata:
   short-description: extract notebook results and write a flow-local report
-  tags: [pipeio, notebook, report, results]
+  tags: [pipeio, notebook, extract, results]
   tooling:
     mcp:
       - server: projio
         tools:
-          - pipeio_nb_report
+          - pipeio_nb_extract
           - pipeio_flow_list
           - pipeio_nb_status
           - note_create
 ---
 
-# Pipeio Report
+# Pipeio Notebook Extract
 
 Use this skill to extract findings from an executed notebook and write a
 curated report that lives in the flow's `docs/reports/` directory.
+
+> **Name note:** this skill (and the underlying `pipeio_nb_extract` tool)
+> was renamed from `pipeio-report` / `pipeio_nb_report` to disambiguate
+> from the snakemake HTML report tool `pipeio_flow_report`. The two do
+> completely different things — if you want the snakemake runtime/
+> provenance report, use `pipeio_flow_report`, not this skill.
 
 ## When to use
 
 - After running `pipeio_nb_exec` to execute an exploratory notebook
 - When you need to summarize notebook findings for collaborators
 - When preparing results for meeting notes or manuscript sections
-- When the user says `/report`
+- When the user says `/extract` or asks to turn notebook outputs into a report
 
 ## Format support
 
@@ -51,7 +59,7 @@ available flows and notebooks.
 ### 2) Extract notebook outputs
 
 ```
-pipeio_nb_report(flow="<flow>", name="<notebook>")
+pipeio_nb_extract(flow="<flow>", name="<notebook>")
 ```
 
 This extracts:
@@ -65,12 +73,12 @@ to run `pipeio_nb_exec` first.
 
 If figures already exist and the notebook was re-executed, use:
 ```
-pipeio_nb_report(flow="<flow>", name="<notebook>", overwrite=True)
+pipeio_nb_extract(flow="<flow>", name="<notebook>", overwrite=True)
 ```
 
 For long notebooks where the author tagged important cells with `# REPORT:`:
 ```
-pipeio_nb_report(flow="<flow>", name="<notebook>", tags_only=True)
+pipeio_nb_extract(flow="<flow>", name="<notebook>", tags_only=True)
 ```
 
 ### 3) Check for existing report
