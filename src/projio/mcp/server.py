@@ -735,6 +735,45 @@ def present_diff_tool(name: str):
     return presentio.present_diff(name=name)
 
 
+@server.tool("present_section_import")
+def present_section_import_tool(
+    name: str,
+    from_project: str,
+    source_deck: str,
+    section: str,
+    key: str = "",
+    order: int = 0,
+    mode: str = "reference",
+):
+    """Import a section from another project's deck via worklog.
+    Fetches the remote section, caches it under docs/presentations/<name>/imports/,
+    registers it in deck.yml with import metadata. mode is 'reference' (can be
+    refreshed) or 'freeze' (locked)."""
+    return presentio.present_section_import(
+        name=name,
+        from_project=from_project,
+        source_deck=source_deck,
+        section=section,
+        key=key,
+        order=order,
+        mode=mode,
+    )
+
+
+@server.tool("present_refresh_import")
+def present_refresh_import_tool(name: str, section: str):
+    """Re-fetch a previously imported section from its source project.
+    Only works on reference-mode imports; frozen imports are skipped."""
+    return presentio.present_refresh_import(name=name, section=section)
+
+
+@server.tool("present_freeze_import")
+def present_freeze_import_tool(name: str, section: str = ""):
+    """Lock an imported section against future refreshes. Empty section
+    freezes all imports in the deck."""
+    return presentio.present_freeze_import(name=name, section=section)
+
+
 # --- Master document tools ---
 
 @server.tool("master_list")
@@ -936,6 +975,16 @@ def pipeio_flow_list_tool(prefix: str = ""):
 def pipeio_flow_status_tool(flow: str):
     """Show status of a specific flow (config, outputs, notebooks)."""
     return pipeio.pipeio_flow_status(flow=flow)
+
+
+@server.tool("pipeio_flow_audit")
+def pipeio_flow_audit_tool(flow: str):
+    """Audit a flow against the pipeline-docs.md spec (read-only).
+    Reports which scaffolded files are present (Snakefile, config.yml,
+    publish.yml, CHANGELOG.md), which canonical sections exist in
+    docs/index.md, and which mod facet dirs have theory/spec pairs.
+    Preview what pipeio_flow_new would add to an existing flow."""
+    return pipeio.pipeio_flow_audit(flow=flow)
 
 
 @server.tool("pipeio_flow_fork")

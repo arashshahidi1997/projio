@@ -1764,6 +1764,9 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Insert figio figure into section | `present_figure_insert(name, section, figure_id)` | Edit markdown directly |")
         rows.append("| Cite check (bib + docling) | `present_cite_check(name)` | Cross-ref manually |")
         rows.append("| Diff vs last assembled.md | `present_diff(name)` | Run `diff` in terminal |")
+        rows.append("| Import section from another project | `present_section_import(name, from_project, source_deck, section)` | Copy files manually |")
+        rows.append("| Refresh imported section | `present_refresh_import(name, section)` | Re-copy manually |")
+        rows.append("| Freeze imported section | `present_freeze_import(name, section?)` | Edit deck.yml manually |")
         rows.append("| Seed deck from a paper (LLM) | `present_seed_from_paper(name, citekey)` | Run `biblio present` in terminal |")
 
     if has_codio:
@@ -1788,10 +1791,14 @@ and `runtime_conventions()` to see available Makefile targets.
         # Flow & registry
         rows.append("| List flows | `pipeio_flow_list(prefix?)` | Parse registry YAML directly |")
         rows.append("| Flow status | `pipeio_flow_status(flow)` | Inspect flow dirs manually |")
+        rows.append("| Scaffold new flow | `pipeio_flow_new(flow)` | Create flow skeleton manually |")
+        rows.append("| Fork an existing flow | `pipeio_flow_fork(src, dest)` | Copy flow dir manually |")
+        rows.append("| Deregister a flow | `pipeio_flow_deregister(flow)` | Edit registry.yml manually |")
         rows.append("| Scan for pipelines | `pipeio_registry_scan()` | Walk filesystem manually |")
         rows.append("| Validate registry | `pipeio_registry_validate()` | Check consistency manually |")
         # Mod management
         rows.append("| List mods | `pipeio_mod_list(flow)` | Parse registry manually |")
+        rows.append("| Resolve rule → mod | `pipeio_mod_resolve(flow, rule)` | Grep Snakefiles manually |")
         rows.append("| Mod context (rules, scripts, doc, config) | `pipeio_mod_context(flow, mod)` | Multiple reads manually |")
         rows.append("| Scaffold mod (script + docs) | `pipeio_mod_create(flow, mod, inputs, outputs)` | Create files manually |")
         rows.append("| Add script to existing mod | `pipeio_script_create(flow, mod, script_name)` | Create script manually |")
@@ -1824,6 +1831,10 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Full notebook pipeline | `pipeio_nb_pipeline(flow, name)` | Chain sync/publish/collect |")
         rows.append("| Build Jupyter Lab manifest | `pipeio_nb_lab(flow?, sync?)` | Create symlinks manually |")
         rows.append("| Promote notebook to mod | `pipeio_nb_promote(flow, name, mod)` | Manual extraction |")
+        rows.append("| Validate notebook structure | `pipeio_nb_validate(flow, name)` | Eyeball notebook formatting |")
+        rows.append("| Live-edit marimo notebook | `pipeio_nb_watch(flow, name)` | Launch marimo CLI manually |")
+        rows.append("| Execute marimo + read outputs | `pipeio_nb_snapshot(flow, name)` | Run marimo + parse output manually |")
+        rows.append("| Extract figures from executed notebook | `pipeio_nb_report(flow, name)` | Dig ipynb/marimo outputs by hand |")
         # Contracts & validation
         rows.append("| Validate I/O contracts | `pipeio_contracts_validate()` | Check configs manually |")
         rows.append("| Cross-flow manifest chains | `pipeio_cross_flow(flow?)` | Compare configs manually |")
@@ -1831,7 +1842,7 @@ and `runtime_conventions()` to see available Makefile targets.
         # Paths & DAG
         rows.append("| Resolve output paths | `pipeio_target_paths(flow, group, member)` | Construct BIDS paths manually |")
         rows.append("| Export DAG | `pipeio_dag_export(flow, graph_type)` | Run snakemake --rulegraph |")
-        rows.append("| Generate report | `pipeio_report(flow)` | Run snakemake --report |")
+        rows.append("| Generate snakemake HTML report (size pre-flight) | `pipeio_report(flow)` | Run snakemake --report directly |")
         rows.append("| Parse logs | `pipeio_log_parse(flow)` | Read log files manually |")
         # Documentation
         rows.append("| Collect pipeline docs | `pipeio_docs_collect()` | Copy doc files manually |")

@@ -20,6 +20,12 @@ Mirrors :mod:`projio.mcp.manuscripto`.
   figures and citations, slide count)
 - ``present_diff`` — compare current sections against the last assembled.md
 
+**Phase 4** — cross-project imports:
+- ``present_section_import`` — fetch a section from another project's deck via
+  worklog and register it as an imported section in the host deck
+- ``present_refresh_import`` — re-fetch a previously imported section
+- ``present_freeze_import`` — lock an import against future refreshes
+
 Cross-package glue (biblio for seeding, figio for figures, worklog for
 cross-project imports) lives here, not in ``notio.present`` itself — this
 keeps the notio subpackage cheap to graduate to a standalone
@@ -1041,6 +1047,406 @@ def present_diff(name: str) -> JsonDict:
                 "word_count_delta": word_count_after - word_count_before,
                 "sections": section_changes,
                 "unified_diff": unified_diff,
+            }
+        )
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+# ────────────────────────────────────────────────────────────────────
+# Phase 4 — cross-project imports via worklog
+# ────────────────────────────────────────────────────────────────────
+
+
+def _worklog_read_file(project_id: str, path: str):
+    """Delegate to the worklog MCP tool for cross-project file reads.
+
+    Imports the worklog MCP module lazily — worklog is not a hard
+    dependency of projio, and decks can still be built without it.
+    Returns the fetched text, or raises RuntimeError with a friendly
+    message if worklog is unavailable.
+    """
+    try:
+        # Worklog is typically mounted as its own MCP server; its functions
+        # are importable from `worklog.mcp` when installed.
+        from worklog.mcp import worklog_read_file as wl_read_file  # type: ignore
+    except ImportError as exc:
+        raise RuntimeError(
+            "worklog not available — cross-project imports require the "
+            "worklog package. Install with: pip install -e <worklog-repo>"
+        ) from exc
+    result = wl_read_file(project_id=project_id, path=path)
+    if isinstance(result, dict) and result.get("error"):
+        raise RuntimeError(f"worklog_read_file failed: {result['error']}")
+    if isinstance(result, dict) and "content" in result:
+        return str(result["content"])
+    if isinstance(result, str):
+        return result
+    raise RuntimeError(
+        f"worklog_read_file returned unexpected shape: {type(result).__name__}"
+    )
+
+
+def _imports_dir(base_dir: Path) -> Path:
+    """Return the per-deck imports cache directory."""
+    return base_dir / "imports"
+
+
+def _import_filename(from_project: str, source_deck: str, section: str) -> str:
+    """Canonical file name for an imported section."""
+    safe = (
+        f"{from_project}-{source_deck}-{section}"
+        .replace("/", "-")
+        .replace("\\", "-")
+        .replace(" ", "_")
+    )
+    return f"{safe}.md"
+
+
+def present_section_import(
+    name: str,
+    from_project: str,
+    source_deck: str,
+    section: str,
+    key: str = "",
+    order: int = 0,
+    mode: str = "reference",
+) -> JsonDict:
+    """Import a section from another project's deck into the host deck.
+
+    Fetches ``docs/presentations/<source_deck>/sections/<section>.md`` from
+    the ``from_project`` via the worklog MCP server, writes a local copy
+    under ``docs/presentations/<name>/imports/``, and registers a new
+    section in the host deck's ``deck.yml`` with ``import:`` metadata.
+
+    Extracts citekeys from the imported body and reports which are missing
+    from the host project's bibliography — the agent is expected to run
+    ``biblio_ingest`` on them explicitly. This keeps side effects scoped.
+
+    Args:
+        name: Host deck name.
+        from_project: Source project id (as registered in worklog).
+        source_deck: Source deck name in the remote project.
+        section: Section key in the source deck.
+        key: Section key in the host deck. Defaults to
+            ``<from_project>-<section>``.
+        order: Sort order in the host deck. Defaults to one slot after
+            the current max.
+        mode: ``"reference"`` (default, can be refreshed) or ``"freeze"``
+            (locked against re-fetch).
+    """
+    if not _present_available():
+        return _unavailable("present_section_import")
+    if mode not in ("reference", "freeze"):
+        return {"error": f"Invalid mode {mode!r}. Use 'reference' or 'freeze'."}
+    root = get_project_root()
+    try:
+        base_dir, spec_path = _find_deck_dir(root, name)
+        if base_dir is None:
+            return json_dict(
+                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+            )
+
+        from notio.present.schema import DeckSection, DeckSectionImport, DeckSpec
+
+        spec = DeckSpec.from_yaml(spec_path)
+
+        # Fetch remote section via worklog
+        remote_path = f"docs/presentations/{source_deck}/sections/{section}.md"
+        try:
+            body = _worklog_read_file(from_project, remote_path)
+        except RuntimeError as exc:
+            return json_dict({"error": str(exc), "remote_path": remote_path})
+
+        # Resolve local key / order
+        host_key = key or f"{from_project}-{section}".replace("/", "-")
+        if any(s.key == host_key for s in spec.sections):
+            return json_dict(
+                {
+                    "error": (
+                        f"Section key '{host_key}' already exists in deck "
+                        f"'{name}'. Pass a different key= to override."
+                    )
+                }
+            )
+        if order <= 0:
+            existing_orders = [s.order for s in spec.sections]
+            order = (max(existing_orders) + 10) if existing_orders else 10
+
+        # Write the cache file. Prepend a small header so the imported
+        # section carries projio-compatible frontmatter.
+        imports_dir = _imports_dir(base_dir)
+        imports_dir.mkdir(parents=True, exist_ok=True)
+        filename = _import_filename(from_project, source_deck, section)
+        cache_path = imports_dir / filename
+
+        # Strip any pre-existing frontmatter from the remote body and
+        # stamp our own with import provenance.
+        from notio.manuscript.assembly import strip_frontmatter
+
+        remote_body = strip_frontmatter(body).strip()
+
+        import_header = (
+            f"---\n"
+            f'title: "Imported: {section}"\n'
+            f"order: {order}\n"
+            f"deck: {name}\n"
+            f"imported_from_project: {from_project}\n"
+            f"imported_from_deck: {source_deck}\n"
+            f"imported_from_section: {section}\n"
+            f"import_mode: {mode}\n"
+            f"status: imported\n"
+            f"tags: [presentation, section, imported]\n"
+            f"---\n\n"
+        )
+        cache_path.write_text(import_header + remote_body + "\n", encoding="utf-8")
+
+        # Add a DeckSection pointing at the cache file with import metadata
+        import_meta = DeckSectionImport(
+            from_project=from_project,
+            deck=source_deck,
+            section=section,
+            mode=mode,
+        )
+        spec.sections.append(
+            DeckSection(
+                key=host_key,
+                path=f"imports/{filename}",
+                order=order,
+                import_=import_meta,
+            )
+        )
+
+        import yaml
+
+        spec_path.write_text(
+            yaml.dump(spec.to_dict(), default_flow_style=False, sort_keys=False),
+            encoding="utf-8",
+        )
+
+        # Extract citekeys from the imported body and report which are
+        # present in the host project's bibliography already.
+        imported_citekeys = sorted(set(_CITE_RE.findall(remote_body)))
+        missing_citekeys: list[str] = []
+        if imported_citekeys:
+            # Best-effort: consult the resolved bibliography to compute
+            # missing keys. Same pattern as present_cite_check.
+            try:
+                from notio.present.schema import resolve_deck_render
+
+                resolved = resolve_deck_render(spec, base_dir)
+                bib_rel = resolved["bib_file"]
+                if bib_rel:
+                    bib_path = base_dir / bib_rel
+                    if bib_path.is_file():
+                        bib_text = bib_path.read_text(encoding="utf-8")
+                        bib_keys = set(
+                            re.findall(r"@\w+\{([^,\s]+)", bib_text)
+                        )
+                        missing_citekeys = sorted(
+                            set(imported_citekeys) - bib_keys
+                        )
+                    else:
+                        missing_citekeys = imported_citekeys
+                else:
+                    missing_citekeys = imported_citekeys
+            except Exception:
+                missing_citekeys = imported_citekeys
+
+        # Extract figure references for reporting
+        imported_figures = sorted(
+            {m.group(2) for m in _FIG_REF_RE.finditer(remote_body)}
+        )
+
+        suggestions: list[str] = []
+        if missing_citekeys:
+            suggestions.append(
+                f"Run biblio_ingest for missing citekeys: {missing_citekeys}"
+            )
+        if imported_figures:
+            suggestions.append(
+                f"Imported figure refs: {imported_figures}. Ensure they exist "
+                f"in the host project (figio_build, or freeze them manually)."
+            )
+
+        return json_dict(
+            {
+                "deck": name,
+                "from_project": from_project,
+                "source_deck": source_deck,
+                "source_section": section,
+                "host_key": host_key,
+                "host_path": f"imports/{filename}",
+                "order": order,
+                "mode": mode,
+                "imported_citekeys": imported_citekeys,
+                "missing_citekeys": missing_citekeys,
+                "imported_figures": imported_figures,
+                "suggestions": suggestions,
+            }
+        )
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def present_refresh_import(name: str, section: str) -> JsonDict:
+    """Re-fetch a previously imported section from its source project.
+
+    Works on sections in ``reference`` mode only. Sections in ``freeze``
+    mode refuse to refresh — use ``present_freeze_import`` to unfreeze
+    first if you really mean it.
+
+    Args:
+        name: Host deck name.
+        section: Section key in the host deck.
+    """
+    if not _present_available():
+        return _unavailable("present_refresh_import")
+    root = get_project_root()
+    try:
+        base_dir, spec_path = _find_deck_dir(root, name)
+        if base_dir is None:
+            return json_dict(
+                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+            )
+
+        from notio.present.schema import DeckSpec
+
+        spec = DeckSpec.from_yaml(spec_path)
+
+        target = next((s for s in spec.sections if s.key == section), None)
+        if target is None:
+            return json_dict(
+                {
+                    "error": f"Section '{section}' not found in deck '{name}'",
+                    "available_sections": [s.key for s in spec.sections],
+                }
+            )
+        if target.import_ is None:
+            return json_dict(
+                {
+                    "error": (
+                        f"Section '{section}' is not an imported section. "
+                        "Only imports can be refreshed."
+                    )
+                }
+            )
+        if target.import_.mode == "freeze":
+            return json_dict(
+                {
+                    "error": (
+                        f"Section '{section}' is frozen (import_mode=freeze). "
+                        "Nothing to refresh."
+                    )
+                }
+            )
+
+        remote_path = (
+            f"docs/presentations/{target.import_.deck}/sections/"
+            f"{target.import_.section}.md"
+        )
+        try:
+            body = _worklog_read_file(target.import_.from_project, remote_path)
+        except RuntimeError as exc:
+            return json_dict({"error": str(exc), "remote_path": remote_path})
+
+        from notio.manuscript.assembly import strip_frontmatter
+
+        remote_body = strip_frontmatter(body).strip()
+
+        # Overwrite the cache file, preserving the existing frontmatter header
+        cache_path = base_dir / target.path
+        existing = (
+            cache_path.read_text(encoding="utf-8") if cache_path.is_file() else ""
+        )
+        m = re.match(r"\A(---\s*\n.*?\n---\s*\n\s*)", existing, re.DOTALL)
+        header = m.group(1) if m else ""
+        cache_path.write_text(header + remote_body + "\n", encoding="utf-8")
+
+        return json_dict(
+            {
+                "deck": name,
+                "section": section,
+                "from_project": target.import_.from_project,
+                "source_deck": target.import_.deck,
+                "source_section": target.import_.section,
+                "mode": target.import_.mode,
+                "bytes": cache_path.stat().st_size,
+                "refreshed": True,
+            }
+        )
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
+def present_freeze_import(name: str, section: str = "") -> JsonDict:
+    """Lock an imported section (or all imports) against future refreshes.
+
+    Setting ``import_mode: freeze`` in deck.yml is all this does — the
+    cache file itself doesn't change. Freezing is a deliberate act:
+    use it before giving a talk from a deck that depends on another
+    project's in-flight work.
+
+    Args:
+        name: Host deck name.
+        section: Section key. Empty string freezes every imported
+            section in the deck.
+    """
+    if not _present_available():
+        return _unavailable("present_freeze_import")
+    root = get_project_root()
+    try:
+        base_dir, spec_path = _find_deck_dir(root, name)
+        if base_dir is None:
+            return json_dict(
+                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+            )
+
+        from notio.present.schema import DeckSpec
+
+        spec = DeckSpec.from_yaml(spec_path)
+
+        frozen: list[str] = []
+        skipped: list[str] = []
+        for entry in spec.sections:
+            if entry.import_ is None:
+                continue
+            if section and entry.key != section:
+                continue
+            if entry.import_.mode == "freeze":
+                skipped.append(entry.key)
+                continue
+            entry.import_.mode = "freeze"
+            # Update the cache file's frontmatter header too
+            cache_path = base_dir / entry.path
+            if cache_path.is_file():
+                raw = cache_path.read_text(encoding="utf-8")
+                raw = re.sub(
+                    r"(?m)^import_mode:\s*reference\s*$",
+                    "import_mode: freeze",
+                    raw,
+                )
+                cache_path.write_text(raw, encoding="utf-8")
+            frozen.append(entry.key)
+
+        if section and not frozen and not skipped:
+            return json_dict(
+                {"error": f"Section '{section}' is not an imported section."}
+            )
+
+        import yaml
+
+        spec_path.write_text(
+            yaml.dump(spec.to_dict(), default_flow_style=False, sort_keys=False),
+            encoding="utf-8",
+        )
+
+        return json_dict(
+            {
+                "deck": name,
+                "frozen": frozen,
+                "already_frozen": skipped,
+                "total_frozen": len(frozen),
             }
         )
     except Exception as exc:
