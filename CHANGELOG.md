@@ -15,9 +15,11 @@
 - `kind: interactive` notebook kind — marimo-only, persists by design, not promoted to scripts
 - Marimo notebooks placed in workspace dir (not `.src/`) — the `.py` IS the human interface
 - `pipeio_nb_create` accepts `format` param; `kind="interactive"` auto-selects marimo
-- `pipeio_nb_report` tool + `/report` skill — extract notebook results into flow-local reports with figures
+- `pipeio_nb_extract` tool + `pipeio-nb-extract` skill — extract notebook results into flow-local reports with figures (renamed from `pipeio_nb_report` / `pipeio-report`; see [commit note](docs/log/commit/commit-arash-20260413-153016-000000.md))
+- Size pre-flight in `pipeio_flow_report` — sums resolved target bytes before invoking `snakemake --report`, refuses above `max_embed_mb=200` with top-offenders list, warns above `warn_embed_mb=50`; motivated by pixecog `preprocess_motion` producing an 856 MB HTML from 640 MB of dense trajectory SVGs
 - `pipeio_nb_move` tool — move a notebook between flows (files + registry update)
 - `commit` note type in notio — structured change records with subsystem, commit_hash, files_created/modified fields
+- `pipeio_flow_audit` tool + `pipeline-docs.md` spec — canonical flow documentation convention (`docs/index.md` section template, per-mod facet dirs, flow-root `CHANGELOG.md`), read-only compliance check, `ChangelogCollector` in `docs_collect`, richer `flow_new` scaffold. Pixecog migrated 0/8 → 7/8 compliant. See [commit note](docs/log/commit/commit-arash-20260413-175852-000000.md)
 
 **biblio** (literature)
 - 5 new MCP tools: `biblio_openalex_resolve`, `biblio_status`, `biblio_crossref_resolve`, `biblio_graph_promote`, `biblio_extract`
@@ -38,6 +40,8 @@
 - Index staleness reported in `ecosystem_status()`
 
 ### Changed
+- **pipeio BREAKING rename** — `pipeio_report` → `pipeio_flow_report`, `pipeio_nb_report` → `pipeio_nb_extract`, skill `pipeio-report` → `pipeio-nb-extract`, slash-command `/pipeio-report` → `/pipeio-nb-extract`. Motivation: two tools that both sounded like "make a report" did completely different things (snakemake HTML report vs. notebook figure extraction). No backward-compat aliases — callers must update. See [commit note](docs/log/commit/commit-arash-20260413-153016-000000.md) for full change table.
+- `agent_instructions()` routing table (`src/projio/init.py`) — added 8 previously missing pipeio tool rows (`pipeio_flow_new`, `_flow_fork`, `_flow_deregister`, `_mod_resolve`, `_nb_validate`, `_nb_watch`, `_nb_snapshot`, `_nb_extract`)
 - Questio YAML sources moved from `docs/plan/` to `plan/` at project root
 - Conda env rename: `rag` → `projio`
 - Cross-platform compatibility — removed hardcoded lab paths, Windows support

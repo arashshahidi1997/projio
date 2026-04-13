@@ -1791,7 +1791,8 @@ and `runtime_conventions()` to see available Makefile targets.
         # Flow & registry
         rows.append("| List flows | `pipeio_flow_list(prefix?)` | Parse registry YAML directly |")
         rows.append("| Flow status | `pipeio_flow_status(flow)` | Inspect flow dirs manually |")
-        rows.append("| Scaffold new flow | `pipeio_flow_new(flow)` | Create flow skeleton manually |")
+        rows.append("| Audit flow against pipeline-docs.md spec | `pipeio_flow_audit(flow)` — read-only; reports missing scaffold files, canonical docs/index.md sections, and mod facet gaps. Use before `pipeio_flow_new(flow)` to preview what idempotent scaffold would add | Manual file-by-file check |")
+        rows.append("| Scaffold new flow (also completes an existing flow) | `pipeio_flow_new(flow)` — idempotent; only writes missing files | Create flow skeleton manually |")
         rows.append("| Fork an existing flow | `pipeio_flow_fork(src, dest)` | Copy flow dir manually |")
         rows.append("| Deregister a flow | `pipeio_flow_deregister(flow)` | Edit registry.yml manually |")
         rows.append("| Scan for pipelines | `pipeio_registry_scan()` | Walk filesystem manually |")

@@ -33,7 +33,7 @@ Do NOT use for modifying existing tool signatures — that is a refactor, not a 
 
 ## Inputs
 
-- `TOOL_NAME` (required): the MCP tool name (e.g. `biblio_pool_resolve`)
+- `TOOL_NAME` (required): the MCP tool name (e.g. `biblio_pool_promote`)
 - `PACKAGE` (required): which subsystem package (biblio, codio, notio, pipeio, indexio, figio)
 - `SPEC` (optional): path to design spec describing the tool's behavior
 - `DESCRIPTION` (required): one-line tool description for the MCP decorator
