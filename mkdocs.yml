@@ -59,12 +59,14 @@ nav:
       - Research Orchestration (Questio): tutorials/questio-setup.md
       - Site & Docs Workflow: tutorials/site-workflow.md
       - Marimo Reactive Notebooks: tutorials/marimo-notebooks.md
+      - Presentio Deck Iteration: tutorials/presentio-deck.md
   - How-To Guides:
       - how-to/index.md
       - Initialize A Workspace: how-to/init.md
       - Configure The MCP Server: how-to/mcp.md
       - Manage DataLad Siblings: how-to/siblings.md
       - Build The Documentation Site: how-to/site.md
+      - Presentio Cross-Project Imports: how-to/presentio-cross-project.md
   - Explanation:
       - explanation/index.md
       - Ecosystem: explanation/ecosystem.md
@@ -74,12 +76,14 @@ nav:
       - Search Before Creation: explanation/search-before-creation.md
       - Agent Safety & Permissions: explanation/agent-safety.md
       - Research Orchestration (Questio): explanation/questio.md
+      - Presentio (Decks as Artifacts): explanation/presentio.md
   - Reference:
       - reference/index.md
       - CLI: reference/cli.md
       - Workspace Layout: reference/workspace-layout.md
       - Configuration: reference/configuration.md
       - MCP Tools: reference/mcp-tools.md
+      - Skills: reference/skills.md
   - Specs:
       - pipeio:
           - specs/pipeio/index.md

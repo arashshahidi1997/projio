@@ -119,6 +119,59 @@ The projio MCP server exposes tools across eight categories. Optional tools requ
 
 `manuscript_figure_insert` appends or prepends a `![](fig/<figure_id>.*)` reference at the specified position in a section file.
 
+## Presentation tools (via notio.present)
+
+Presentio treats presentation decks as first-class projio artifacts, parallel to manuscripts: a YAML spec + ordered section tree + dual-backend renderer (Marp or reveal.js via pandoc). Decks live under `docs/presentations/<name>/` and are iterated section-by-section rather than one-shot-generated.
+
+### Read
+
+| Tool | Description |
+|------|-------------|
+| `present_list()` | List all decks under `docs/presentations/` |
+| `present_status(name)` | Per-section state, figure counts, bibliography inheritance, last-built outputs |
+| `present_overview(name)` | Rich dashboard: per-section stats, missing/stale citations and figures, slide count estimate |
+| `present_section_context(name, section)` | One-call context for drafting a slide section — body, citations, figures, RAG hits, related notes |
+| `present_validate(name)` | Structural checks (section files exist, figure ids resolve, citekeys against bib, renderer availability) |
+| `present_cite_check(name)` | Cross-check cited keys against the inherited bibliography; report docling fulltext availability; suggest `biblio_ingest` / `biblio_docling` follow-ups |
+| `present_diff(name)` | Compare current sections against the last `assembled.md` — per-section word/citation/figure drift plus a full unified diff |
+
+### Write
+
+| Tool | Description |
+|------|-------------|
+| `present_init(name, format="marp", template="lab-meeting", title="")` | Scaffold a new deck with template-driven section stubs |
+| `present_assemble(name)` | Write `build/assembled.md` without calling a renderer |
+| `present_build(name, format="")` | Full render pipeline via the backend matching `spec.format` (marp-cli or pandoc `-t revealjs`) |
+| `present_figure_insert(name, section, figure_id, position="end")` | Insert a `fig:<id>` placeholder into a section and auto-register in `deck.yml` |
+| `present_seed_from_paper(name, citekey, template="journal-club", model="sonnet", force=false)` | Scaffold a deck and seed a `sections/seed.md` via `biblio.present.generate_slides` |
+| `present_section_import(name, from_project, source_deck, section, key="", order=0, mode="reference")` | Import a section from another project's deck via worklog; caches under `imports/` and registers in `deck.yml` |
+| `present_refresh_import(name, section)` | Re-fetch a previously imported section from its source project (reference mode only) |
+| `present_freeze_import(name, section="")` | Lock one or all imported sections against future refreshes |
+
+`present_init` accepts four templates: `lab-meeting` (5 sections), `journal-club` (6), `conference-talk` (8), `progress-report` (5). Two formats: `marp` (phase 1, requires `marp-cli`) and `revealjs` (phase 3, requires pandoc ≥ 2.19). Section files are scaffolded as markdown stubs with notio-compatible YAML frontmatter so notio indexing can surface them.
+
+`present_status` and `present_overview` both return per-section counts. `present_status` is the fast version for quick checks; `present_overview` adds citation cross-checking, figure staleness detection, and total slide count (including intra-file `---` separators).
+
+`present_section_context` is the agent's single entry point for drafting. It gathers the section body, extracts citekeys and figure refs, runs a RAG query seeded from the section key + deck title, and pulls related notes — everything needed to draft without multiple reads.
+
+`present_assemble` dispatches by `spec.format`: Marp decks get a Marp frontmatter block; reveal.js decks get a pandoc YAML metadata block. Intra-file `---` separators are preserved in both backends; the section source files themselves are format-agnostic and can be rendered both ways by flipping `format:` in `deck.yml`.
+
+`present_build` runs the full pipeline. For Marp: assemble → figure resolution → pandoc citeproc preresolve (if bibliography configured) → marp-cli render. For reveal.js: assemble (pandoc frontmatter) → figure resolution → pandoc `-t revealjs --slide-level=0 --citeproc` render. `--slide-level=0` is deliberate — it makes horizontal rules act as slide separators, matching Marp's convention so the same section source builds both formats.
+
+`present_cite_check` walks every section, extracts citekey markers, cross-references them against the inherited bibliography, and reports which cited papers have docling fulltext available for RAG. Returns actionable suggestions (`Run biblio_ingest for missing citekeys: [...]`) the agent can execute directly.
+
+`present_diff` compares the current assembled markdown against `build/assembled.md` from the last build. Reports per-section word-count deltas, citekey drift (added/removed), figure-ref drift, and a full unified diff. Useful after a round of edits to see what the next build would actually change.
+
+`present_figure_insert` inserts `![caption](fig:<figure_id>)` into a section and appends the figure to `deck.yml`'s `figures:` list if not already there. At render time, `resolve_figure_paths` swaps the placeholder for the real figio output path with a format-aware extension preference (png for Marp, svg for reveal.js, png for pptx).
+
+`present_seed_from_paper` is the bridge to biblio. It delegates to `biblio.present.generate_slides` (LLM-backed Marp generation from a paper's docling output and figures), strips the Marp frontmatter, and writes the result into the deck as `sections/seed.md`. The seed is a *starting point* for iteration, never a finished deck.
+
+`present_section_import` fetches `docs/presentations/<source_deck>/sections/<section>.md` from another project via `worklog_read_file`, strips the remote frontmatter, stamps a new header with provenance (`imported_from_project`, `imported_from_deck`, `imported_from_section`, `import_mode`), writes the cache file to `docs/presentations/<name>/imports/<key>.md`, and registers a `DeckSection` in `deck.yml` with an `import:` block. Extracts citekeys and figure refs from the body and reports which citekeys are missing from the host project's bibliography.
+
+`present_refresh_import` re-fetches a reference-mode import to pick up upstream edits. Preserves the cache file's provenance header. Refuses to operate on frozen imports — use `present_freeze_import` to unfreeze first if you really need to.
+
+`present_freeze_import` flips `import_mode: reference → freeze` in both `deck.yml` and the cache file's frontmatter. Use before giving a talk from a deck that depends on another project's in-flight material.
+
 ## Code intelligence tools (via codio)
 
 ### Read
@@ -186,7 +239,7 @@ Notebook tools support multiple backends via the `NotebookBackend` protocol. Eac
 | `pipeio_nb_exec(flow, name, params={}, timeout=600)` | Execute notebook (papermill for percent, marimo run for marimo) |
 | `pipeio_nb_pipeline(flow, name, formats=[], build_site=false)` | Composite: sync → publish → docs_collect → docs_nav in one call |
 | `pipeio_nb_promote(flow, name, mod, rule_name="", description="", apply=false)` | Promote notebook to pipeline mod: analyze → script → rule stub → docs |
-| `pipeio_nb_report(flow, name, overwrite=false, tags_only=false)` | Extract figures/markdown/text from executed notebook for reporting |
+| `pipeio_nb_extract(flow, name, overwrite=false, tags_only=false)` | Extract figures/markdown/text from executed notebook for reporting (renamed from `pipeio_nb_report`) |
 | `pipeio_nb_validate(flow, name)` | Structural validation (percent: AST + import isolation; marimo: `marimo check`) |
 | `pipeio_nb_watch(flow, name, port=0)` | Launch `marimo edit --watch` for live human oversight (marimo-only) |
 | `pipeio_nb_snapshot(flow, name, timeout=120)` | Execute marimo notebook and return cell outputs — agent's "eyes" (marimo-only) |
@@ -237,7 +290,7 @@ Notebook tools support multiple backends via the `NotebookBackend` protocol. Eac
 | Tool | Description |
 |------|-------------|
 | `pipeio_dag_export(pipe, flow="", graph_type="rulegraph", output_format="dot")` | Export rule/job DAG via Snakemake's native graph output |
-| `pipeio_report(pipe, flow="", output_path="", target="")` | Generate Snakemake HTML report with runtime stats and provenance |
+| `pipeio_flow_report(flow="", output_path="", target="", max_embed_mb=200, warn_embed_mb=50, force=false)` | Generate Snakemake HTML report with runtime stats and provenance. Pre-flight sums resolved target sizes and refuses above `max_embed_mb` to prevent GB-scale HTML from dense-SVG plots (renamed from `pipeio_report`) |
 | `pipeio_target_paths(pipe, flow="", group="", member="", entities={}, expand=false)` | Resolve output paths for a flow's registry entries |
 
 `pipeio_dag_export` `graph_type`: `rulegraph` (compact), `dag` (full jobs), `d3dag` (JSON). `output_format`: `dot`, `mermaid`, `svg` (needs graphviz), `json` (d3dag only).
