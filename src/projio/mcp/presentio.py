@@ -278,14 +278,15 @@ def present_build(
     name: str,
     format: str | None = None,
 ) -> JsonDict:
-    """Build the deck via marp-cli.
+    """Build the deck.
 
-    Runs the full pipeline: assembly → figure resolution → citation
-    preresolve (pandoc, if bib configured) → marp-cli render.
+    Dispatches on ``deck.yml``'s ``format:`` field:
+    - ``marp`` → marp-cli (html/pdf/pptx)
+    - ``revealjs`` → pandoc ``-t revealjs`` (html only)
 
     Args:
         name: Deck name.
-        format: Output format override (``html``, ``pdf``, ``pptx``).
+        format: Output format override (e.g. ``html``, ``pdf``, ``pptx``).
             When omitted, uses ``spec.outputs`` or defaults to html.
     """
     if not _present_available():
@@ -298,33 +299,19 @@ def present_build(
                 {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
             )
 
+        from notio.present.render import render
         from notio.present.schema import DeckSpec
 
         spec = DeckSpec.from_yaml(spec_path)
-
-        if spec.format == "marp":
-            from notio.present.render_marp import render_marp
-
-            formats = [format] if format else None
-            outputs = render_marp(spec, base_dir, formats=formats)
-            return json_dict(
-                {
-                    "name": spec.name,
-                    "format": spec.format,
-                    "outputs": [str(p.relative_to(root)) for p in outputs],
-                }
-            )
-        elif spec.format == "revealjs":
-            return json_dict(
-                {
-                    "error": (
-                        "Reveal.js backend arrives in phase 3. "
-                        "Set format: marp in deck.yml to build with phase 1."
-                    )
-                }
-            )
-        else:
-            return json_dict({"error": f"Unknown deck format: {spec.format!r}"})
+        formats = [format] if format else None
+        outputs = render(spec, base_dir, formats=formats)
+        return json_dict(
+            {
+                "name": spec.name,
+                "format": spec.format,
+                "outputs": [str(p.relative_to(root)) for p in outputs],
+            }
+        )
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
