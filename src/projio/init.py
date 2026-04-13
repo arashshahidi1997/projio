@@ -1752,6 +1752,14 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Update note metadata | `note_update(path, fields)` | Edit frontmatter directly |")
         rows.append("| See note types | `note_types()` | Read notio.toml directly |")
         rows.append("| Rebuild note indexes | `notio_reindex(note_type?)` | Regenerate index.md manually |")
+        # Presentio (notio.present subpackage): presentation decks
+        rows.append("| Scaffold a presentation deck | `present_init(name, format?, template?)` | Create deck.yml by hand |")
+        rows.append("| List decks | `present_list()` | Walk docs/presentations/ manually |")
+        rows.append("| Deck status (sections, figures, citations) | `present_status(name)` | Inspect files manually |")
+        rows.append("| Assemble deck markdown | `present_assemble(name)` | Concatenate sections manually |")
+        rows.append("| Build deck via marp-cli | `present_build(name, format?)` | Run `marp` in terminal |")
+        rows.append("| Validate deck | `present_validate(name)` | Grep citekeys / figure ids manually |")
+        rows.append("| Seed deck from a paper (LLM) | `present_seed_from_paper(name, citekey)` | Run `biblio present` in terminal |")
 
     if has_codio:
         rows.append("| Add a library | `codio_add_urls(urls)` | Edit YAML registry files |")

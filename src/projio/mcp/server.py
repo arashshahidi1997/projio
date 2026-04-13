@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from . import biblio, codio, context, datalad, figio as figio_mcp, manuscripto, notio, pipeio, questio, rag, site as site_mcp
+from . import biblio, codio, context, datalad, figio as figio_mcp, manuscripto, notio, pipeio, presentio, questio, rag, site as site_mcp
 
 server = FastMCP("projio")
 
@@ -630,6 +630,67 @@ def manuscript_cite_suggest_tool(name: str, section: str, claim: str = ""):
 def manuscript_journal_check_tool(name: str, journal: str = ""):
     """Check manuscript against journal target profile (word/figure limits, required sections, CSL match)."""
     return manuscripto.manuscript_journal_check(name=name, journal=journal)
+
+
+# --- Presentio tools (presentation decks) ---
+
+@server.tool("present_init")
+def present_init_tool(
+    name: str,
+    format: str = "marp",
+    template: str = "lab-meeting",
+    title: str = "",
+):
+    """Scaffold a new presentation deck under docs/presentations/<name>/.
+    Format is 'marp' (phase 1) or 'revealjs' (phase 3). Template is one of
+    lab-meeting, journal-club, conference-talk, progress-report."""
+    return presentio.present_init(name=name, format=format, template=template, title=title)
+
+
+@server.tool("present_list")
+def present_list_tool():
+    """List all decks under docs/presentations/."""
+    return presentio.present_list()
+
+
+@server.tool("present_status")
+def present_status_tool(name: str):
+    """Show deck section state, figures, bibliography inheritance, last build."""
+    return presentio.present_status(name=name)
+
+
+@server.tool("present_assemble")
+def present_assemble_tool(name: str):
+    """Generate assembled markdown without calling marp-cli."""
+    return presentio.present_assemble(name=name)
+
+
+@server.tool("present_build")
+def present_build_tool(name: str, format: str = ""):
+    """Build a deck via marp-cli. format is html, pdf, or pptx; defaults to html."""
+    return presentio.present_build(name=name, format=format or None)
+
+
+@server.tool("present_validate")
+def present_validate_tool(name: str):
+    """Validate deck sections, figures, citations, and marp-cli availability."""
+    return presentio.present_validate(name=name)
+
+
+@server.tool("present_seed_from_paper")
+def present_seed_from_paper_tool(
+    name: str,
+    citekey: str,
+    template: str = "journal-club",
+    model: str = "sonnet",
+    force: bool = False,
+):
+    """Scaffold a deck and seed its first section from a paper citekey via
+    biblio.present (LLM-backed). Use as a starting point for iteration, not
+    as a finished deck."""
+    return presentio.present_seed_from_paper(
+        name=name, citekey=citekey, template=template, model=model, force=force
+    )
 
 
 # --- Master document tools ---
