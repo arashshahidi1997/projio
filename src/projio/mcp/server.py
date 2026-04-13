@@ -693,6 +693,48 @@ def present_seed_from_paper_tool(
     )
 
 
+@server.tool("present_section_context")
+def present_section_context_tool(name: str, section: str):
+    """One-call context for drafting a slide section: body, citations,
+    figures, RAG hits, related notes."""
+    return presentio.present_section_context(name=name, section=section)
+
+
+@server.tool("present_figure_insert")
+def present_figure_insert_tool(
+    name: str,
+    section: str,
+    figure_id: str,
+    position: str = "end",
+):
+    """Insert a figio figure reference into a deck section and register
+    it under deck.yml figures: if new."""
+    return presentio.present_figure_insert(
+        name=name, section=section, figure_id=figure_id, position=position
+    )
+
+
+@server.tool("present_cite_check")
+def present_cite_check_tool(name: str):
+    """Cross-check deck citations against the inherited bibliography
+    and report docling fulltext availability per citekey."""
+    return presentio.present_cite_check(name=name)
+
+
+@server.tool("present_overview")
+def present_overview_tool(name: str):
+    """Rich deck dashboard: per-section stats, missing/stale citations
+    and figures, slide count estimate, last-built outputs."""
+    return presentio.present_overview(name=name)
+
+
+@server.tool("present_diff")
+def present_diff_tool(name: str):
+    """Compare current section content against the last assembled.md —
+    per-section word deltas, citation drift, figure-ref drift, unified diff."""
+    return presentio.present_diff(name=name)
+
+
 # --- Master document tools ---
 
 @server.tool("master_list")
@@ -1463,12 +1505,23 @@ def pipeio_report_tool(
     flow: str = "",
     output_path: str = "",
     target: str = "",
+    max_embed_mb: float = 200.0,
+    warn_embed_mb: float = 50.0,
+    force: bool = False,
 ):
     """Generate snakemake HTML report with runtime stats, provenance, and annotated outputs.
+
+    Pre-flight check sums resolved target sizes before invoking snakemake;
+    refuses above max_embed_mb (default 200), warns above warn_embed_mb
+    (default 50). Set force=True to bypass the hard cap.
+
     target: rule to run first (e.g. "report" for flows with partial outputs)."""
     return pipeio.pipeio_report(
         flow=flow,
         output_path=output_path, target=target,
+        max_embed_mb=max_embed_mb,
+        warn_embed_mb=warn_embed_mb,
+        force=force,
     )
 
 

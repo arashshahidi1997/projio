@@ -1756,9 +1756,14 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Scaffold a presentation deck | `present_init(name, format?, template?)` | Create deck.yml by hand |")
         rows.append("| List decks | `present_list()` | Walk docs/presentations/ manually |")
         rows.append("| Deck status (sections, figures, citations) | `present_status(name)` | Inspect files manually |")
+        rows.append("| Rich deck dashboard | `present_overview(name)` | Compile stats manually |")
         rows.append("| Assemble deck markdown | `present_assemble(name)` | Concatenate sections manually |")
         rows.append("| Build deck via marp-cli | `present_build(name, format?)` | Run `marp` in terminal |")
         rows.append("| Validate deck | `present_validate(name)` | Grep citekeys / figure ids manually |")
+        rows.append("| Section-drafting context | `present_section_context(name, section)` | Multiple reads manually |")
+        rows.append("| Insert figio figure into section | `present_figure_insert(name, section, figure_id)` | Edit markdown directly |")
+        rows.append("| Cite check (bib + docling) | `present_cite_check(name)` | Cross-ref manually |")
+        rows.append("| Diff vs last assembled.md | `present_diff(name)` | Run `diff` in terminal |")
         rows.append("| Seed deck from a paper (LLM) | `present_seed_from_paper(name, citekey)` | Run `biblio present` in terminal |")
 
     if has_codio:
@@ -1792,6 +1797,7 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Add script to existing mod | `pipeio_script_create(flow, mod, script_name)` | Create script manually |")
         rows.append("| Audit mod health | `pipeio_mod_audit(flow, mod?)` | Manual inspection |")
         rows.append("| Refresh mod doc from code | `pipeio_mod_doc_refresh(flow, mod, facet, apply?)` | Rewrite spec.md manually |")
+        rows.append("| Record flow design change | Edit `code/pipelines/{flow}/CHANGELOG.md` — Keep-a-Changelog style, date + rationale + notio refs (see pipeline-docs.md) | Let strategy shifts get lost in git log |")
         # Rule authoring
         rows.append("| List rules | `pipeio_rule_list(flow)` | Parse Snakefiles manually |")
         rows.append("| Generate rule stub | `pipeio_rule_stub(flow, rule_name)` | Write rule text manually |")
