@@ -20,6 +20,7 @@
 - `pipeio_nb_move` tool — move a notebook between flows (files + registry update)
 - `commit` note type in notio — structured change records with subsystem, commit_hash, files_created/modified fields
 - `pipeio_flow_audit` tool + `pipeline-docs.md` spec — canonical flow documentation convention (`docs/index.md` section template, per-mod facet dirs, flow-root `CHANGELOG.md`), read-only compliance check, `ChangelogCollector` in `docs_collect`, richer `flow_new` scaffold. Pixecog migrated 0/8 → 7/8 compliant. See [commit note](docs/log/commit/commit-arash-20260413-175852-000000.md)
+- **Delegation model** ([docs/explanation/delegation-model.md](docs/explanation/delegation-model.md)) — explicit engineering-vs-science boundary: pipeio flows own engineering (flows, DAGs, CHANGELOG), notio `result` notes own individual findings, `docs/deliverables/` owns narrative artifacts, questio binds them to research questions. Flow pages link to (not embed) results/deliverables. New frontmatter fields: `source_flow` (on results), `source_flows` (on deliverables). Updates to ecosystem.md, pipeio/overview.md, pipeline-docs.md, deliverables.md, notio result template.
 
 **biblio** (literature)
 - 5 new MCP tools: `biblio_openalex_resolve`, `biblio_status`, `biblio_crossref_resolve`, `biblio_graph_promote`, `biblio_extract`

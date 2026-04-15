@@ -26,12 +26,30 @@ def _resolve_project_python() -> str | None:
     return None
 
 
+def _resolve_default_env_name() -> str | None:
+    """Return the ``code.envs.default`` conda env name from the project config.
+
+    Returns ``None`` when the config key is absent or on any error.
+    """
+    try:
+        from projio.config import load_effective_config
+        root = get_project_root()
+        cfg = load_effective_config(root)
+        code = cfg.get("code", {}) or {}
+        envs = code.get("envs", {}) or {}
+        return envs.get("default") or None
+    except Exception:
+        return None
+
+
 def _resolve_snakemake_cmd(use_conda: str = "") -> list[str]:
     """Resolve the snakemake command with conda wrapping if needed.
 
     Checks (in order):
     1. Explicit ``use_conda`` env name (e.g. ``"cogpy"``)
     2. ``SNAKEMAKE`` Makefile variable
+    2.5. Project config ``code.envs.default`` (avoids picking up the MCP
+         server's own conda env from PATH)
     3. ``snakemake`` on PATH (with conda wrapping if in a conda env)
     4. Known fallback: ``cogpy`` conda env
     5. Bare ``["snakemake"]``
@@ -59,6 +77,13 @@ def _resolve_snakemake_cmd(use_conda: str = "") -> list[str]:
         if wrapped:
             return wrapped
         return tokens
+
+    # 2.5. Project config: code.envs.default
+    # This check comes before PATH search so the MCP server's own conda env
+    # (e.g. 'rag') is never picked up when a project env is configured.
+    default_env = _resolve_default_env_name()
+    if default_env:
+        return _conda_run_cmd(default_env, "snakemake")
 
     # 3. On PATH
     binary = shutil.which("snakemake")

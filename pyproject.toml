@@ -53,4 +53,10 @@ projio = "projio.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-projio = ["data/filters/*.lua", "data/csl/*.csl", "data/skills/*/SKILL.md"]
+projio = [
+    "data/filters/*.lua",
+    "data/csl/*.csl",
+    "data/skills/*/SKILL.md",
+    "data/profiles/*/profile.yml",
+    "data/profiles/*/*.tmpl",
+]

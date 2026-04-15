@@ -1,0 +1,35 @@
+description: "Sirota lab: full stack with conda envs (cogpy/projio/labpy) and GitLab push"
+
+packages:
+  - notio
+  - biblio
+  - codio
+  - indexio
+  - pipeio
+  - figio
+
+getting_started: GETTING_STARTED.md.tmpl
+root_readme_stub: README_STUB.md.tmpl
+
+config:
+  push_sibling: gitlab
+  code:
+    conda_prefix: ""
+    envs:
+      default: cogpy
+      docs: projio
+      projio: projio
+      datalad: labpy
+  site:
+    output_dir: _site
+    mkdocs:
+      site_dir: _site
+  helpers:
+    sibling:
+      gitlab:
+        project_template: "sirotalab/{project_name}"
+      ria:
+        sibling: ria-storage
+        storage_url: "ria+file:///storage/share/git/ria-store"
+        shared: group
+        alias_template: "{project_name}"

@@ -70,6 +70,7 @@ nav:
   - Explanation:
       - explanation/index.md
       - Ecosystem: explanation/ecosystem.md
+      - Delegation Model (Engineering vs. Science): explanation/delegation-model.md
       - Ecosystem Architecture: explanation/architecture.md
       - Workspace Architecture: explanation/workspace-architecture.md
       - Package Integration: explanation/package-integration.md

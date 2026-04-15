@@ -11,6 +11,7 @@ import pytest
 from projio.mcp.pipeio import (
     _conda_run_cmd,
     _pipeio_available,
+    _resolve_default_env_name,
     _resolve_snakemake_cmd,
     _unavailable,
 )
@@ -94,6 +95,9 @@ class TestResolveSnakemakeCmd:
             "projio.mcp.pipeio.resolve_makefile_vars",
             return_value={},
         ), mock.patch(
+            "projio.mcp.pipeio._resolve_default_env_name",
+            return_value=None,
+        ), mock.patch(
             "shutil.which",
             return_value="/usr/bin/snakemake",
         ), mock.patch(
@@ -103,11 +107,46 @@ class TestResolveSnakemakeCmd:
             result = _resolve_snakemake_cmd()
         assert result == ["/usr/bin/snakemake"]
 
+    def test_uses_config_default_env(self) -> None:
+        """Step 2.5: code.envs.default is used before PATH search."""
+        with mock.patch(
+            "projio.mcp.pipeio.resolve_makefile_vars",
+            return_value={},
+        ), mock.patch(
+            "projio.mcp.pipeio._resolve_default_env_name",
+            return_value="cogpy",
+        ), mock.patch(
+            "shutil.which",
+            return_value="/usr/bin/conda",
+        ):
+            result = _resolve_snakemake_cmd()
+        assert result == ["/usr/bin/conda", "run", "-n", "cogpy", "snakemake"]
+
+    def test_config_default_env_skips_path_snakemake(self) -> None:
+        """Step 2.5 prevents picking up snakemake from MCP server's own env."""
+        with mock.patch(
+            "projio.mcp.pipeio.resolve_makefile_vars",
+            return_value={},
+        ), mock.patch(
+            "projio.mcp.pipeio._resolve_default_env_name",
+            return_value="cogpy",
+        ), mock.patch(
+            "shutil.which",
+            return_value="/opt/conda/envs/rag/bin/conda",
+        ):
+            result = _resolve_snakemake_cmd()
+        # Must use cogpy, not rag
+        assert "cogpy" in result
+        assert "rag" not in result
+
     def test_falls_back_to_bare_snakemake(self, monkeypatch) -> None:
         monkeypatch.setattr(shutil, "which", lambda x: None)
         with mock.patch(
             "projio.mcp.pipeio.resolve_makefile_vars",
             return_value={},
+        ), mock.patch(
+            "projio.mcp.pipeio._resolve_default_env_name",
+            return_value=None,
         ), mock.patch(
             "projio.mcp.pipeio._conda_run_cmd",
             return_value=["snakemake"],
@@ -120,6 +159,9 @@ class TestResolveSnakemakeCmd:
             "projio.mcp.pipeio.resolve_makefile_vars",
             return_value={},
         ), mock.patch(
+            "projio.mcp.pipeio._resolve_default_env_name",
+            return_value=None,
+        ), mock.patch(
             "shutil.which",
             return_value=None,
         ), mock.patch(
@@ -129,6 +171,35 @@ class TestResolveSnakemakeCmd:
             result = _resolve_snakemake_cmd()
         assert isinstance(result, list)
         assert len(result) >= 1
+
+
+# ---------------------------------------------------------------------------
+# _resolve_default_env_name
+# ---------------------------------------------------------------------------
+
+
+class TestResolveDefaultEnvName:
+    def test_returns_env_name_from_config(self) -> None:
+        cfg = {"code": {"envs": {"default": "cogpy"}, "conda_prefix": "/opt/conda"}}
+        with mock.patch("projio.config.load_effective_config", return_value=cfg), \
+             mock.patch("projio.mcp.pipeio.get_project_root", return_value=Path("/fake")):
+            result = _resolve_default_env_name()
+        assert result == "cogpy"
+
+    def test_returns_none_when_key_absent(self) -> None:
+        cfg: dict = {"code": {}}
+        with mock.patch("projio.config.load_effective_config", return_value=cfg), \
+             mock.patch("projio.mcp.pipeio.get_project_root", return_value=Path("/fake")):
+            result = _resolve_default_env_name()
+        assert result is None
+
+    def test_returns_none_on_exception(self) -> None:
+        with mock.patch(
+            "projio.config.load_effective_config",
+            side_effect=FileNotFoundError("no config"),
+        ), mock.patch("projio.mcp.pipeio.get_project_root", return_value=Path("/fake")):
+            result = _resolve_default_env_name()
+        assert result is None
 
 
 # ---------------------------------------------------------------------------

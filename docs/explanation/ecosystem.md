@@ -7,10 +7,16 @@ The split is deliberate:
 - `projio` owns project-local scaffolding, docs-site workflows, and MCP exposure
 - `indexio` owns semantic search and chat-backed retrieval
 - `biblio` owns bibliography ingestion, enrichment, and bibliography-first sites
-- `notio` owns notes, structured project logs, and manuscript assembly
+- `notio` owns notes, structured project logs, and manuscript assembly — including the `result` note type for individual scientific findings
 - `codio` owns code-library and code-context discovery
-- `pipeio` owns pipeline authoring, contracts, notebook lifecycle, and Snakemake integration
+- `pipeio` owns pipeline authoring, contracts, notebook lifecycle, and Snakemake integration — **engineering, not science**
 - `figio` owns declarative figure orchestration — FigureSpec YAML to SVG/PDF composition
+- `questio` owns research questions, hypothesis tracking, prior art, and the binding between questions and results/deliverables
+
+The engineering-vs-science boundary between pipeio and questio/notio/deliverables
+is documented in [delegation-model.md](delegation-model.md) — read that next if
+you're authoring a new flow, result, or report and wondering where the content
+should live.
 
 ## Role diagram
 

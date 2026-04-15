@@ -64,6 +64,8 @@ audience: supervisor      # supervisor | team | conference | public
 event: ""                 # conference/meeting name (presentations, posters)
 period: ""                # time window covered (reports: "2026-04-03 to 2026-04-09")
 questions: []             # questio question IDs referenced (e.g., [H1, H3])
+results: []               # notio result IDs cited (e.g., [result-arash-20260410-...])
+source_flows: []          # pipeio flow names this deliverable draws from (e.g., [preprocess_ieeg])
 tags: []                  # free-form tags
 ---
 ```
@@ -79,6 +81,8 @@ tags: []                  # free-form tags
 | `event` | no | presentation, poster | Conference, workshop, or meeting name |
 | `period` | no | report | Time window the report covers |
 | `questions` | no | all | Questio question IDs this deliverable references |
+| `results` | no | all | Notio `result` note IDs cited by this deliverable |
+| `source_flows` | no | all | pipeio flow names that produced the data underlying this deliverable. Drives flow-page backlinks via the planned `DeliverablesLinkCollector`. See [delegation-model.md](../explanation/delegation-model.md) |
 | `tags` | no | all | Free-form tags for search |
 
 ## 5. Relationship to Existing Layers

@@ -142,6 +142,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p_sibling_ria.add_argument("--alias", help="RIA alias.")
     p_sibling_ria.add_argument("--storage-url", help="RIA storage URL.")
     p_sibling_ria.add_argument("--shared", help="RIA shared mode.")
+    p_sibling_ria.add_argument(
+        "--force-alias",
+        action="store_true",
+        help="Allow overwriting an existing alias in the RIA store (unsafe).",
+    )
     p_sibling_ria.add_argument("--yes", action="store_true", help="Execute instead of preview.")
 
     p_docs = sub.add_parser("docs", help="Project docs helpers.")
@@ -449,6 +454,7 @@ def main(argv: Iterable[str] | None = None) -> None:
                 alias=args.alias,
                 storage_url=args.storage_url,
                 shared=args.shared,
+                force_alias=args.force_alias,
                 yes=args.yes,
             )
         return

@@ -1,0 +1,129 @@
+# {name} — Getting Started
+
+> Scaffolded with `projio init --profile sirota`. This doc lives under
+> `.projio/` so your project's top-level `README.md` stays yours to write.
+
+## Project structure
+
+```
+{name}/
+  .projio/          # projio workspace config, render settings, subsystem state
+                    # (this file lives here)
+  bib/              # bibliography: srcbib/ (Zotero exports), articles/ (PDFs)
+  code/
+    lib/            # shared code libraries (datalad subdatasets)
+    pipelines/      # Snakemake flows (one dir per flow)
+    scripts/        # standalone scripts
+    utils/          # project-specific cross-flow utilities
+  docs/             # MkDocs site source
+    log/            # project notes (ideas, issues, decisions)
+    plan/           # research questions and milestones (generated from plan/)
+    pipelines/      # auto-generated pipeline documentation
+    manuscript/     # paper sections
+    infra/          # infrastructure notes
+    deliverables/   # final outputs
+  plan/             # questio YAML sources (questions.yml, milestones.yml)
+```
+
+## Next steps
+
+### 1. Install input datasets
+
+```bash
+conda run -n labpy datalad install -d . -s <source_url> data/<dataset_name>
+```
+
+### 2. Clone shared code libraries
+
+```bash
+conda run -n labpy datalad install -d . -s <lab_gitlab>/cogpy code/lib/cogpy
+conda run -n labpy datalad install -d . -s <lab_gitlab>/labpy code/lib/labpy
+```
+
+### 3. Set up the Python environment
+
+Overlay a project venv on top of the shared conda base:
+
+```bash
+conda activate cogpy
+python -m venv .venv --system-site-packages
+source .venv/bin/activate
+pip install -e code/lib/cogpy -e code/lib/labpy
+python -m ipykernel install --user --name {name}
+```
+
+### 4. Register code libraries
+
+```bash
+projio sync   # auto-discovers code/lib/* and code/utils/
+```
+
+### 5. Define research questions
+
+Edit `plan/questions.yml` and `plan/milestones.yml`, then ask the agent:
+
+- "What are my open research questions?" (`questio_status`)
+- "What's the next step?" (use `/questio-next` skill)
+
+## Lab siblings
+
+The sirota profile pre-configures two datalad siblings for lab
+infrastructure. Both use `projio sibling` — preview-first; add `--yes` to
+actually run.
+
+### GitLab — code + history
+
+Pushes land under the `sirotalab/` group:
+
+```bash
+projio sibling gitlab           # preview
+projio sibling gitlab --yes     # create
+datalad push --to gitlab        # push commits
+```
+
+The target project path is `sirotalab/{name}`. Change it by editing
+`helpers.sibling.gitlab.project_template` in `.projio/config.yml`.
+
+### RIA store — full dataset backup
+
+The lab RIA store lives at `/storage/share/git/ria-store`. The sirota profile
+creates a sibling named `ria-storage` with alias `{name}`:
+
+```bash
+projio sibling ria              # preview (shows resolved alias + store)
+projio sibling ria --yes        # create
+datalad push --to ria-storage   # push annex + git
+```
+
+**Alias safety:** projio refuses to create the sibling if the alias is
+already bound to a different dataset in the store. If you see an `[ABORT]`
+message, either pick a different `project_name` in `.projio/config.yml`, or
+pass `--force-alias` — only when you genuinely mean to replace a stale
+entry.
+
+## Working with projio through an agent
+
+Projio is designed to be driven through an AI agent (Claude Code). The agent
+has access to all projio tools via MCP. Common workflows:
+
+| Task | What to ask the agent |
+|------|----------------------|
+| Add a paper          | "ingest this DOI into the bibliography" |
+| Create a pipeline    | "create a new flow called preprocessing" |
+| Write a notebook     | "create a notebook in the preprocessing flow" |
+| Run a pipeline       | "run the preprocessing flow" |
+| Build docs           | "build and serve the docs site" |
+| Capture a note       | "log an issue about X" |
+| Search the project   | "search for references about Y" |
+
+## Conda environments
+
+This project uses three conda environments:
+
+| Environment | Purpose |
+|-------------|---------|
+| `cogpy`  | Data analysis, Snakemake, notebooks |
+| `projio` | Projio tools, MkDocs, MCP server |
+| `labpy`  | DataLad and git-annex operations |
+
+The generated `.projio/projio.mk` maps these to make variables automatically.

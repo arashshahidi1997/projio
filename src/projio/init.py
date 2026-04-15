@@ -12,100 +12,29 @@ SITE_FRAMEWORK_CHOICES = ("mkdocs", "sphinx", "vite")
 
 KNOWN_PACKAGES = ("biblio", "notio", "codio", "indexio", "pipeio", "figio", "claude", "codex", "copilot")
 
-SIROTA_README = """\
-# {name}
+_PROFILES_DATA_DIR = Path(__file__).parent / "data" / "profiles"
 
-> Scaffolded with `projio init . --kind study --profile sirota`
 
-## Project structure
+def _load_disk_profile(name: str) -> dict | None:
+    """Load a profile from src/projio/data/profiles/<name>/profile.yml.
 
-```
-{name}/
-  .projio/          # projio workspace config, render settings, subsystem state
-  bib/              # bibliography: srcbib/ (Zotero exports), articles/ (PDFs)
-  code/
-    lib/            # shared code libraries (datalad subdatasets)
-    pipelines/      # Snakemake flows (one dir per flow)
-    scripts/        # standalone scripts
-    utils/          # project-specific cross-flow utilities
-  docs/             # MkDocs site source
-    log/            # project notes (ideas, issues, decisions)
-    plan/           # research questions and milestones (generated from plan/)
-    pipelines/      # auto-generated pipeline documentation
-    manuscript/     # paper sections
-    infra/          # infrastructure notes
-    deliverables/   # final outputs
-  plan/             # questio YAML sources (questions.yml, milestones.yml)
-```
+    Resolves `getting_started` and `root_readme_stub` paths against the
+    profile dir and inlines the file contents.
+    """
+    import yaml as _yaml  # local import to keep module top-level light
+    profile_dir = _PROFILES_DATA_DIR / name
+    profile_yml = profile_dir / "profile.yml"
+    if not profile_yml.exists():
+        return None
+    data = _yaml.safe_load(profile_yml.read_text(encoding="utf-8")) or {}
+    for key in ("getting_started", "root_readme_stub"):
+        rel = data.get(key)
+        if isinstance(rel, str) and rel:
+            tmpl_path = profile_dir / rel
+            if tmpl_path.exists():
+                data[key] = tmpl_path.read_text(encoding="utf-8")
+    return data
 
-## Next steps
-
-### 1. Install your dataset
-
-```bash
-# Install an existing datalad dataset as input data
-datalad install -d . -s <source_url> data/<dataset_name>
-```
-
-### 2. Set up shared code libraries
-
-```bash
-# Clone shared libraries as datalad subdatasets
-datalad install -d . -s <lab_gitlab>/cogpy code/lib/cogpy
-datalad install -d . -s <lab_gitlab>/labpy code/lib/labpy
-```
-
-### 3. Set up the project Python environment
-
-Create a `.venv` overlay on top of the shared conda base:
-
-```bash
-conda activate cogpy
-python -m venv .venv --system-site-packages
-source .venv/bin/activate
-pip install -e code/lib/cogpy -e code/lib/labpy
-python -m ipykernel install --user --name {name}
-```
-
-### 4. Register code libraries
-
-```bash
-projio sync   # auto-discovers code/lib/* and code/utils/
-```
-
-### 5. Define research questions
-
-Edit `plan/questions.yml` and `plan/milestones.yml`, then ask the agent:
-- "What are my open research questions?" (`questio_status`)
-- "What's the next step?" (use `/questio-next` skill)
-
-## Working with projio
-
-Projio is designed to be used through an AI agent (Claude Code). The agent has
-access to all projio tools via MCP. Common workflows:
-
-| Task | What to ask the agent |
-|------|----------------------|
-| Add a paper | "ingest this DOI into the bibliography" |
-| Create a pipeline | "create a new flow called preprocessing" |
-| Write a notebook | "create a notebook in the preprocessing flow" |
-| Run a pipeline | "run the preprocessing flow" |
-| Build docs | "build and serve the docs site" |
-| Capture a note | "log an issue about X" |
-| Search the project | "search for references about Y" |
-
-## Conda environments
-
-This project uses three conda environments:
-
-| Environment | Purpose |
-|-------------|---------|
-| `cogpy` | Data analysis, Snakemake, notebooks |
-| `projio` | Projio tools, MkDocs, MCP server |
-| `labpy` | DataLad and git-annex operations |
-
-The Makefile includes `.projio/projio.mk` which maps these automatically.
-"""
 
 PROFILES: dict[str, dict] = {
     # --- shipped profiles (no lab-specific paths or env names) ---
@@ -131,29 +60,13 @@ PROFILES: dict[str, dict] = {
             },
         },
     },
-    # --- lab profiles (site-specific conventions) ---
-    "sirota": {
-        "description": "Sirota lab: full stack with conda envs (cogpy/projio/labpy) and GitLab push",
-        "packages": ("notio", "biblio", "codio", "indexio", "pipeio", "figio"),
-        "readme": SIROTA_README,
-        "config": {
-            "push_sibling": "gitlab",
-            "code": {
-                "conda_prefix": "",
-                "envs": {
-                    "default": "cogpy",
-                    "docs": "projio",
-                    "projio": "projio",
-                    "datalad": "labpy",
-                },
-            },
-            "site": {
-                "output_dir": "_site",
-                "mkdocs": {"site_dir": "_site"},
-            },
-        },
-    },
 }
+
+# --- lab profiles loaded from src/projio/data/profiles/<name>/ ---
+for _profile_name in ("sirota",):
+    _loaded = _load_disk_profile(_profile_name)
+    if _loaded is not None:
+        PROFILES[_profile_name] = _loaded
 
 BASE_PROJIO_CONFIG = """\
 # projio workspace config
@@ -1242,9 +1155,22 @@ def scaffold(
         config_overlay = prof.get("config")
         if config_overlay:
             _apply_config_overlay(root_path, config_overlay)
-        readme_tpl = prof.get("readme")
-        if readme_tpl:
-            _write_if_needed(root_path / "README.md", readme_tpl.format(name=root_path.name), root_path, force=force)
+        getting_started_tpl = prof.get("getting_started") or prof.get("readme")
+        if getting_started_tpl:
+            _write_if_needed(
+                root_path / ".projio" / "GETTING_STARTED.md",
+                getting_started_tpl.format(name=root_path.name),
+                root_path,
+                force=force,
+            )
+        root_stub_tpl = prof.get("root_readme_stub")
+        if root_stub_tpl and not (root_path / "README.md").exists():
+            _write_if_needed(
+                root_path / "README.md",
+                root_stub_tpl.format(name=root_path.name),
+                root_path,
+                force=force,
+            )
 
 
 def load_projio_config(root: str | Path) -> dict:

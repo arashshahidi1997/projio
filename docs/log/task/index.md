@@ -22,9 +22,9 @@
 
 ## pending (29)
 
-[**Create pipeio-flow-create skill and pixecog-flow-setup skill**](task-arash-20260410-150459-158814.md){ .note-card-title }
+[**pipeio_run env resolution bug: `_resolve_snakemake_cmd()` finds snakemake on PAT**](task-arash-20260414-030042-333119.md){ .note-card-title }
 
-<small>**date:** 2026-04-10 · **status:** pending</small>
+<small>**date:** 2026-04-14 · **status:** pending</small>
 
 ---
 
@@ -274,8 +274,14 @@
     
     ---
     
-??? note "done (81)"
+??? note "done (82)"
 
+    [**Create pipeio-flow-create skill and pixecog-flow-setup skill**](task-arash-20260410-150459-158814.md){ .note-card-title }
+    
+    <small>**date:** 2026-04-10 · **status:** done</small>
+    
+    ---
+    
     [**docs_collect: overview.md fix + two-phase export/collect architecture**](task-arash-20260409-140348-067497.md){ .note-card-title }
     
     <small>**date:** 2026-04-09 · **status:** done · **tags:** [task, decision]</small>

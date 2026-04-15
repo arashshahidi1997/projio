@@ -399,3 +399,14 @@ Session: `bf8a344f` | Task: `issue-arash-20260412-013344-955432.md`
 | 3. notio | `test_mcp_notio.py` | ~33 | All 13 wrapper unavailability, note_read validation, ...
 
 Session: `c618c2d5` | Task: `issue-arash-20260412-013511-941571.md`
+
+## 2026-04-14 03:04 | projio | sonnet | 1 steps
+
+**`tests/test_mcp_pipeio.py`**
+- Added `_resolve_default_env_name` to imports.
+- Updated `test_finds_snakemake_on_path`, `test_falls_back_to_bare_snakemake`, and `test_returns_list` to mock `_resolve_default_env_name → None` so they don't accidentally hit step 2.5.
+- Added `test_uses_config_default_env` — verifies step 2.5 works when `code.envs.default = "cogpy"`.
+- Added `test_config_default_env_skips_path_snakemake` — verifies the `rag` env is never used when `cogpy` is configured.
+- Added ...
+
+Session: `faa60403` | Task: `task-arash-20260414-030042-333119.md`
