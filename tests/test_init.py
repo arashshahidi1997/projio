@@ -10,6 +10,7 @@ from projio.init import (
     KIND_CHOICES,
     _apply_config_overlay,
     _deep_merge,
+    _gitignore_entries_for_framework,
     scaffold,
 )
 from projio.config import Layout
@@ -232,3 +233,14 @@ def test_scaffold_full_profile_enables_all(tmp_path: Path) -> None:
 
 def test_kind_choices_complete() -> None:
     assert set(KIND_CHOICES) == {"generic", "tool", "study"}
+
+
+# ---------------------------------------------------------------------------
+# Gitignore entries
+# ---------------------------------------------------------------------------
+
+
+def test_gitignore_includes_quarto_report_caches() -> None:
+    entries = _gitignore_entries_for_framework("mkdocs")
+    assert "docs/deliverables/reports/*/_freeze/" in entries
+    assert "docs/deliverables/reports/*/_files/" in entries

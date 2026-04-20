@@ -1,4 +1,4 @@
-"""Tests for projio.mcp.pipeio — conda resolution and snakemake command helpers."""
+"""Tests for projio.mcp.pipeio — runner resolution and snakemake command helpers."""
 from __future__ import annotations
 
 import shutil
@@ -8,11 +8,15 @@ from unittest import mock
 
 import pytest
 
+from projio.mcp.datalad import _conda_wrap
 from projio.mcp.pipeio import (
     _conda_run_cmd,
+    _pixi_run_cmd,
     _pipeio_available,
     _resolve_default_env_name,
+    _resolve_runner,
     _resolve_snakemake_cmd,
+    _run_cmd,
     _unavailable,
 )
 
@@ -66,15 +70,43 @@ class TestCondaRunCmd:
 
 
 # ---------------------------------------------------------------------------
+# _conda_wrap — pixi guard
+# ---------------------------------------------------------------------------
+
+
+class TestCondaWrapPixiGuard:
+    def test_conda_env_binary_is_wrapped(self) -> None:
+        with mock.patch("shutil.which", return_value="/opt/conda/bin/conda"):
+            result = _conda_wrap("/opt/conda/envs/cogpy/bin/snakemake")
+        assert result is not None
+        assert result == ["/opt/conda/bin/conda", "run", "-n", "cogpy", "snakemake"]
+
+    def test_pixi_env_binary_is_not_wrapped(self) -> None:
+        result = _conda_wrap("/home/user/project/.pixi/envs/default/bin/snakemake")
+        assert result is None
+
+    def test_non_env_binary_is_not_wrapped(self) -> None:
+        result = _conda_wrap("/usr/bin/snakemake")
+        assert result is None
+
+
+# ---------------------------------------------------------------------------
 # _resolve_snakemake_cmd
 # ---------------------------------------------------------------------------
 
 
 class TestResolveSnakemakeCmd:
-    def test_explicit_conda_env_takes_priority(self) -> None:
-        with mock.patch("shutil.which", return_value="/usr/bin/conda"):
-            result = _resolve_snakemake_cmd(use_conda="myenv")
+    def test_explicit_env_takes_priority_conda(self) -> None:
+        with mock.patch("projio.mcp.pipeio._resolve_runner", return_value="conda"), \
+             mock.patch("shutil.which", return_value="/usr/bin/conda"):
+            result = _resolve_snakemake_cmd(use_env="myenv")
         assert result == ["/usr/bin/conda", "run", "-n", "myenv", "snakemake"]
+
+    def test_explicit_env_takes_priority_pixi(self) -> None:
+        with mock.patch("projio.mcp.pipeio._resolve_runner", return_value="pixi"), \
+             mock.patch("shutil.which", return_value="/usr/bin/pixi"):
+            result = _resolve_snakemake_cmd(use_env="datalad")
+        assert result == ["/usr/bin/pixi", "run", "-e", "datalad", "snakemake"]
 
     def test_uses_makefile_snakemake_variable(self) -> None:
         with mock.patch(
@@ -107,9 +139,12 @@ class TestResolveSnakemakeCmd:
             result = _resolve_snakemake_cmd()
         assert result == ["/usr/bin/snakemake"]
 
-    def test_uses_config_default_env(self) -> None:
-        """Step 2.5: code.envs.default is used before PATH search."""
+    def test_uses_config_default_env_conda(self) -> None:
+        """Step 2.5: code.envs.default with conda runner."""
         with mock.patch(
+            "projio.mcp.pipeio._resolve_runner",
+            return_value="conda",
+        ), mock.patch(
             "projio.mcp.pipeio.resolve_makefile_vars",
             return_value={},
         ), mock.patch(
@@ -122,9 +157,30 @@ class TestResolveSnakemakeCmd:
             result = _resolve_snakemake_cmd()
         assert result == ["/usr/bin/conda", "run", "-n", "cogpy", "snakemake"]
 
+    def test_uses_config_default_env_pixi(self) -> None:
+        """Step 2.5: code.envs.default with pixi runner."""
+        with mock.patch(
+            "projio.mcp.pipeio._resolve_runner",
+            return_value="pixi",
+        ), mock.patch(
+            "projio.mcp.pipeio.resolve_makefile_vars",
+            return_value={},
+        ), mock.patch(
+            "projio.mcp.pipeio._resolve_default_env_name",
+            return_value="datalad",
+        ), mock.patch(
+            "shutil.which",
+            return_value="/usr/bin/pixi",
+        ):
+            result = _resolve_snakemake_cmd()
+        assert result == ["/usr/bin/pixi", "run", "-e", "datalad", "snakemake"]
+
     def test_config_default_env_skips_path_snakemake(self) -> None:
         """Step 2.5 prevents picking up snakemake from MCP server's own env."""
         with mock.patch(
+            "projio.mcp.pipeio._resolve_runner",
+            return_value="conda",
+        ), mock.patch(
             "projio.mcp.pipeio.resolve_makefile_vars",
             return_value={},
         ), mock.patch(
@@ -142,6 +198,9 @@ class TestResolveSnakemakeCmd:
     def test_falls_back_to_bare_snakemake(self, monkeypatch) -> None:
         monkeypatch.setattr(shutil, "which", lambda x: None)
         with mock.patch(
+            "projio.mcp.pipeio._resolve_runner",
+            return_value="conda",
+        ), mock.patch(
             "projio.mcp.pipeio.resolve_makefile_vars",
             return_value={},
         ), mock.patch(
@@ -154,8 +213,27 @@ class TestResolveSnakemakeCmd:
             result = _resolve_snakemake_cmd()
         assert result == ["snakemake"]
 
+    def test_pixi_fallback(self, monkeypatch) -> None:
+        """Step 4: pixi runner falls back to bare pixi run snakemake."""
+        monkeypatch.setattr(shutil, "which", lambda x: "/usr/bin/pixi" if x == "pixi" else None)
+        with mock.patch(
+            "projio.mcp.pipeio._resolve_runner",
+            return_value="pixi",
+        ), mock.patch(
+            "projio.mcp.pipeio.resolve_makefile_vars",
+            return_value={},
+        ), mock.patch(
+            "projio.mcp.pipeio._resolve_default_env_name",
+            return_value=None,
+        ):
+            result = _resolve_snakemake_cmd()
+        assert result == ["/usr/bin/pixi", "run", "snakemake"]
+
     def test_returns_list(self) -> None:
         with mock.patch(
+            "projio.mcp.pipeio._resolve_runner",
+            return_value="conda",
+        ), mock.patch(
             "projio.mcp.pipeio.resolve_makefile_vars",
             return_value={},
         ), mock.patch(
@@ -200,6 +278,85 @@ class TestResolveDefaultEnvName:
         ), mock.patch("projio.mcp.pipeio.get_project_root", return_value=Path("/fake")):
             result = _resolve_default_env_name()
         assert result is None
+
+
+# ---------------------------------------------------------------------------
+# _pixi_run_cmd
+# ---------------------------------------------------------------------------
+
+
+class TestPixiRunCmd:
+    def test_uses_pixi_on_path(self) -> None:
+        with mock.patch("shutil.which", return_value="/usr/bin/pixi"):
+            result = _pixi_run_cmd("snakemake")
+        assert result == ["/usr/bin/pixi", "run", "snakemake"]
+
+    def test_with_env_name(self) -> None:
+        with mock.patch("shutil.which", return_value="/usr/bin/pixi"):
+            result = _pixi_run_cmd("snakemake", env_name="datalad")
+        assert result == ["/usr/bin/pixi", "run", "-e", "datalad", "snakemake"]
+
+    def test_falls_back_to_bare_cmd(self) -> None:
+        with mock.patch("shutil.which", return_value=None):
+            result = _pixi_run_cmd("snakemake")
+        assert result == ["snakemake"]
+
+
+# ---------------------------------------------------------------------------
+# _resolve_runner
+# ---------------------------------------------------------------------------
+
+
+class TestResolveRunner:
+    def test_explicit_config_pixi(self) -> None:
+        cfg = {"code": {"runner": "pixi"}}
+        with mock.patch("projio.config.load_effective_config", return_value=cfg), \
+             mock.patch("projio.mcp.pipeio.get_project_root", return_value="/fake"):
+            assert _resolve_runner() == "pixi"
+
+    def test_explicit_config_conda(self) -> None:
+        cfg = {"code": {"runner": "conda"}}
+        with mock.patch("projio.config.load_effective_config", return_value=cfg), \
+             mock.patch("projio.mcp.pipeio.get_project_root", return_value="/fake"):
+            assert _resolve_runner() == "conda"
+
+    def test_autodetect_pixi_toml(self, tmp_path) -> None:
+        (tmp_path / "pixi.toml").write_text("[workspace]\nname = 'test'\n")
+        cfg: dict = {"code": {}}
+        with mock.patch("projio.config.load_effective_config", return_value=cfg), \
+             mock.patch("projio.mcp.pipeio.get_project_root", return_value=str(tmp_path)):
+            assert _resolve_runner() == "pixi"
+
+    def test_defaults_to_conda(self, tmp_path) -> None:
+        cfg: dict = {"code": {}}
+        with mock.patch("projio.config.load_effective_config", return_value=cfg), \
+             mock.patch("projio.mcp.pipeio.get_project_root", return_value=str(tmp_path)):
+            assert _resolve_runner() == "conda"
+
+
+# ---------------------------------------------------------------------------
+# _run_cmd
+# ---------------------------------------------------------------------------
+
+
+class TestRunCmd:
+    def test_dispatches_to_conda(self) -> None:
+        with mock.patch("projio.mcp.pipeio._resolve_runner", return_value="conda"), \
+             mock.patch("shutil.which", return_value="/usr/bin/conda"):
+            result = _run_cmd("cogpy", "snakemake")
+        assert result == ["/usr/bin/conda", "run", "-n", "cogpy", "snakemake"]
+
+    def test_dispatches_to_pixi(self) -> None:
+        with mock.patch("projio.mcp.pipeio._resolve_runner", return_value="pixi"), \
+             mock.patch("shutil.which", return_value="/usr/bin/pixi"):
+            result = _run_cmd("datalad", "snakemake")
+        assert result == ["/usr/bin/pixi", "run", "-e", "datalad", "snakemake"]
+
+    def test_pixi_empty_env_omits_flag(self) -> None:
+        with mock.patch("projio.mcp.pipeio._resolve_runner", return_value="pixi"), \
+             mock.patch("shutil.which", return_value="/usr/bin/pixi"):
+            result = _run_cmd("", "snakemake")
+        assert result == ["/usr/bin/pixi", "run", "snakemake"]
 
 
 # ---------------------------------------------------------------------------

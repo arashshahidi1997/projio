@@ -235,6 +235,29 @@ def _sync_csl_files(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
     }
 
 
+_QUARTO_YML_DEFAULT = """\
+# Projio Quarto defaults for docs/deliverables/reports/*.qmd.
+# CSL + bibliography inherit from .projio/render.yml via report.qmd frontmatter;
+# report_build enforces min_version as a runtime check.
+min_version: "1.5"
+"""
+
+
+def _sync_quarto_config(root: Path, *, dry_run: bool = False) -> dict[str, str]:
+    """Create .projio/render/quarto.yml with min_version defaults if missing.
+
+    Leaves existing files untouched — users may override min_version.
+    """
+    target = root / ".projio" / "render" / "quarto.yml"
+    if target.is_file():
+        return {"action": "skipped", "reason": "already exists"}
+    if dry_run:
+        return {"action": "would_create", "path": ".projio/render/quarto.yml"}
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(_QUARTO_YML_DEFAULT, encoding="utf-8")
+    return {"action": "created", "path": str(target.relative_to(root))}
+
+
 def _sync_render_config(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
     """If .projio/render.yml exists, generate pandoc-defaults.yaml."""
     render_yml = root / ".projio" / "render.yml"
@@ -988,6 +1011,11 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
     elif render_action["action"] == "skipped":
         pass  # silent if no render.yml
 
+    # 5b. Scaffold .projio/render/quarto.yml (report_build reads min_version)
+    quarto_action = _sync_quarto_config(root_path, dry_run=dry_run)
+    if quarto_action["action"] in ("created", "would_create"):
+        print(f"{prefix}[+] quarto.yml → {quarto_action.get('path', '.projio/render/quarto.yml')}")
+
     # 6. Validate code.envs configuration
     env_validation = _validate_code_envs(root_path)
     for w in env_validation.get("warnings", []):
@@ -1104,6 +1132,7 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
         "lua_filter": filter_action,
         "csl_files": csl_action,
         "render": render_action,
+        "quarto": quarto_action,
         "code_envs": env_validation,
         "projio_mk": mk_action,
         "mkdocs": mkdocs_action,

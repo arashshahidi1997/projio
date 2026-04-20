@@ -11,6 +11,7 @@ from projio.sync import (
     _get_bundled_filter,
     _sync_lua_filter,
     _sync_project_utils_config,
+    _sync_quarto_config,
 )
 
 
@@ -226,3 +227,33 @@ def test_sync_lua_filter_dry_run_would_update(tmp_path: Path) -> None:
     assert result["action"] == "would_update"
     # File should remain unchanged
     assert target.read_bytes() == b"stale content"
+
+
+# ---------------------------------------------------------------------------
+# _sync_quarto_config
+# ---------------------------------------------------------------------------
+
+
+def test_sync_quarto_config_creates_when_missing(tmp_path: Path) -> None:
+    result = _sync_quarto_config(tmp_path)
+    assert result["action"] == "created"
+    target = tmp_path / ".projio" / "render" / "quarto.yml"
+    assert target.is_file()
+    data = yaml.safe_load(target.read_text(encoding="utf-8"))
+    assert data["min_version"] == "1.5"
+
+
+def test_sync_quarto_config_skips_when_present(tmp_path: Path) -> None:
+    target = tmp_path / ".projio" / "render" / "quarto.yml"
+    target.parent.mkdir(parents=True)
+    target.write_text('min_version: "1.6"\n', encoding="utf-8")
+    result = _sync_quarto_config(tmp_path)
+    assert result["action"] == "skipped"
+    # Existing file left untouched
+    assert "1.6" in target.read_text(encoding="utf-8")
+
+
+def test_sync_quarto_config_dry_run_would_create(tmp_path: Path) -> None:
+    result = _sync_quarto_config(tmp_path, dry_run=True)
+    assert result["action"] == "would_create"
+    assert not (tmp_path / ".projio" / "render" / "quarto.yml").exists()

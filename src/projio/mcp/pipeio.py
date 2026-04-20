@@ -27,9 +27,11 @@ def _resolve_project_python() -> str | None:
 
 
 def _resolve_default_env_name() -> str | None:
-    """Return the ``code.envs.default`` conda env name from the project config.
+    """Return the ``code.envs.default`` env name from the project config.
 
-    Returns ``None`` when the config key is absent or on any error.
+    The value is a conda env name or pixi environment name depending on
+    ``code.runner``.  Returns ``None`` when the config key is absent or
+    on any error.
     """
     try:
         from projio.config import load_effective_config
@@ -42,64 +44,39 @@ def _resolve_default_env_name() -> str | None:
         return None
 
 
-def _resolve_snakemake_cmd(use_conda: str = "") -> list[str]:
-    """Resolve the snakemake command with conda wrapping if needed.
+# ---------------------------------------------------------------------------
+# Runner helpers: conda / pixi
+# ---------------------------------------------------------------------------
+
+def _resolve_runner() -> str:
+    """Detect the package manager runner: ``"pixi"`` or ``"conda"``.
 
     Checks (in order):
-    1. Explicit ``use_conda`` env name (e.g. ``"cogpy"``)
-    2. ``SNAKEMAKE`` Makefile variable
-    2.5. Project config ``code.envs.default`` (avoids picking up the MCP
-         server's own conda env from PATH)
-    3. ``snakemake`` on PATH (with conda wrapping if in a conda env)
-    4. Known fallback: ``cogpy`` conda env
-    5. Bare ``["snakemake"]``
-
-    Args:
-        use_conda: Force a specific conda environment name.
+    1. Explicit ``code.runner`` in project config (``"pixi"`` or ``"conda"``).
+    2. Auto-detect ``pixi.toml`` in project root.
+    3. Default to ``"conda"``.
     """
-    import shlex
-    import shutil
+    try:
+        from projio.config import load_effective_config
+        root = get_project_root()
+        cfg = load_effective_config(root)
+        code = cfg.get("code", {}) or {}
+        runner = code.get("runner")
+        if runner in ("pixi", "conda"):
+            return runner
+    except Exception:
+        pass
 
-    from .datalad import _conda_wrap
+    # Auto-detect: pixi.toml in project root
+    from pathlib import Path
+    try:
+        root = get_project_root()
+        if (Path(root) / "pixi.toml").is_file():
+            return "pixi"
+    except Exception:
+        pass
 
-    # 1. Explicit conda env override
-    if use_conda:
-        return _conda_run_cmd(use_conda, "snakemake")
-
-    # 2. Makefile variable
-    vars_ = resolve_makefile_vars()
-    if "SNAKEMAKE" in vars_:
-        expanded = _expand(vars_["SNAKEMAKE"], vars_)
-        tokens = shlex.split(expanded)
-        if len(tokens) > 1:
-            return tokens
-        wrapped = _conda_wrap(tokens[0])
-        if wrapped:
-            return wrapped
-        return tokens
-
-    # 2.5. Project config: code.envs.default
-    # This check comes before PATH search so the MCP server's own conda env
-    # (e.g. 'rag') is never picked up when a project env is configured.
-    default_env = _resolve_default_env_name()
-    if default_env:
-        return _conda_run_cmd(default_env, "snakemake")
-
-    # 3. On PATH
-    binary = shutil.which("snakemake")
-    if binary:
-        wrapped = _conda_wrap(binary)
-        if wrapped:
-            return wrapped
-        return [binary]
-
-    # 4. Known fallback: cogpy conda env
-    cmd = _conda_run_cmd("cogpy", "snakemake")
-    if cmd:
-        return cmd
-
-    # 5. Bare fallback
-    return ["snakemake"]
+    return "conda"
 
 
 def _conda_run_cmd(env_name: str, cmd_name: str) -> list[str]:
@@ -124,6 +101,138 @@ def _conda_run_cmd(env_name: str, cmd_name: str) -> list[str]:
             return [str(candidate), "run", "-n", env_name, cmd_name]
 
     return [cmd_name]
+
+
+def _pixi_run_cmd(cmd_name: str, env_name: str = "") -> list[str]:
+    """Build a ``pixi run [-e <env>] <cmd>`` token list.
+
+    Args:
+        cmd_name: Command to run inside the pixi environment.
+        env_name: Pixi environment/feature name (omit for default env).
+
+    Returns bare ``[cmd_name]`` if pixi cannot be found.
+    """
+    import shutil
+
+    pixi_bin = shutil.which("pixi")
+    if not pixi_bin:
+        return [cmd_name]
+
+    tokens = [pixi_bin, "run"]
+    if env_name:
+        tokens.extend(["-e", env_name])
+    tokens.append(cmd_name)
+    return tokens
+
+
+def _run_cmd(env_name: str, cmd_name: str) -> list[str]:
+    """Build a runner command dispatching to conda or pixi."""
+    runner = _resolve_runner()
+    if runner == "pixi":
+        return _pixi_run_cmd(cmd_name, env_name)
+    return _conda_run_cmd(env_name, cmd_name)
+
+
+def _resolve_python_cmd() -> list[str]:
+    """Resolve the project Python command with runner wrapping.
+
+    Used for marimo execution (``nb_snapshot``, ``nb_watch``) where the
+    notebook needs the project's compute env, not the MCP server's Python.
+
+    Checks (in order):
+    1. ``PYTHON`` Makefile variable (handles ``pixi run python`` etc.)
+    2. Project config ``code.envs.default`` (via detected runner)
+    3. Runner-specific fallback (pixi: ``pixi run python``; conda: skip)
+    4. MCP server's own ``sys.executable``
+    """
+    import shlex
+    import sys
+
+    runner = _resolve_runner()
+
+    # 1. Makefile variable
+    vars_ = resolve_makefile_vars()
+    if "PYTHON" in vars_:
+        expanded = _expand(vars_["PYTHON"], vars_)
+        tokens = shlex.split(expanded)
+        if tokens:
+            return tokens
+
+    # 2. code.envs.default
+    default_env = _resolve_default_env_name()
+    if default_env:
+        return _run_cmd(default_env, "python")
+
+    # 3. Runner-specific fallback
+    if runner == "pixi":
+        return _pixi_run_cmd("python")
+
+    # 4. MCP server's Python (conda or bare)
+    return [sys.executable]
+
+
+def _resolve_snakemake_cmd(use_env: str = "") -> list[str]:
+    """Resolve the snakemake command with runner wrapping if needed.
+
+    Checks (in order):
+    1. Explicit ``use_env`` env name (routed through detected runner)
+    2. ``SNAKEMAKE`` Makefile variable
+    2.5. Project config ``code.envs.default`` (avoids picking up the MCP
+         server's own conda env from PATH)
+    3. ``snakemake`` on PATH (with conda wrapping if in a conda env)
+    4. Runner-specific fallback (conda: ``cogpy``; pixi: default env)
+    5. Bare ``["snakemake"]``
+
+    Args:
+        use_env: Force a specific environment name.
+    """
+    import shlex
+    import shutil
+
+    from .datalad import _conda_wrap
+
+    runner = _resolve_runner()
+
+    # 1. Explicit env override
+    if use_env:
+        return _run_cmd(use_env, "snakemake")
+
+    # 2. Makefile variable
+    vars_ = resolve_makefile_vars()
+    if "SNAKEMAKE" in vars_:
+        expanded = _expand(vars_["SNAKEMAKE"], vars_)
+        tokens = shlex.split(expanded)
+        if len(tokens) > 1:
+            return tokens
+        wrapped = _conda_wrap(tokens[0])
+        if wrapped:
+            return wrapped
+        return tokens
+
+    # 2.5. Project config: code.envs.default
+    # This check comes before PATH search so the MCP server's own conda env
+    # (e.g. 'rag') is never picked up when a project env is configured.
+    default_env = _resolve_default_env_name()
+    if default_env:
+        return _run_cmd(default_env, "snakemake")
+
+    # 3. On PATH
+    binary = shutil.which("snakemake")
+    if binary:
+        wrapped = _conda_wrap(binary)
+        if wrapped:
+            return wrapped
+        return [binary]
+
+    # 4. Runner-specific fallback
+    if runner == "pixi":
+        return _pixi_run_cmd("snakemake")
+    cmd = _conda_run_cmd("cogpy", "snakemake")
+    if cmd:
+        return cmd
+
+    # 5. Bare fallback
+    return ["snakemake"]
 
 
 def _pipeio_available() -> bool:
@@ -1344,6 +1453,7 @@ def pipeio_nb_watch(
     flow: str,
     name: str,
     port: int = 0,
+    python_bin: str = "",
 ) -> JsonDict:
     """Launch marimo edit with --watch for live human oversight.
 
@@ -1356,13 +1466,23 @@ def pipeio_nb_watch(
         flow: Flow name.
         name: Notebook basename (without extension).
         port: Optional port for the marimo server (0 = auto).
+        python_bin: Python binary where marimo + compute libraries are installed.
+            Empty = auto-resolve from project config.
     """
     if not _pipeio_available():
         return _unavailable("pipeio_nb_watch")
     root = get_project_root()
+    # Auto-resolve project Python when not explicitly provided
+    resolved_python = python_bin
+    if not resolved_python:
+        cmd = _resolve_python_cmd()
+        resolved_python = " ".join(cmd)
     try:
         from pipeio.mcp import mcp_nb_watch  # type: ignore[import]
-        return json_dict(mcp_nb_watch(root, flow=flow, name=name, port=port))
+        return json_dict(mcp_nb_watch(
+            root, flow=flow, name=name, port=port,
+            python_bin=resolved_python,
+        ))
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
@@ -1390,16 +1510,23 @@ def pipeio_nb_snapshot(
         timeout: Execution timeout in seconds (default 120).
         python_bin: Python binary where marimo + compute libraries are installed.
             Use when the notebook needs a different env than the MCP server,
-            e.g. ``"conda run -n cogpy python"``. Empty = MCP server's Python.
+            e.g. ``"conda run -n cogpy python"`` or ``"pixi run python"``.
+            Empty = auto-resolve from project config (``code.runner`` /
+            ``code.envs.default``).
     """
     if not _pipeio_available():
         return _unavailable("pipeio_nb_snapshot")
     root = get_project_root()
+    # Auto-resolve project Python when not explicitly provided
+    resolved_python = python_bin
+    if not resolved_python:
+        cmd = _resolve_python_cmd()
+        resolved_python = " ".join(cmd)
     try:
         from pipeio.mcp import mcp_nb_snapshot  # type: ignore[import]
         return json_dict(mcp_nb_snapshot(
             root, flow=flow, name=name,
-            timeout=timeout, python_bin=python_bin,
+            timeout=timeout, python_bin=resolved_python,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})

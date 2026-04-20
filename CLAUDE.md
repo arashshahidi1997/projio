@@ -109,7 +109,17 @@ Projio-managed projects use two distinct environments, configured in `~/.config/
 
 The generated `.projio/projio.mk` substitutes these into `PROJIO ?=` and `DATALAD ?=`. `projio_python` takes precedence over `python_bin` for the `PROJIO` variable; `python_bin` still controls `PYTHON` for project code. Projects can override either key in their own `.projio/config.yml`.
 
-**Notebook execution:** pipeio supports two notebook backends, selected per-notebook via `format:` in `notebook.yml` (auto-detected when empty). Percent-format (jupytext): `pipeio_nb_exec` runs papermill from the MCP server's own Python (`projio` env), not from the project's `PYTHON`. The `-k` kernel flag controls which Jupyter kernel executes the cells. Marimo-format: `pipeio_nb_exec` runs `marimo run` directly on the `.py` file (no `.ipynb`, no kernel). `pipeio_nb_validate` runs `marimo check` for structural validation. `pipeio_nb_watch` launches `marimo edit --watch` for live human oversight of agent edits. Marimo should be installed in the project's compute env (e.g. `cogpy`) where data libraries are available — run `conda run -n cogpy marimo edit notebook.py --watch` for interactive use.
+**Runner selection (conda / pixi):** pipeio tools that invoke snakemake (`pipeio_run`, `pipeio_dag_export`, `pipeio_flow_report`) auto-detect the package manager via `code.runner` in `.projio/config.yml`. Supported values: `"conda"` (default) and `"pixi"`. When omitted, projio auto-detects `pixi.toml` in the project root — if present, pixi is used; otherwise conda. The resolution chain for the snakemake command is: (1) explicit env override → (2) `SNAKEMAKE` Makefile variable → (3) `code.envs.default` → (4) `snakemake` on PATH → (5) runner-specific fallback → (6) bare `["snakemake"]`. With conda the env is addressed as `conda run -n <env> snakemake`; with pixi as `pixi run [-e <env>] snakemake`.
+
+```yaml
+# .projio/config.yml — runner selection
+code:
+  runner: pixi           # "conda" (default) or "pixi"; auto-detected from pixi.toml if omitted
+  envs:
+    default: ""          # conda env name or pixi environment name (omit for pixi default env)
+```
+
+**Notebook execution:** pipeio supports two notebook backends, selected per-notebook via `format:` in `notebook.yml` (auto-detected when empty). Percent-format (jupytext): `pipeio_nb_exec` runs papermill from the MCP server's own Python (`projio` env), not from the project's `PYTHON`. The `-k` kernel flag controls which Jupyter kernel executes the cells. Marimo-format: `pipeio_nb_exec` runs `marimo run` directly on the `.py` file (no `.ipynb`, no kernel). `pipeio_nb_validate` runs `marimo check` for structural validation. `pipeio_nb_watch` launches `marimo edit --watch` for live human oversight of agent edits. Marimo should be installed in the project's compute env — run `pixi run marimo edit notebook.py --watch` (pixi) or `conda run -n cogpy marimo edit notebook.py --watch` (conda) for interactive use.
 
 ### Claude Code Integration
 

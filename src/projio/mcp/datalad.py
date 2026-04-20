@@ -20,7 +20,9 @@ def _conda_wrap(binary: str) -> list[str] | None:
     import shutil
     from pathlib import Path
 
-    # Match Unix or Windows conda env layout
+    # Match Unix or Windows conda env layout (but not pixi envs)
+    if "/.pixi/" in binary or "\\.pixi\\" in binary:
+        return None
     m = _re.search(
         r"[/\\]envs[/\\]([^/\\]+)[/\\](?:bin|Scripts)[/\\]([^/\\]+?)(?:\.exe)?$",
         binary,

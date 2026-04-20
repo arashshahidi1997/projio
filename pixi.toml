@@ -1,0 +1,43 @@
+[project]
+name = "projio"
+version = "0.1.2"
+description = "Project knowledge orchestrator and MCP server for research repositories"
+authors = ["Arash Shahidi <A.Shahidi@campus.lmu.de>"]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
+# System binaries shelled out to by the ecosystem.
+# Python deps are kept on PyPI to match pyproject.toml as the single source of truth.
+[dependencies]
+python = ">=3.11,<3.13"
+pandoc = ">=3.1"
+
+[pypi-dependencies]
+# Editable installs — root projio + every subpackage under packages/.
+projio  = { path = ".",                  editable = true, extras = ["all", "docs"] }
+indexio      = { path = "packages/indexio", editable = true }
+biblio-tools = { path = "packages/biblio",  editable = true }
+notio        = { path = "packages/notio",   editable = true }
+codio-tools  = { path = "packages/codio",   editable = true }
+pipeio       = { path = "packages/pipeio",  editable = true }
+figio-tools  = { path = "packages/figio",   editable = true }
+
+[feature.dev.pypi-dependencies]
+pytest = "*"
+build = "*"
+twine = "*"
+
+[feature.datalad.dependencies]
+datalad = "*"
+git-annex = "*"
+
+[environments]
+default = { features = [], solve-group = "default" }
+dev     = { features = ["dev"], solve-group = "default" }
+full    = { features = ["dev", "datalad"], solve-group = "default" }
+
+[tasks]
+test       = "python -m pytest tests -q"
+docs       = "python -m mkdocs build --strict"
+docs-serve = "python -m mkdocs serve"
+mcp        = "python -m projio.mcp.server"

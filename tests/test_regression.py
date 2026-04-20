@@ -25,8 +25,8 @@ def test_existing_init_scaffolds_workspace(tmp_path: Path) -> None:
     assert "$(DATALAD) save" in mk_text
     assert "$(DATALAD) push" in mk_text
     assert "$(PROJIO) url -C ." in mk_text
-    assert "PROJIO  ?=" in mk_text and "-m projio" in mk_text
-    assert "MKDOCS  ?=" in mk_text and "-m mkdocs" in mk_text
+    assert "PROJIO" in mk_text and "?=" in mk_text and "-m projio" in mk_text
+    assert "MKDOCS" in mk_text and "?=" in mk_text and "-m mkdocs" in mk_text
     gitignore_text = (tmp_path / ".gitignore").read_text(encoding="utf-8")
     assert "# >>> projio >>>" in gitignore_text
     assert "site/" in gitignore_text
@@ -176,7 +176,7 @@ def test_tool_kind_does_not_overwrite_existing_pyproject_without_force(tmp_path:
 def test_existing_status_command_still_dispatches(monkeypatch) -> None:
     calls: list[str] = []
 
-    def fake_print_report(root: str) -> None:
+    def fake_print_report(root: str, as_json: bool = False) -> None:
         calls.append(root)
 
     monkeypatch.setattr("projio.status.print_report", fake_print_report)

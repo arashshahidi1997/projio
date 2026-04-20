@@ -242,15 +242,16 @@ PROJIO_MK = """\
 # projio.mk — shared targets, managed by projio
 # Include from your Makefile: -include .projio/projio.mk
 
-PYTHON  ?= python
-DATALAD ?= datalad
-MKDOCS  ?= $(PYTHON) -m mkdocs
-PROJIO  ?= $(PYTHON) -m projio
-NOTIO   ?= $(PYTHON) -m notio
-PANDOC  ?= pandoc
-MATLAB  ?= matlab
-PUBLISH ?= $(PYTHON) -m twine upload
-MSG     ?= Update
+PYTHON    ?= python
+SNAKEMAKE ?= snakemake
+DATALAD   ?= datalad
+MKDOCS    ?= $(PYTHON) -m mkdocs
+PROJIO    ?= $(PYTHON) -m projio
+NOTIO     ?= $(PYTHON) -m notio
+PANDOC    ?= pandoc
+MATLAB    ?= matlab
+PUBLISH   ?= $(PYTHON) -m twine upload
+MSG       ?= Update
 
 PANDOC_FILTER ?= .projio/filters/include.lua
 
@@ -408,7 +409,14 @@ def _projio_mk(root: Path) -> str:
 
     Prefers ``code.envs`` + ``code.conda_prefix`` when present, falling
     back to the legacy ``runtime.*`` keys for backward compatibility.
+
+    When ``code.runner`` is ``"pixi"`` (or ``pixi.toml`` exists), project
+    tools (PYTHON, SNAKEMAKE, DATALAD) use ``pixi run`` wrapping instead of
+    absolute conda env paths.  Infrastructure tools (PROJIO, NOTIO, MKDOCS)
+    are still resolved via their own environment settings.
     """
+    import shutil
+
     from projio.config import resolve_env_all
 
     try:
@@ -418,12 +426,61 @@ def _projio_mk(root: Path) -> str:
         cfg = {}
         runtime = {}
 
+    # --- Detect runner: pixi or conda ---
+    code = cfg.get("code", {}) or {}
+    runner = code.get("runner", "")
+    if runner not in ("pixi", "conda"):
+        runner = "pixi" if (root / "pixi.toml").is_file() else "conda"
+
+    pixi_bin = shutil.which("pixi") or "pixi" if runner == "pixi" else None
+    envs_cfg = code.get("envs", {}) or {}
+    default_env = envs_cfg.get("default", "")
+    datalad_env = envs_cfg.get("datalad", "")
+
     # --- Resolve binaries: prefer code.envs, fall back to runtime.* ---
     envs = resolve_env_all(root)
     has_envs = any(v is not None for v in envs.values())
 
-    if has_envs:
+    if runner == "pixi":
+        # Pixi projects: use ``pixi run [-e <env>] <cmd>`` wrapping for
+        # project compute tools (PYTHON, SNAKEMAKE).  For other tools
+        # (DATALAD, PANDOC), prefer conda-resolved absolute paths when
+        # available — this supports partial migration where some tools
+        # still live in a conda env.
+        def _pixi_cmd(cmd: str, env: str = "") -> str:
+            parts = [pixi_bin, "run"]
+            if env:
+                parts.extend(["-e", env])
+            parts.append(cmd)
+            return " ".join(parts)
+
+        python_bin = _pixi_cmd("python", default_env)
+        snakemake_bin = _pixi_cmd("snakemake", default_env)
+
+        # Datalad/pandoc: conda path wins (partial migration), then pixi
+        # wrapping if the env name is a pixi environment, then bare command.
+        if envs.get("datalad"):
+            datalad_bin = envs["datalad"]   # conda absolute path
+        elif datalad_env:
+            datalad_bin = _pixi_cmd("datalad", datalad_env)
+        else:
+            datalad_bin = None
+
+        if envs.get("pandoc"):
+            pandoc_bin = envs["pandoc"]     # conda absolute path
+        elif datalad_env:
+            pandoc_bin = _pixi_cmd("pandoc", datalad_env)
+        else:
+            pandoc_bin = None
+
+        matlab_bin = envs.get("matlab")
+        # Infrastructure tools (projio, docs) are NOT in the pixi project env —
+        # resolve them from code.envs (if configured) or leave as defaults.
+        projio_python = envs.get("projio")
+        docs_python = envs.get("docs")
+    elif has_envs:
         python_bin = envs["python"]
+        snakemake_bin = None  # resolved from PYTHON env at runtime
         projio_python = envs["projio"]
         docs_python = envs["docs"]
         datalad_bin = envs["datalad"]
@@ -431,6 +488,7 @@ def _projio_mk(root: Path) -> str:
         matlab_bin = envs["matlab"]
     else:
         python_bin = runtime.get("python_bin")
+        snakemake_bin = None
         projio_python = runtime.get("projio_python")
         docs_python = runtime.get("docs_python") or projio_python
         datalad_bin = runtime.get("datalad_bin")
@@ -464,65 +522,69 @@ def _projio_mk(root: Path) -> str:
             1,
         )
     if python_bin:
-        mk = mk.replace("PYTHON  ?= python", f"PYTHON  ?= {python_bin}", 1)
+        mk = mk.replace("PYTHON    ?= python", f"PYTHON    ?= {python_bin}", 1)
+    if snakemake_bin:
+        mk = mk.replace(
+            "SNAKEMAKE ?= snakemake", f"SNAKEMAKE ?= {snakemake_bin}", 1,
+        )
     if projio_python:
         mk = mk.replace(
-            "PROJIO  ?= $(PYTHON) -m projio",
-            f"PROJIO  ?= {projio_python} -m projio",
+            "PROJIO    ?= $(PYTHON) -m projio",
+            f"PROJIO    ?= {projio_python} -m projio",
             1,
         )
         mk = mk.replace(
-            "NOTIO   ?= $(PYTHON) -m notio",
-            f"NOTIO   ?= {projio_python} -m notio",
+            "NOTIO     ?= $(PYTHON) -m notio",
+            f"NOTIO     ?= {projio_python} -m notio",
             1,
         )
     elif python_bin:
         mk = mk.replace(
-            "PROJIO  ?= $(PYTHON) -m projio",
-            f"PROJIO  ?= {python_bin} -m projio",
+            "PROJIO    ?= $(PYTHON) -m projio",
+            f"PROJIO    ?= {python_bin} -m projio",
             1,
         )
         mk = mk.replace(
-            "NOTIO   ?= $(PYTHON) -m notio",
-            f"NOTIO   ?= {python_bin} -m notio",
+            "NOTIO     ?= $(PYTHON) -m notio",
+            f"NOTIO     ?= {python_bin} -m notio",
             1,
         )
     publish_script = runtime.get("publish_script")
     if publish_script:
         mk = mk.replace(
-            "PUBLISH ?= $(PYTHON) -m twine upload",
-            f"PUBLISH ?= {publish_script}",
+            "PUBLISH   ?= $(PYTHON) -m twine upload",
+            f"PUBLISH   ?= {publish_script}",
             1,
         )
     if docs_python:
         mk = mk.replace(
-            "MKDOCS  ?= $(PYTHON) -m mkdocs",
-            f"MKDOCS  ?= {docs_python} -m mkdocs",
+            "MKDOCS    ?= $(PYTHON) -m mkdocs",
+            f"MKDOCS    ?= {docs_python} -m mkdocs",
             1,
         )
     if datalad_bin:
-        mk = mk.replace("DATALAD ?= datalad", f"DATALAD ?= {datalad_bin}", 1)
-        if not has_envs:
+        mk = mk.replace("DATALAD   ?= datalad", f"DATALAD   ?= {datalad_bin}", 1)
+        if not has_envs and runner != "pixi":
             # Legacy: derive MKDOCS/PANDOC from datalad_bin path
             datalad_path = Path(datalad_bin)
             labpy_python = datalad_path.parent / "python"
             if labpy_python.exists() and not docs_python:
                 mk = mk.replace(
-                    "MKDOCS  ?= $(PYTHON) -m mkdocs",
-                    f"MKDOCS  ?= {labpy_python} -m mkdocs",
+                    "MKDOCS    ?= $(PYTHON) -m mkdocs",
+                    f"MKDOCS    ?= {labpy_python} -m mkdocs",
                     1,
                 )
             labpy_pandoc = datalad_path.parent / "pandoc"
             if labpy_pandoc.exists() and not pandoc_bin:
                 mk = mk.replace(
-                    "PANDOC  ?= pandoc",
-                    f"PANDOC  ?= {labpy_pandoc}",
+                    "PANDOC    ?= pandoc",
+                    f"PANDOC    ?= {labpy_pandoc}",
                     1,
                 )
     if pandoc_bin:
-        mk = mk.replace("PANDOC  ?= pandoc", f"PANDOC  ?= {pandoc_bin}", 1)
+        mk = mk.replace("PANDOC    ?= pandoc", f"PANDOC    ?= {pandoc_bin}", 1)
     if matlab_bin:
-        mk = mk.replace("MATLAB  ?= matlab", f"MATLAB  ?= {matlab_bin}", 1)
+        mk = mk.replace("MATLAB    ?= matlab", f"MATLAB    ?= {matlab_bin}", 1)
 
     # Detect manuscripts and masters, append conditional targets
     manuscripts = _detect_manuscripts(root)
@@ -900,6 +962,9 @@ def _gitignore_entries_for_framework(site_framework: str) -> list[str]:
         ".ipynb_checkpoints/",
         # docs/pipelines (generated by pipeio docs_collect / docs_nav)
         "docs/pipelines/mkdocs.yml",
+        # Quarto report caches (see docs/specs/quarto-reports.md §12c)
+        "docs/deliverables/reports/*/_freeze/",
+        "docs/deliverables/reports/*/_files/",
         # site
         ".projio/site/",
         ".projio.mkdocs.yml",
@@ -1658,6 +1723,7 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Find unresolved refs | `paper_absent_refs(citekey)` | Parse references.json manually |")
         rows.append("| Check paper status | `library_get(citekey)` | Read library.yml directly |")
         rows.append("| Update paper status | `biblio_library_set(citekeys)` | Edit library.yml directly |")
+        rows.append("| Normalize citekeys | `biblio_citekey_normalize(apply, enrich)` | Rename bib entries by hand |")
         rows.append("| Merge bibliography | `biblio_merge()` | Run `biblio merge` in terminal |")
         rows.append("| Fetch PDFs from BibTeX | `biblio_pdf_fetch(dry_run, force)` | Copy PDFs manually |")
         rows.append("| Fetch PDFs via OA cascade | `biblio_pdf_fetch_oa(force, citekeys)` | Run `biblio bibtex fetch-pdfs-oa` |")
@@ -1680,7 +1746,7 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Rebuild note indexes | `notio_reindex(note_type?)` | Regenerate index.md manually |")
         # Presentio (notio.present subpackage): presentation decks
         rows.append("| Scaffold a presentation deck | `present_init(name, format?, template?)` | Create deck.yml by hand |")
-        rows.append("| List decks | `present_list()` | Walk docs/presentations/ manually |")
+        rows.append("| List decks | `present_list()` | Walk docs/deliverables/presentations/ manually |")
         rows.append("| Deck status (sections, figures, citations) | `present_status(name)` | Inspect files manually |")
         rows.append("| Rich deck dashboard | `present_overview(name)` | Compile stats manually |")
         rows.append("| Assemble deck markdown | `present_assemble(name)` | Concatenate sections manually |")

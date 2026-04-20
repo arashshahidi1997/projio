@@ -99,6 +99,28 @@ The `runtime` section configures how projio tools are invoked externally.
 |-----|---------|
 | `runtime.python_bin` | Absolute path to the Python binary used by `projio mcp-config` to generate `.mcp.json`. Set this in your user config (`~/.config/projio/config.yml`) when the projio ecosystem lives in a specific conda env. Falls back to `sys.executable`. |
 
+## Code & runner config
+
+The `code` section configures how pipeio invokes snakemake and resolves project environments.
+
+```yaml
+code:
+  runner: pixi           # "conda" (default) or "pixi"; auto-detected from pixi.toml if omitted
+  envs:
+    default: cogpy       # environment name for snakemake / notebook execution
+    docs: docs-env       # optional: environment for mkdocs
+    datalad: labpy       # optional: environment for datalad
+  conda_prefix: /opt/conda  # optional: absolute path to conda installation (for conda runner)
+```
+
+| Key | Purpose |
+|-----|---------|
+| `code.runner` | Package manager used to wrap snakemake invocations: `"conda"` or `"pixi"`. When omitted, projio auto-detects `pixi.toml` in the project root. |
+| `code.envs.default` | Environment name passed to the runner. For conda: `conda run -n <name> snakemake`. For pixi: `pixi run -e <name> snakemake` (omit or leave empty for pixi's default environment). |
+| `code.envs.docs` | Optional environment for documentation builds. |
+| `code.envs.datalad` | Optional environment for DataLad operations. |
+| `code.conda_prefix` | Absolute path to the conda envs directory. Used with `code.envs.*` to resolve binary paths. Not needed for pixi projects. |
+
 ## Ecosystem sections
 
 Each ecosystem package has a top-level section (`indexio`, `biblio`, `notio`, `codio`) with an `enabled` flag. Setting `enabled: false` prevents that subsystem's MCP tools from being registered.
