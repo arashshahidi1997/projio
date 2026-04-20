@@ -37,7 +37,14 @@ dev     = { features = ["dev"], solve-group = "default" }
 full    = { features = ["dev", "datalad"], solve-group = "default" }
 
 [tasks]
-test       = "python -m pytest tests -q"
+# Runtime-env tasks: work in the default environment.
 docs       = "python -m mkdocs build --strict"
 docs-serve = "python -m mkdocs serve"
 mcp        = "python -m projio.mcp.server"
+
+[feature.dev.tasks]
+# Dev-env tasks: require pytest / build / twine.  Invoke with `pixi run -e dev <task>`.
+test  = "PYTHONPATH=src python -m pytest tests -q"
+build = "python -m build"
+check = "python -m twine check dist/*"
+clean = "rm -rf build dist site .pytest_cache .mypy_cache src/*.egg-info src/projio.egg-info"

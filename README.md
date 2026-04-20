@@ -15,13 +15,17 @@ pip install projio                # core orchestrator + MCP server
 pip install "projio[all]"         # all ecosystem packages
 ```
 
-For development:
+For development (pixi — primary):
 
 ```bash
 git clone https://github.com/arashshahidi1997/projio.git
 cd projio
-make dev
+pixi install -e dev            # install projio + all subpackages + dev tools
+pixi run -e dev test           # run the test suite
+pixi run docs                  # build the docs site
 ```
+
+Conda is also supported. See [CLAUDE.md](CLAUDE.md) for the `make dev` / `make test` path and the `code.runner: conda` project-level fallback.
 
 ## Quick start
 
