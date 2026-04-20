@@ -1,6 +1,36 @@
 # Issue
 
-## open (59)
+## open (64)
+
+[**report_build preflight fails on projects with no bibliography (quarto-reports ph**](issue-arash-20260420-194804-459841.md){ .note-card-title }
+
+<small>**created:** 2026-04-20 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Implement quarto-reports phase 1: report_init + report_build MCP tools**](issue-arash-20260420-025311-537046.md){ .note-card-title }
+
+<small>**created:** 2026-04-20 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**_scan_deliverables in src/projio/mcp/questio**](issue-arash-20260419-212250-953561.md){ .note-card-title }
+
+<small>**created:** 2026-04-19 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**pipeio_run_kill: "Failed to kill screen session" despite the screen existing**](issue-arash-20260417-194148-680260.md){ .note-card-title }
+
+<small>**created:** 2026-04-17 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**pipeio_run MCP: `targets` array only passes first target to snakemake**](issue-arash-20260417-194119-134127.md){ .note-card-title }
+
+<small>**created:** 2026-04-17 · **status:** open · **confidence:** 1.0</small>
+
+---
 
 [**pipeio_run env resolution bug: `_resolve_snakemake_cmd()` finds snakemake on PAT**](issue-arash-20260414-030010-945964.md){ .note-card-title }
 

@@ -16,10 +16,10 @@ Presentio treats the deck as a collaborative workspace between the human and the
 
 ## What presentio is
 
-A subpackage of notio at `notio.present`, parallel to `notio.manuscript`. Decks live under `docs/presentations/<name>/` with:
+A subpackage of notio at `notio.present`, parallel to `notio.manuscript`. Decks live under `docs/deliverables/presentations/<name>/` with:
 
 ```
-docs/presentations/<name>/
+docs/deliverables/presentations/<name>/
 ├── deck.yml                     # DeckSpec manifest
 ├── sections/
 │   ├── title.md                 # each section = markdown + YAML frontmatter
@@ -82,7 +82,7 @@ The `literature-presentation` skill enforces this loop as a hard rule: *Never dr
 
 Phase 4 added `present_section_import`, which solves the pixecog-pulls-projio-slides use case: one project can reuse another project's deck sections by reference.
 
-The mechanism is deliberately simple. `present_section_import` fetches a remote section via `worklog_read_file` (worklog is projio's cross-project file-reading MCP server), strips its frontmatter, stamps a new provenance header with `imported_from_project`, `imported_from_deck`, `imported_from_section`, and `import_mode`, then writes the cache file to `docs/presentations/<name>/imports/<key>.md` and registers it in `deck.yml` with an `import:` block.
+The mechanism is deliberately simple. `present_section_import` fetches a remote section via `worklog_read_file` (worklog is projio's cross-project file-reading MCP server), strips its frontmatter, stamps a new provenance header with `imported_from_project`, `imported_from_deck`, `imported_from_section`, and `import_mode`, then writes the cache file to `docs/deliverables/presentations/<name>/imports/<key>.md` and registers it in `deck.yml` with an `import:` block.
 
 Two modes:
 

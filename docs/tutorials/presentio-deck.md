@@ -4,7 +4,7 @@ This tutorial walks through building a research presentation deck from scratch w
 
 By the end, you will have a minimal deck that:
 
-- Lives at `docs/presentations/smoketest/`
+- Lives at `docs/deliverables/presentations/smoketest/`
 - Contains a scaffolded section tree with editable markdown stubs
 - Builds to HTML via marp-cli (or reveal.js via pandoc)
 - Can be validated, diffed, and iterated without leaving the MCP tool surface
@@ -33,7 +33,7 @@ present_init(
 This creates:
 
 ```
-docs/presentations/smoketest/
+docs/deliverables/presentations/smoketest/
 ├── deck.yml               # DeckSpec manifest
 ├── sections/
 │   ├── title.md           # scaffolded stubs, one per template section
@@ -71,7 +71,7 @@ Four templates ship today:
     | Tool | Purpose |
     |------|---------|
     | `present_init` | Create deck.yml and scaffolded section stubs |
-    | `present_list` | Enumerate all decks under `docs/presentations/` |
+    | `present_list` | Enumerate all decks under `docs/deliverables/presentations/` |
 
     Full reference: [Presentation tools](../reference/mcp-tools.md#presentation-tools-via-notiopresent).
 
@@ -206,7 +206,7 @@ For Marp, the pipeline is: `assemble_marp` → figure resolution → pandoc cite
 
 For reveal.js, the pipeline is: `assemble_pandoc` → figure resolution → `pandoc -t revealjs` with native citeproc. No preresolve step — pandoc handles `@key` natively.
 
-Output lands at `docs/presentations/smoketest/build/smoketest.html` either way.
+Output lands at `docs/deliverables/presentations/smoketest/build/smoketest.html` either way.
 
 ???+ info "MCP tools touched in step 5"
 

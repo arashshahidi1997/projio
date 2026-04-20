@@ -1,0 +1,41 @@
+name: projio-intro
+title: "Projio \u2014 Project Knowledge Orchestrator for Research Repositories"
+format: revealjs
+sections:
+- key: title
+  path: sections/title.md
+  order: 10
+- key: problem
+  path: sections/problem.md
+  order: 20
+- key: shape
+  path: sections/shape.md
+  order: 30
+- key: delegation-model
+  path: sections/delegation-model.md
+  order: 40
+- key: walkthrough
+  path: sections/walkthrough.md
+  order: 50
+- key: ecosystem-tour
+  path: sections/ecosystem-tour.md
+  order: 60
+- key: which-subpackage
+  path: sections/which-subpackage.md
+  order: 70
+- key: adoption
+  path: sections/adoption.md
+  order: 80
+bibliography:
+  bib_file: ''
+  csl: ''
+render:
+  output_dir: build/
+  theme: default
+  ratio: '16:9'
+  paginate: true
+  header: ''
+  footer: ''
+  speaker_notes: true
+  marp_args: []
+  revealjs_args: []

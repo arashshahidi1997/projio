@@ -96,7 +96,7 @@ present_init(name=DECK_NAME, format="marp", template="conference-talk")
 internal framing talk, `conference-talk` for a full talk with related
 work + contributions.)
 
-The scaffold creates `docs/presentations/<DECK_NAME>/` with
+The scaffold creates `docs/deliverables/presentations/<DECK_NAME>/` with
 `deck.yml`, `sections/*.md` stubs, and an empty `figures/` tree.
 
 ### 3) Propose the outline to the human

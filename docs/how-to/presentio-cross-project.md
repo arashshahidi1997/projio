@@ -5,7 +5,7 @@ Pull a section from another project's presentio deck into the current project's 
 ## Prerequisites
 
 - Both projects registered in worklog (the source project must be resolvable by `worklog_read_file`)
-- Source project must have a deck at `docs/presentations/<source_deck>/sections/<section>.md`
+- Source project must have a deck at `docs/deliverables/presentations/<source_deck>/sections/<section>.md`
 - Host project has a scaffolded deck (`present_init` already run)
 - `worklog` package installed — presentio lazy-imports it and raises a friendly error if missing
 
@@ -23,7 +23,7 @@ worklog_project_context(project_id=<id>)   # confirm the deck exists
 You can also read the source deck.yml directly if you need to confirm section keys:
 
 ```text
-worklog_read_file(project_id=<id>, path="docs/presentations/<source_deck>/deck.yml")
+worklog_read_file(project_id=<id>, path="docs/deliverables/presentations/<source_deck>/deck.yml")
 ```
 
 ### 2. Import the section
@@ -42,9 +42,9 @@ present_section_import(
 
 What happens:
 
-1. Presentio fetches `docs/presentations/<source_deck>/sections/<section>.md` from the source project via `worklog_read_file`
+1. Presentio fetches `docs/deliverables/presentations/<source_deck>/sections/<section>.md` from the source project via `worklog_read_file`
 2. Strips any existing frontmatter from the remote body
-3. Writes a new cache file at `docs/presentations/<host-deck>/imports/<project>-<deck>-<section>.md` with a stamped provenance header:
+3. Writes a new cache file at `docs/deliverables/presentations/<host-deck>/imports/<project>-<deck>-<section>.md` with a stamped provenance header:
    ```yaml
    ---
    title: "Imported: <section>"
@@ -78,7 +78,7 @@ Then re-run `present_cite_check(name=<host-deck>)` to confirm the imported secti
 If the imported section contains `fig:<id>` placeholders, those ids must exist in the host project's figio registry. Options:
 
 - **Rebuild locally**: if the host project has a `figures/<id>.figurespec.yaml`, run `figio_build(figure_id=<id>)` to produce the output.
-- **Copy the source figure**: the simplest cross-project figure approach today is to manually copy the SVG/PNG from the source project into `docs/presentations/<host-deck>/figures/` and adjust the reference to an inline markdown image (`![](figures/<id>.png)`) instead of a `fig:<id>` placeholder.
+- **Copy the source figure**: the simplest cross-project figure approach today is to manually copy the SVG/PNG from the source project into `docs/deliverables/presentations/<host-deck>/figures/` and adjust the reference to an inline markdown image (`![](figures/<id>.png)`) instead of a `fig:<id>` placeholder.
 - **Defer**: leave the `fig:<id>` placeholder in the imported section. `present_validate` will warn about unresolved figures but the rest of the deck still builds.
 
 Full cross-project figure resolution (a worklog-backed figure resolver) is a phase-4.1 follow-up.
@@ -116,7 +116,7 @@ After the talk, you can unfreeze by editing `deck.yml` to set `import_mode: refe
 
 # 1. Confirm source exists
 list_projects()  # returns: [..., {id: "projio", ...}]
-worklog_read_file(project_id="projio", path="docs/presentations/ecosystem-intro/deck.yml")
+worklog_read_file(project_id="projio", path="docs/deliverables/presentations/ecosystem-intro/deck.yml")
 
 # 2. Scaffold host deck if not already
 present_init(name="thesis-defense", format="revealjs", template="conference-talk")

@@ -60,7 +60,7 @@ project activity data.
 - `DECK_NAME` (required): short slug, usually dated
   (e.g. `progress-2026-05-05`)
 - `HOST_PROJECT` (required): which project's
-  `docs/presentations/` the deck lives in
+  `docs/deliverables/presentations/` the deck lives in
 - `WINDOW` (optional): date range for activity ("last 2 weeks",
   "since 2026-04-01"). Default: the span since the most recent
   progress-report deck.

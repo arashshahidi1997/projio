@@ -410,3 +410,21 @@ Session: `c618c2d5` | Task: `issue-arash-20260412-013511-941571.md`
 - Added ...
 
 Session: `faa60403` | Task: `task-arash-20260414-030042-333119.md`
+
+## 2026-04-20 02:57 | projio | opus | 1 steps
+
+Fix landed in `src/projio/mcp/questio.py`: added `_parse_deck_yml` helper and taught `_scan_deliverables` to (1) prefer `deck.yml` in presentation/poster subdirs with fallback to the old primary-file convention, and (2) also pick up subdir-layout reports (`report.qmd` / `report.md` / `index.md`) alongside the legacy flat `*.md` pattern. Verified against the real `projio-intro` deck (title, format=revealjs, dir-mtime date) and a synthetic fixture covering all five code paths.
+
+Session: `c31ab239` | Task: `task-arash-20260420-025341-623742.md`
+
+## 2026-04-20 03:07 | projio | opus | 1 steps
+
+**Tests**: `tests/test_mcp_report.py` (27 tests covering version parsing, frontmatter splitting, notebook embed validation, preflight happy path + each failure mode, runner resolution for pixi/conda/PATH/missing, `report_init` scaffolding + overwrite guard + result-note preamble, and `report_build` integration with quarto mocked); `tests/test_sync.py` + `tests/test_init.py` extended. Full suite: 514 passing.
+
+Session: `97cf4949` | Task: `task-arash-20260420-025343-049948.md`
+
+## 2026-04-20 19:53 | projio | sonnet | 1 steps
+
+**`docs/specs/quarto-reports.md` §5c**: updated the bibliography bullet to say "resolves *if the report body contains at least one citation*".
+
+Session: `ff7175f2` | Task: `task-arash-20260420-195132-741415.md`

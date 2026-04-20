@@ -1015,14 +1015,45 @@ def questio_docs_collect() -> JsonDict:
 _DELIVERABLE_TYPES = ("reports", "presentations", "posters")
 
 
+def _parse_deck_yml(path: Path) -> dict[str, Any]:
+    """Parse a presentio ``deck.yml`` into the fm-like dict used by the scanner.
+
+    Returns ``{}`` on parse error so the caller can fall back to primary-file
+    scanning.
+    """
+    try:
+        spec = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError:
+        return {}
+    if not isinstance(spec, dict):
+        return {}
+    fm: dict[str, Any] = {
+        "title": spec.get("title") or spec.get("name", ""),
+        "type": "presentation",
+    }
+    if spec.get("format"):
+        fm["format"] = spec["format"]
+    if "date" in spec:
+        fm["date"] = spec["date"]
+    else:
+        from datetime import date
+        fm["date"] = date.fromtimestamp(path.parent.stat().st_mtime).isoformat()
+    for key in ("audience", "event"):
+        if key in spec:
+            fm[key] = spec[key]
+    return fm
+
+
 def _scan_deliverables(
     deliverables_dir: Path,
 ) -> dict[str, list[dict[str, Any]]]:
     """Scan docs/deliverables/{reports,presentations,posters}/ for items.
 
-    Reports are individual .md files.  Presentations and posters are
-    subdirectories containing a primary markdown file (slides.md, poster.md,
-    or index.md).
+    Reports are either flat ``.md`` files or subdirectories with ``report.qmd``
+    / ``report.md`` / ``index.md``.  Presentations and posters are
+    subdirectories; presentio decks (``deck.yml``) are recognized as the
+    primary manifest, with fallback to the older ``slides.md`` / ``poster.md``
+    / ``index.md`` convention.
     """
     by_type: dict[str, list[dict[str, Any]]] = {t: [] for t in _DELIVERABLE_TYPES}
 
@@ -1032,7 +1063,7 @@ def _scan_deliverables(
             continue
 
         if dtype == "reports":
-            # Reports are flat .md files (excluding index.md)
+            # Flat .md files (legacy layout)
             for path in sorted(type_dir.glob("*.md"), reverse=True):
                 if path.name == "index.md":
                     continue
@@ -1042,12 +1073,39 @@ def _scan_deliverables(
                     fm["_filename"] = path.stem
                     fm["_rel"] = path.name
                     by_type[dtype].append(fm)
+            # Subdirectory layout (quarto-reports spec): <name>/report.qmd
+            for subdir in sorted(type_dir.iterdir(), reverse=True):
+                if not subdir.is_dir():
+                    continue
+                primary = None
+                for candidate in ("report.qmd", "report.md", "index.md"):
+                    p = subdir / candidate
+                    if p.exists():
+                        primary = p
+                        break
+                if primary is None:
+                    continue
+                fm = _parse_frontmatter(primary)
+                if fm:
+                    fm["_path"] = primary
+                    fm["_dirname"] = subdir.name
+                    fm["_rel"] = f"{subdir.name}/{primary.name}"
+                    by_type[dtype].append(fm)
         else:
             # Presentations and posters are subdirectories
             for subdir in sorted(type_dir.iterdir(), reverse=True):
                 if not subdir.is_dir():
                     continue
-                # Look for the primary file
+                deck_yml = subdir / "deck.yml"
+                if deck_yml.exists():
+                    fm = _parse_deck_yml(deck_yml)
+                    if fm:
+                        fm["_path"] = deck_yml
+                        fm["_dirname"] = subdir.name
+                        fm["_rel"] = f"{subdir.name}/"
+                        by_type[dtype].append(fm)
+                        continue
+                # Fallback: older convention with a primary markdown file
                 primary = None
                 for candidate in ("slides.md", "poster.md", "index.md"):
                     p = subdir / candidate
@@ -1055,7 +1113,6 @@ def _scan_deliverables(
                         primary = p
                         break
                 if primary is None:
-                    # Try any .md file
                     md_files = list(subdir.glob("*.md"))
                     if md_files:
                         primary = md_files[0]

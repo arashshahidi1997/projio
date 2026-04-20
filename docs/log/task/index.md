@@ -22,9 +22,9 @@
 
 ## pending (29)
 
-[**pipeio_run env resolution bug: `_resolve_snakemake_cmd()` finds snakemake on PAT**](task-arash-20260414-030042-333119.md){ .note-card-title }
+[**report_build empty-bib edge case: skip bibliography preflight when no citations**](task-arash-20260420-195132-741415.md){ .note-card-title }
 
-<small>**date:** 2026-04-14 · **status:** pending</small>
+<small>**date:** 2026-04-20 · **status:** pending</small>
 
 ---
 
@@ -242,6 +242,14 @@
 
 ---
 
+## planned (1)
+
+[**OSF integration: manifest, push/pull, registration, preprint**](task-arash-20260416-025441-887422.md){ .note-card-title }
+
+<small>**date:** 2026-04-16 · **status:** planned · **tags:** [osf, publication, doi, integration]</small>
+
+---
+
 ??? note "cancelled (5)"
 
     [**Task from /storage2/arash/projects/projio/docs/log/issue/issue-arash-20260326-191057-730671.md**](task-arash-20260326-192730-144882.md){ .note-card-title }
@@ -274,8 +282,26 @@
     
     ---
     
-??? note "done (82)"
+??? note "done (85)"
 
+    [**Implement quarto-reports phase 1 (report_init + report_build)**](task-arash-20260420-025343-049948.md){ .note-card-title }
+    
+    <small>**date:** 2026-04-20 · **status:** done</small>
+    
+    ---
+    
+    [**Teach _scan_deliverables about deck.yml and .qmd**](task-arash-20260420-025341-623742.md){ .note-card-title }
+    
+    <small>**date:** 2026-04-20 · **status:** done</small>
+    
+    ---
+    
+    [**pipeio_run env resolution bug: `_resolve_snakemake_cmd()` finds snakemake on PAT**](task-arash-20260414-030042-333119.md){ .note-card-title }
+    
+    <small>**date:** 2026-04-14 · **status:** done</small>
+    
+    ---
+    
     [**Create pipeio-flow-create skill and pixecog-flow-setup skill**](task-arash-20260410-150459-158814.md){ .note-card-title }
     
     <small>**date:** 2026-04-10 · **status:** done</small>

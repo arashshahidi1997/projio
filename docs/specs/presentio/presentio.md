@@ -141,7 +141,7 @@ edits in Google Slides do not flow back.
 ## DeckSpec schema
 
 ```yaml
-# docs/presentations/<name>/deck.yml
+# docs/deliverables/presentations/<name>/deck.yml
 name: projio-ecosystem-intro
 title: "Projio: a project-centric research environment"
 author: Arash Sal Moslehian
@@ -311,7 +311,7 @@ for v1.
 ## Filesystem layout
 
 ```
-docs/presentations/
+docs/deliverables/presentations/
   <name>/
     deck.yml
     sections/
@@ -348,7 +348,7 @@ frozen) are tracked.
    *Leaning worklog_search — registries should earn their keep.*
 3. **Should section files be under `notes/` proper** (so notio
    indexing picks them up without extra config) or under
-   `docs/presentations/<name>/sections/` (so they're co-located with
+   `docs/deliverables/presentations/<name>/sections/` (so they're co-located with
    the deck)? *Leaning co-located; notio can be told to index the
    additional directory via config.*
 4. **Reveal.js plugin surface** — chalkboard, highlight, math. How

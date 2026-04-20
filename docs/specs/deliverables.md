@@ -31,9 +31,12 @@ docs/deliverables/
     report-YYYY-MM-DD.md                # one file per report
   presentations/
     index.md                            # auto-generated presentation list
-    YYYY-MM-event-slug/                 # one directory per deck
-      slides.md                         # slide content (markdown, or pointer to .pptx/.pdf)
-      assets/                           # deck-specific images, diagrams
+    <name>/                             # one directory per deck (presentio section tree)
+      deck.yml                          # DeckSpec manifest (format: marp | revealjs)
+      sections/                         # one markdown file per slide section
+      figures/                          # local or frozen cross-project figures
+      imports/                          # cross-project section cache (phase 4)
+      build/                            # renderer output (html/pdf/pptx)
   posters/
     index.md                            # auto-generated poster list
     YYYY-MM-event-slug/                 # one directory per poster
@@ -46,10 +49,10 @@ docs/deliverables/
 | Type | Pattern | Example |
 |------|---------|---------|
 | Report | `report-YYYY-MM-DD.md` | `report-2026-04-09.md` |
-| Presentation | `YYYY-MM-event-slug/` | `2026-04-tdmn-project-overview/` |
+| Presentation | presentio `<name>/` (slugged, optionally dated) | `2026-04-tdmn-project-overview/`, `projio-intro/` |
 | Poster | `YYYY-MM-event-slug/` | `2026-06-fens-swr-detection/` |
 
-Reports are single files (markdown). Presentations and posters are directories because they typically include supporting assets (images, exported figures, build artifacts).
+Reports are single files (markdown). Presentations are presentio section trees (`deck.yml` + `sections/` + renderer-owned `build/`), scaffolded by `present_init` and iterated via the presentio MCP tools. Posters are directories because they typically include supporting assets (images, exported figures, build artifacts).
 
 ## 4. Frontmatter Schema
 
@@ -102,7 +105,7 @@ docs/manuscript/     ───  docs/deliverables/               (separate: diff
 | Deliverable | Primary Skill | Data Sources | Output |
 |-------------|--------------|--------------|--------|
 | Report | `questio-report` | questio_status, result notes, pipeline status | `reports/report-YYYY-MM-DD.md` |
-| Presentation | (manual or project-level skill) | results, figures, plan status | `presentations/YYYY-MM-slug/slides.md` |
+| Presentation | `present_init` + presentio MCP tools (see [presentio spec](presentio/presentio.md)) | results, figures, plan status | `presentations/<name>/deck.yml` + `sections/` |
 | Poster | (manual or project-level skill) | results, figures, citations | `posters/YYYY-MM-slug/poster.md` |
 
 ## 6. Indexing

@@ -121,13 +121,13 @@ The projio MCP server exposes tools across eight categories. Optional tools requ
 
 ## Presentation tools (via notio.present)
 
-Presentio treats presentation decks as first-class projio artifacts, parallel to manuscripts: a YAML spec + ordered section tree + dual-backend renderer (Marp or reveal.js via pandoc). Decks live under `docs/presentations/<name>/` and are iterated section-by-section rather than one-shot-generated.
+Presentio treats presentation decks as first-class projio artifacts, parallel to manuscripts: a YAML spec + ordered section tree + dual-backend renderer (Marp or reveal.js via pandoc). Decks live under `docs/deliverables/presentations/<name>/` and are iterated section-by-section rather than one-shot-generated.
 
 ### Read
 
 | Tool | Description |
 |------|-------------|
-| `present_list()` | List all decks under `docs/presentations/` |
+| `present_list()` | List all decks under `docs/deliverables/presentations/` |
 | `present_status(name)` | Per-section state, figure counts, bibliography inheritance, last-built outputs |
 | `present_overview(name)` | Rich dashboard: per-section stats, missing/stale citations and figures, slide count estimate |
 | `present_section_context(name, section)` | One-call context for drafting a slide section — body, citations, figures, RAG hits, related notes |
@@ -166,7 +166,7 @@ Presentio treats presentation decks as first-class projio artifacts, parallel to
 
 `present_seed_from_paper` is the bridge to biblio. It delegates to `biblio.present.generate_slides` (LLM-backed Marp generation from a paper's docling output and figures), strips the Marp frontmatter, and writes the result into the deck as `sections/seed.md`. The seed is a *starting point* for iteration, never a finished deck.
 
-`present_section_import` fetches `docs/presentations/<source_deck>/sections/<section>.md` from another project via `worklog_read_file`, strips the remote frontmatter, stamps a new header with provenance (`imported_from_project`, `imported_from_deck`, `imported_from_section`, `import_mode`), writes the cache file to `docs/presentations/<name>/imports/<key>.md`, and registers a `DeckSection` in `deck.yml` with an `import:` block. Extracts citekeys and figure refs from the body and reports which citekeys are missing from the host project's bibliography.
+`present_section_import` fetches `docs/deliverables/presentations/<source_deck>/sections/<section>.md` from another project via `worklog_read_file`, strips the remote frontmatter, stamps a new header with provenance (`imported_from_project`, `imported_from_deck`, `imported_from_section`, `import_mode`), writes the cache file to `docs/deliverables/presentations/<name>/imports/<key>.md`, and registers a `DeckSection` in `deck.yml` with an `import:` block. Extracts citekeys and figure refs from the body and reports which citekeys are missing from the host project's bibliography.
 
 `present_refresh_import` re-fetches a reference-mode import to pick up upstream edits. Preserves the cache file's provenance header. Refuses to operate on frozen imports — use `present_freeze_import` to unfreeze first if you really need to.
 
@@ -198,7 +198,7 @@ Presentio treats presentation decks as first-class projio artifacts, parallel to
 
 `codio_add` registers a library by hand when you already have the metadata. `kind` is one of the controlled vocabulary values from `codio_vocab()`.
 
-`codio_func_doc` imports a package in the specified conda environment and returns the docstring for a function or an entire module. Useful for discovering API surface before implementing an integration.
+`codio_func_doc` imports a package in the specified environment (conda or pixi) and returns the docstring for a function or an entire module. Useful for discovering API surface before implementing an integration.
 
 `codio_rag_sync` writes codio catalog and notes files into the indexio source config. Run `indexio_build` afterwards to embed the updated content.
 
@@ -241,12 +241,12 @@ Notebook tools support multiple backends via the `NotebookBackend` protocol. Eac
 | `pipeio_nb_promote(flow, name, mod, rule_name="", description="", apply=false)` | Promote notebook to pipeline mod: analyze → script → rule stub → docs |
 | `pipeio_nb_extract(flow, name, overwrite=false, tags_only=false)` | Extract figures/markdown/text from executed notebook for reporting (renamed from `pipeio_nb_report`) |
 | `pipeio_nb_validate(flow, name)` | Structural validation (percent: AST + import isolation; marimo: `marimo check`) |
-| `pipeio_nb_watch(flow, name, port=0)` | Launch `marimo edit --watch` for live human oversight (marimo-only) |
-| `pipeio_nb_snapshot(flow, name, timeout=120)` | Execute marimo notebook and return cell outputs — agent's "eyes" (marimo-only) |
+| `pipeio_nb_watch(flow, name, port=0, python_bin="")` | Launch `marimo edit --watch` for live human oversight (marimo-only) |
+| `pipeio_nb_snapshot(flow, name, timeout=120, python_bin="")` | Execute marimo notebook and return cell outputs — agent's "eyes" (marimo-only) |
 
 **Percent-format (jupytext):** `pipeio_nb_sync` direction `"py2nb"` (default) regenerates `.ipynb`/`.myst.md` from the source `.py`; use `"nb2py"` after human edits in JupyterLab. `pipeio_nb_exec` syncs `.py` → `.ipynb` first, then runs via papermill. `params` overrides RunCard fields.
 
-**Marimo-format:** Single-file `.py` format — sync is a no-op, execution runs `marimo run` directly, validation runs `marimo check` for DAG integrity. Use `pipeio_nb_watch` to launch live editing with `--watch` for agent-human collaboration.
+**Marimo-format:** Single-file `.py` format — sync is a no-op, execution runs `marimo run` directly, validation runs `marimo check` for DAG integrity. Use `pipeio_nb_watch` to launch live editing with `--watch` for agent-human collaboration. Both `pipeio_nb_watch` and `pipeio_nb_snapshot` auto-resolve the project Python via `code.runner` config (conda or pixi) when `python_bin` is empty.
 
 ### Mod authoring
 
@@ -309,13 +309,13 @@ Notebook tools support multiple backends via the `NotebookBackend` protocol. Eac
 
 | Tool | Description |
 |------|-------------|
-| `pipeio_run(pipe, flow="", targets=[], cores=1, dryrun=false, ...)` | Launch Snakemake in a detached screen session |
+| `pipeio_run(flow="", targets=[], cores=1, dryrun=false, ...)` | Launch Snakemake in a detached screen session |
 | `pipeio_run_status(run_id="", pipe="", flow="")` | Query progress of running or recent Snakemake runs |
 | `pipeio_run_dashboard()` | Rich summary of all tracked runs: active/completed/failed per flow |
 | `pipeio_run_kill(run_id)` | Gracefully stop a running Snakemake screen session |
 | `pipeio_log_parse(pipe, flow="", run_id="", log_path="")` | Extract structured data from Snakemake logs |
 
-`pipeio_run` launches Snakemake in a `screen` session, tracks state in `.pipeio/runs.json`, and returns a `run_id`. `wildcards`: entity filters for scoping (e.g. `{"subject": "01", "session": "04"}`). `use_conda=true` passes `--use-conda` to Snakemake.
+`pipeio_run` launches Snakemake in a `screen` session, tracks state in `.pipeio/runs.json`, and returns a `run_id`. The snakemake command is resolved via `code.runner` config — either `conda run -n <env>` or `pixi run [-e <env>]` (auto-detected from `pixi.toml` when `code.runner` is not set). `wildcards`: entity filters for scoping (e.g. `{"subject": "01", "session": "04"}`). `use_conda=true` passes `--use-conda` to Snakemake (for snakemake's own conda env management, independent of the runner).
 
 `pipeio_log_parse` extracts completed rules with timing, failed rules with error summaries, resource warnings, and missing inputs from the log file.
 

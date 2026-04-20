@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from . import biblio, codio, context, datalad, figio as figio_mcp, manuscripto, notio, pipeio, presentio, questio, rag, site as site_mcp
+from . import biblio, codio, context, datalad, figio as figio_mcp, manuscripto, notio, pipeio, presentio, questio, rag, report, site as site_mcp
 
 server = FastMCP("projio")
 
@@ -87,6 +87,16 @@ def paper_absent_refs_tool(citekey: str):
 def library_get_tool(citekey: str):
     """Status/tags/priority from the library ledger for a citekey."""
     return biblio.library_get(citekey)
+
+
+@server.tool("biblio_citekey_normalize")
+def biblio_citekey_normalize_tool(apply: bool = False, enrich: bool = False):
+    """Preview or apply citekey normalization to canonical author_year_Title.
+    Entries with incomplete metadata (author/year/title) go to the `skipped` bucket
+    and are never renamed to anon_nd_Record — enrich first, then re-run.
+    MCP defaults: apply=False (preview), enrich=False (offline). Set enrich=True
+    to resolve missing authors via OpenAlex/GROBID/CrossRef."""
+    return biblio.biblio_citekey_normalize(apply=apply, enrich=enrich)
 
 
 @server.tool("biblio_ingest")
@@ -641,7 +651,7 @@ def present_init_tool(
     template: str = "lab-meeting",
     title: str = "",
 ):
-    """Scaffold a new presentation deck under docs/presentations/<name>/.
+    """Scaffold a new presentation deck under docs/deliverables/presentations/<name>/.
     Format is 'marp' (phase 1) or 'revealjs' (phase 3). Template is one of
     lab-meeting, journal-club, conference-talk, progress-report."""
     return presentio.present_init(name=name, format=format, template=template, title=title)
@@ -649,7 +659,7 @@ def present_init_tool(
 
 @server.tool("present_list")
 def present_list_tool():
-    """List all decks under docs/presentations/."""
+    """List all decks under docs/deliverables/presentations/."""
     return presentio.present_list()
 
 
@@ -746,7 +756,7 @@ def present_section_import_tool(
     mode: str = "reference",
 ):
     """Import a section from another project's deck via worklog.
-    Fetches the remote section, caches it under docs/presentations/<name>/imports/,
+    Fetches the remote section, caches it under docs/deliverables/presentations/<name>/imports/,
     registers it in deck.yml with import metadata. mode is 'reference' (can be
     refreshed) or 'freeze' (locked)."""
     return presentio.present_section_import(
@@ -772,6 +782,25 @@ def present_freeze_import_tool(name: str, section: str = ""):
     """Lock an imported section against future refreshes. Empty section
     freezes all imports in the deck."""
     return presentio.present_freeze_import(name=name, section=section)
+
+
+# --- Report tools (Quarto-powered executable reports) ---
+
+@server.tool("report_init")
+def report_init_tool(name: str, template: str = "progress"):
+    """Scaffold a new Quarto report under docs/deliverables/reports/<name>/.
+    Template is one of progress, update, milestone. Frontmatter is
+    pre-populated from questio_status, recent result notes, and flow registry."""
+    return report.report_init(name=name, template=template)
+
+
+@server.tool("report_build")
+def report_build_tool(name: str, format: str = "html"):
+    """Render docs/deliverables/reports/<name>/report.qmd via quarto.
+    Preflights embed shortcodes, image refs, and bibliography. Resolves the
+    quarto binary via code.envs.report / code.envs.default / PATH and checks
+    the runtime version against .projio/render/quarto.yml min_version."""
+    return report.report_build(name=name, format=format)
 
 
 # --- Master document tools ---

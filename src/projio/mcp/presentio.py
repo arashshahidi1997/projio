@@ -3,7 +3,7 @@
 Mirrors :mod:`projio.mcp.manuscripto`.
 
 **Phase 1** — scaffolding + Marp build:
-- ``present_init`` — scaffold a new deck under ``docs/presentations/<name>/``
+- ``present_init`` — scaffold a new deck under ``docs/deliverables/presentations/<name>/``
 - ``present_list`` — enumerate all decks
 - ``present_status`` — per-section state, figures, bibliography
 - ``present_assemble`` — write assembled markdown without calling marp-cli
@@ -63,7 +63,7 @@ def _unavailable(tool: str) -> JsonDict:
 
 
 def _find_deck_dir(root: Path, name: str) -> tuple[Path | None, Path | None]:
-    base = root / "docs" / "presentations" / name
+    base = root / "docs" / "deliverables" / "presentations" / name
     spec_path = base / "deck.yml"
     if not spec_path.is_file():
         return None, None
@@ -79,7 +79,7 @@ def present_init(
     """Scaffold a new presentation deck.
 
     Args:
-        name: Deck name (used as directory name under docs/presentations/).
+        name: Deck name (used as directory name under docs/deliverables/presentations/).
         format: Renderer — ``marp`` (phase 1) or ``revealjs`` (phase 3).
         template: Section template — one of ``lab-meeting``, ``journal-club``,
             ``conference-talk``, ``progress-report``.
@@ -91,7 +91,7 @@ def present_init(
     try:
         from notio.present.schema import scaffold_deck
 
-        base_dir = root / "docs" / "presentations" / name
+        base_dir = root / "docs" / "deliverables" / "presentations" / name
         base_dir.mkdir(parents=True, exist_ok=True)
         spec = scaffold_deck(
             name,
@@ -118,12 +118,12 @@ def present_init(
 
 
 def present_list() -> JsonDict:
-    """List all decks under docs/presentations/."""
+    """List all decks under docs/deliverables/presentations/."""
     if not _present_available():
         return _unavailable("present_list")
     root = get_project_root()
     try:
-        decks_dir = root / "docs" / "presentations"
+        decks_dir = root / "docs" / "deliverables" / "presentations"
         if not decks_dir.is_dir():
             return json_dict({"decks": [], "count": 0})
 
@@ -168,7 +168,7 @@ def present_status(name: str) -> JsonDict:
                 {
                     "error": (
                         f"Deck '{name}' not found at "
-                        f"docs/presentations/{name}/deck.yml"
+                        f"docs/deliverables/presentations/{name}/deck.yml"
                     )
                 }
             )
@@ -261,7 +261,7 @@ def present_assemble(name: str) -> JsonDict:
         base_dir, spec_path = _find_deck_dir(root, name)
         if base_dir is None:
             return json_dict(
-                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+                {"error": f"Deck '{name}' not found at docs/deliverables/presentations/{name}/deck.yml"}
             )
 
         from notio.present.assembly import write_assembled
@@ -302,7 +302,7 @@ def present_build(
         base_dir, spec_path = _find_deck_dir(root, name)
         if base_dir is None:
             return json_dict(
-                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+                {"error": f"Deck '{name}' not found at docs/deliverables/presentations/{name}/deck.yml"}
             )
 
         from notio.present.render import render
@@ -331,7 +331,7 @@ def present_validate(name: str) -> JsonDict:
         base_dir, spec_path = _find_deck_dir(root, name)
         if base_dir is None:
             return json_dict(
-                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+                {"error": f"Deck '{name}' not found at docs/deliverables/presentations/{name}/deck.yml"}
             )
 
         from notio.present.schema import DeckSpec
@@ -363,7 +363,7 @@ def present_seed_from_paper(
 
     Delegates to :func:`biblio.present.generate_slides` for the LLM call
     (which reads docling output, figures, and metadata), then drops the
-    result into ``docs/presentations/<name>/sections/seed.md`` of a
+    result into ``docs/deliverables/presentations/<name>/sections/seed.md`` of a
     newly-scaffolded deck.
 
     This tool is the bridge between biblio's paper-context machinery and
@@ -388,7 +388,7 @@ def present_seed_from_paper(
         from biblio.present import generate_slides
         from notio.present.schema import DeckSpec, scaffold_deck
 
-        base_dir = root / "docs" / "presentations" / name
+        base_dir = root / "docs" / "deliverables" / "presentations" / name
         deck_yml = base_dir / "deck.yml"
 
         # Scaffold the deck if it doesn't already exist.
@@ -499,7 +499,7 @@ def present_section_context(name: str, section: str) -> JsonDict:
         base_dir, spec_path = _find_deck_dir(root, name)
         if base_dir is None:
             return json_dict(
-                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+                {"error": f"Deck '{name}' not found at docs/deliverables/presentations/{name}/deck.yml"}
             )
 
         from notio.manuscript.assembly import strip_frontmatter
@@ -629,7 +629,7 @@ def present_figure_insert(
         base_dir, spec_path = _find_deck_dir(root, name)
         if base_dir is None:
             return json_dict(
-                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+                {"error": f"Deck '{name}' not found at docs/deliverables/presentations/{name}/deck.yml"}
             )
 
         from notio.manuscript.assembly import FRONTMATTER_RE
@@ -720,7 +720,7 @@ def present_cite_check(name: str) -> JsonDict:
         base_dir, spec_path = _find_deck_dir(root, name)
         if base_dir is None:
             return json_dict(
-                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+                {"error": f"Deck '{name}' not found at docs/deliverables/presentations/{name}/deck.yml"}
             )
 
         from notio.present.schema import DeckSpec, resolve_deck_render
@@ -820,7 +820,7 @@ def present_overview(name: str) -> JsonDict:
         base_dir, spec_path = _find_deck_dir(root, name)
         if base_dir is None:
             return json_dict(
-                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+                {"error": f"Deck '{name}' not found at docs/deliverables/presentations/{name}/deck.yml"}
             )
 
         from notio.manuscript.assembly import strip_frontmatter
@@ -965,7 +965,7 @@ def present_diff(name: str) -> JsonDict:
         base_dir, spec_path = _find_deck_dir(root, name)
         if base_dir is None:
             return json_dict(
-                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+                {"error": f"Deck '{name}' not found at docs/deliverables/presentations/{name}/deck.yml"}
             )
 
         from notio.manuscript.assembly import strip_frontmatter
@@ -1114,9 +1114,9 @@ def present_section_import(
 ) -> JsonDict:
     """Import a section from another project's deck into the host deck.
 
-    Fetches ``docs/presentations/<source_deck>/sections/<section>.md`` from
+    Fetches ``docs/deliverables/presentations/<source_deck>/sections/<section>.md`` from
     the ``from_project`` via the worklog MCP server, writes a local copy
-    under ``docs/presentations/<name>/imports/``, and registers a new
+    under ``docs/deliverables/presentations/<name>/imports/``, and registers a new
     section in the host deck's ``deck.yml`` with ``import:`` metadata.
 
     Extracts citekeys from the imported body and reports which are missing
@@ -1144,7 +1144,7 @@ def present_section_import(
         base_dir, spec_path = _find_deck_dir(root, name)
         if base_dir is None:
             return json_dict(
-                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+                {"error": f"Deck '{name}' not found at docs/deliverables/presentations/{name}/deck.yml"}
             )
 
         from notio.present.schema import DeckSection, DeckSectionImport, DeckSpec
@@ -1152,7 +1152,7 @@ def present_section_import(
         spec = DeckSpec.from_yaml(spec_path)
 
         # Fetch remote section via worklog
-        remote_path = f"docs/presentations/{source_deck}/sections/{section}.md"
+        remote_path = f"docs/deliverables/presentations/{source_deck}/sections/{section}.md"
         try:
             body = _worklog_read_file(from_project, remote_path)
         except RuntimeError as exc:
@@ -1307,7 +1307,7 @@ def present_refresh_import(name: str, section: str) -> JsonDict:
         base_dir, spec_path = _find_deck_dir(root, name)
         if base_dir is None:
             return json_dict(
-                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+                {"error": f"Deck '{name}' not found at docs/deliverables/presentations/{name}/deck.yml"}
             )
 
         from notio.present.schema import DeckSpec
@@ -1342,7 +1342,7 @@ def present_refresh_import(name: str, section: str) -> JsonDict:
             )
 
         remote_path = (
-            f"docs/presentations/{target.import_.deck}/sections/"
+            f"docs/deliverables/presentations/{target.import_.deck}/sections/"
             f"{target.import_.section}.md"
         )
         try:
@@ -1399,7 +1399,7 @@ def present_freeze_import(name: str, section: str = "") -> JsonDict:
         base_dir, spec_path = _find_deck_dir(root, name)
         if base_dir is None:
             return json_dict(
-                {"error": f"Deck '{name}' not found at docs/presentations/{name}/deck.yml"}
+                {"error": f"Deck '{name}' not found at docs/deliverables/presentations/{name}/deck.yml"}
             )
 
         from notio.present.schema import DeckSpec
