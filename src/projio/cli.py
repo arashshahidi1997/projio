@@ -56,8 +56,9 @@ def _build_parser() -> argparse.ArgumentParser:
     p_list = sub.add_parser("list", help="List workspace components and their status.")
     p_list.add_argument("-C", "--root", default=".", help="Project root (default: .).")
 
-    p_status = sub.add_parser("status", help="Show project, index, and git status.")
+    p_status = sub.add_parser("status", help="Show project, ecosystem, and git status.")
     p_status.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+    p_status.add_argument("--json", action="store_true", help="Emit full status as JSON.")
 
     p_url = sub.add_parser("url", help="Print remote repository and Pages URLs.")
     p_url.add_argument("-C", "--root", default=".", help="Project root (default: .).")
@@ -366,7 +367,7 @@ def main(argv: Iterable[str] | None = None) -> None:
 
     if args.command == "status":
         from .status import print_report
-        print_report(args.root)
+        print_report(args.root, as_json=args.json)
         return
 
     if args.command == "url":

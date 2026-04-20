@@ -81,6 +81,31 @@ def library_get(citekey: str) -> JsonDict:
         return json_dict({"error": str(exc), "citekey": citekey})
 
 
+def biblio_citekey_normalize(apply: bool = False, enrich: bool = False) -> JsonDict:
+    """Preview or apply citekey normalization to canonical author_year_Title.
+
+    Entries with incomplete metadata (missing author, year, or title) are
+    reported in the ``skipped`` bucket and never renamed — enrich first,
+    then re-run normalize.
+
+    Args:
+        apply: If True, rewrite bib files and log to ledger. Default False
+            (preview only).
+        enrich: If True, resolve missing authors via OpenAlex / GROBID /
+            CrossRef. Default False — MCP defaults to offline so agent
+            calls stay cheap. Run ``biblio_enrich`` (or set this flag)
+            when you want network resolution.
+    """
+    if not _biblio_available():
+        return _unavailable("biblio_citekey_normalize")
+    root = get_project_root()
+    try:
+        from biblio.mcp import citekey_normalize as _citekey_normalize
+        return json_dict(_citekey_normalize(root=root, apply=apply, enrich=enrich))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 # --- Write tools ---
 
 
