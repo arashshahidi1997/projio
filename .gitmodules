@@ -25,7 +25,7 @@
 	datalad-url = /storage/share/git/ria-store/alias/pipeio
 [submodule "packages/figio"]
 	path = packages/figio
-	url = ./packages/figio
+	url = https://github.com/arashshahidi1997/figio.git
 	datalad-id = 84966136-7bea-442b-856e-786f9738682a
 [submodule ".projio/codio/mirrors/snakemake--snakemake"]
 	path = .projio/codio/mirrors/snakemake--snakemake

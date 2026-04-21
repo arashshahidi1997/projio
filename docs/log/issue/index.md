@@ -1,6 +1,12 @@
 # Issue
 
-## open (64)
+## open (65)
+
+[**Packaging & install-path cleanup: make uv tool install work, slim the umbrella repo**](issue-arash-20260421-173220-917228.md){ .note-card-title }
+
+<small>**created:** 2026-04-21 · **status:** open</small>
+
+---
 
 [**report_build preflight fails on projects with no bibliography (quarto-reports ph**](issue-arash-20260420-194804-459841.md){ .note-card-title }
 
