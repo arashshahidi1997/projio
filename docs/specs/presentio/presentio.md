@@ -11,7 +11,7 @@ Research presentations — journal clubs, conference talks, lab meetings,
 progress reports, thesis defenses — are currently a gap in the projio
 ecosystem. Today:
 
-- [biblio/present.py](../../packages/biblio/src/biblio/present.py) can
+- [biblio/present.py](https://github.com/arashshahidi1997/biblio/blob/master/src/biblio/present.py) can
   generate a single-paper Marp deck via LLM from docling output. Useful
   seed, but one-shot and paper-scoped.
 - Notio/manuscript owns the pandoc+citeproc+Lua filter stack used for
