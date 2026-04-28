@@ -122,8 +122,12 @@ class TestResolveSnakemakeCmd:
             result = _resolve_snakemake_cmd()
         assert "snakemake" in result
 
-    def test_finds_snakemake_on_path(self) -> None:
+    def test_finds_snakemake_on_path_conda(self) -> None:
+        """For conda projects, PATH search fires when no Makefile/config env set."""
         with mock.patch(
+            "projio.mcp.pipeio._resolve_runner",
+            return_value="conda",
+        ), mock.patch(
             "projio.mcp.pipeio.resolve_makefile_vars",
             return_value={},
         ), mock.patch(
@@ -138,6 +142,33 @@ class TestResolveSnakemakeCmd:
         ):
             result = _resolve_snakemake_cmd()
         assert result == ["/usr/bin/snakemake"]
+
+    def test_pixi_skips_path_search(self) -> None:
+        """For pixi projects, PATH search is skipped — pixi runner fires first.
+
+        This prevents picking up the MCP server's own snakemake (e.g. from rag
+        env) when the project's pixi env is the source of truth.
+        """
+        with mock.patch(
+            "projio.mcp.pipeio._resolve_runner",
+            return_value="pixi",
+        ), mock.patch(
+            "projio.mcp.pipeio.resolve_makefile_vars",
+            return_value={},
+        ), mock.patch(
+            "projio.mcp.pipeio._resolve_default_env_name",
+            return_value=None,
+        ), mock.patch(
+            "shutil.which",
+            return_value="/opt/conda/envs/rag/bin/snakemake",  # MCP server's PATH
+        ):
+            result = _resolve_snakemake_cmd()
+        # Must NOT pick up rag's snakemake from PATH
+        assert "rag" not in result
+        # Must use pixi run snakemake instead
+        assert "pixi" in " ".join(result) or result[-1] == "snakemake"
+        assert "run" in result
+        assert "snakemake" in result
 
     def test_uses_config_default_env_conda(self) -> None:
         """Step 2.5: code.envs.default with conda runner."""

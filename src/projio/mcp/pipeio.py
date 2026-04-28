@@ -216,7 +216,14 @@ def _resolve_snakemake_cmd(use_env: str = "") -> list[str]:
     if default_env:
         return _run_cmd(default_env, "snakemake")
 
-    # 3. On PATH
+    # 3. Pixi runner fallback (before PATH search)
+    # PATH belongs to the MCP server, not the project. For pixi projects,
+    # always prefer the project's pixi env over whatever the MCP server's
+    # PATH happens to surface (which would be e.g. rag's snakemake).
+    if runner == "pixi":
+        return _pixi_run_cmd("snakemake")
+
+    # 4. On PATH (conda projects only)
     binary = shutil.which("snakemake")
     if binary:
         wrapped = _conda_wrap(binary)
@@ -224,14 +231,12 @@ def _resolve_snakemake_cmd(use_env: str = "") -> list[str]:
             return wrapped
         return [binary]
 
-    # 4. Runner-specific fallback
-    if runner == "pixi":
-        return _pixi_run_cmd("snakemake")
+    # 5. Conda known fallback
     cmd = _conda_run_cmd("cogpy", "snakemake")
     if cmd:
         return cmd
 
-    # 5. Bare fallback
+    # 6. Bare fallback
     return ["snakemake"]
 
 
