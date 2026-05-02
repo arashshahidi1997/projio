@@ -1105,16 +1105,19 @@ def _scan_deliverables(
                         fm["_rel"] = f"{subdir.name}/"
                         by_type[dtype].append(fm)
                         continue
-                # Fallback: older convention with a primary markdown file
+                # Fallback: older convention with a primary markdown / quarto file
                 primary = None
-                for candidate in ("slides.md", "poster.md", "index.md"):
+                for candidate in ("slides.qmd", "slides.md", "poster.qmd", "poster.md", "index.md"):
                     p = subdir / candidate
                     if p.exists():
                         primary = p
                         break
                 if primary is None:
+                    qmd_files = list(subdir.glob("*.qmd"))
                     md_files = list(subdir.glob("*.md"))
-                    if md_files:
+                    if qmd_files:
+                        primary = qmd_files[0]
+                    elif md_files:
                         primary = md_files[0]
                 if primary is not None:
                     fm = _parse_frontmatter(primary)
