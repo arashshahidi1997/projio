@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "projio"
 version = "0.1.2"
 description = "Project knowledge orchestrator and MCP server for research repositories"
@@ -27,7 +27,10 @@ pytest = "*"
 build = "*"
 twine = "*"
 
-[feature.datalad.dependencies]
+# datalad + git-annex are linux-only on conda-forge; `full` env solves on
+# linux platforms only. macOS contributors can still use `default`/`dev`
+# without datalad — install datalad via pixi-global or homebrew on macOS.
+[feature.datalad.target.linux-64.dependencies]
 datalad = "*"
 git-annex = "*"
 
