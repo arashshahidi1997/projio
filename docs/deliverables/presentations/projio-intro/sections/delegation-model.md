@@ -26,11 +26,15 @@ Projio splits a research project into two surfaces.
 
 ## One linking direction: downstream → upstream, via frontmatter
 
+![](../../../../assets/excalidraw/delegation-model.excalidraw.svg)
+
+<!-- code-grep-able fallback; uncomment if the SVG is missing or stale.
 ```
 flow  ←──  result note  ←──  deliverable
               │                  │
               └──  question  ←───┘
 ```
+-->
 
 Backlinks (upstream → downstream) are computed at render time. Never stored.
 

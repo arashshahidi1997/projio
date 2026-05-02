@@ -79,6 +79,8 @@ The bibliography and CSL paths resolve via the existing projio render chain — 
 
 ## 5. Figure sources
 
+![figure lifecycle](../assets/excalidraw/figure-lifecycle.excalidraw.svg)
+
 The **notebook is the figure source** for reports. A report reaches directly into an executed pipeio notebook for its plots — these are working figures, not composed ones. If a particular figure later matures to publication quality, it gets promoted to a FigureSpec under figio and enters the manuscript/deck path instead; it does not continue to flow through reports.
 
 Two mechanisms are supported — one primary, one fallback — chosen by notebook backend:

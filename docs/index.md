@@ -19,6 +19,9 @@ pip install "projio[all]"         # all ecosystem packages
 
 Projio itself is small: workspace scaffolding, docs-site workflows, the MCP entrypoint, and the **questio** research-question layer. Everything else lives in focused sibling packages that projio composes. This separation keeps each domain independently usable and specced.
 
+![projio architecture](assets/excalidraw/projio-shape.excalidraw.svg)
+
+<!-- code-grep-able fallback; uncomment if the SVG is missing or stale.
 ```mermaid
 flowchart TD
     R[Your research repository] --> P[projio<br/>scaffold · site · MCP · questio]
@@ -52,6 +55,8 @@ flowchart TD
     figio -. panels .-> notio
     questio -. binds .-> notio
 ```
+-->
+
 
 The **engineering vs. science** split is deliberate — see the [delegation model](explanation/delegation-model.md) for how pipeio flows, result notes, questio questions, and deliverables each own distinct content and link in one direction.
 

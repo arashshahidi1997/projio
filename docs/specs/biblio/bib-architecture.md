@@ -51,11 +51,15 @@ bib/
 
 ## Compilation Pipeline
 
+![bibliography compilation](../../assets/excalidraw/bib-pipeline.excalidraw.svg)
+
+<!-- code-grep-able fallback; uncomment if the SVG is missing or stale.
 ```
 srcbib/*.bib  →  biblio_merge  →  .projio/biblio/merged.bib  ─┐
                                                                 ├→  biblio_compile  →  .projio/render/compiled.bib
              pipeio_modkey_bib →  .projio/pipeio/modkey.bib  ─┘
 ```
+-->
 
 Both pandoc (via `pandoc-defaults.yaml`) and mkdocs (via `bib_file` config)
 point to `.projio/render/compiled.bib` as the single bibliography.

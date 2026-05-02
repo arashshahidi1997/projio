@@ -13,6 +13,8 @@ statement that explains how they interact. Read this first when authoring
 new flows, results, or reports — it keeps you from duplicating content
 across layers.
 
+![engineering vs. science](../assets/excalidraw/delegation-model.excalidraw.svg)
+
 ## Who owns what
 
 | Object | Owns | Does **not** own |

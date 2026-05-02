@@ -4,6 +4,9 @@
 
 A projio project organizes code in three tiers. Each tier has a different scope, development model, and relationship to the pipeline system. pipeio's scaffolding and audit tools must be tier-aware.
 
+![code tier promotion](../../assets/excalidraw/code-tiers.excalidraw.svg)
+
+<!-- code-grep-able fallback; uncomment if the SVG is missing or stale.
 ```
 core library (cogpy)          code/lib/cogpy/       dataset-agnostic, reusable
                                                      pure functions, no project deps
@@ -21,6 +24,7 @@ flow scripts                  code/pipelines/{flow}/scripts/
 notebooks                     code/pipelines/{flow}/notebooks/explore/.src/
                                                      prototyping, investigation
 ```
+-->
 
 ## Tier Definitions
 
