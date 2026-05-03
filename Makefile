@@ -61,8 +61,9 @@ publish-test:
 	$(PUBLISH) --test .
 
 # ── DataLad subdataset management ──────────────────────────────────────
-save:
-	$(DATALAD) save -r -m "$(MSG)"
+# `save` and `push` come from .projio/projio.mk (managed by `projio sync`).
+# Sibling-specific helpers stay here — projio.mk's `push` defaults to github;
+# these add explicit per-sibling control.
 
 status:
 	$(DATALAD) status -r

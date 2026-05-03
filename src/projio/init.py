@@ -261,7 +261,7 @@ PANDOC_FILTER ?= .projio/filters/include.lua
 
 # --- DataLad targets ---
 save:
-\t$(DATALAD) save -m "$(MSG)"
+\t$(DATALAD) save -r -m "$(MSG)"
 
 push:
 \t$(DATALAD) push --to github
