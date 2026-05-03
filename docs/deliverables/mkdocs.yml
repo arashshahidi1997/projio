@@ -1,0 +1,7 @@
+site_name: deliverables
+docs_dir: .
+nav:
+- Overview: index.md
+- Reports: reports/index.md
+- Presentations: presentations/index.md
+- Posters: posters/index.md

@@ -66,6 +66,8 @@ nav:
       - Configure The MCP Server: how-to/mcp.md
       - Manage DataLad Siblings: how-to/siblings.md
       - Build The Documentation Site: how-to/site.md
+      - Set Up A Dev Environment: how-to/dev-environment.md
+      - Build A Quarto Report: how-to/build-a-report.md
       - Presentio Cross-Project Imports: how-to/presentio-cross-project.md
   - Explanation:
       - explanation/index.md
@@ -115,4 +117,5 @@ nav:
               - specs/research-orchestration/skills/questio-investigate.md
               - specs/research-orchestration/skills/questio-iterate.md
               - specs/research-orchestration/skills/questio-record.md
+  - Deliverables: '!include ./docs/deliverables/mkdocs.yml'
   - Log: '!include ./docs/log/mkdocs.yml'
