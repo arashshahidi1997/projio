@@ -5,3 +5,4 @@
 | Date | Title | Event | Audience |
 |------|-------|-------|----------|
 | 2026-04-19 | [Projio — Project Knowledge Orchestrator for Research Repositories](projio-intro/) |  |  |
+| 2026-05-04 | [projio](projio-5min/slides.qmd) |  |  |
