@@ -53,7 +53,7 @@ Quarto uses YAML frontmatter natively. Projio adds four fields on top of Quarto'
 ```yaml
 ---
 title: "Weekly Progress Report — Week of 2026-04-14"
-author: "Arash Sal Moslehian"
+author: "Arash Shahidi"
 date: 2026-04-19
 format:
   html:

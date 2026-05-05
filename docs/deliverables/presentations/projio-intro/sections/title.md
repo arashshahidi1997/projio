@@ -12,7 +12,7 @@ tags: [presentation, section]
 
 <br>
 
-Arash Sal Moslehian
+Arash Shahidi
 
 <https://arashshahidi1997.github.io/projio/>
 

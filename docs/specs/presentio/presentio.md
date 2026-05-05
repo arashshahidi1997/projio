@@ -144,7 +144,7 @@ edits in Google Slides do not flow back.
 # docs/deliverables/presentations/<name>/deck.yml
 name: projio-ecosystem-intro
 title: "Projio: a project-centric research environment"
-author: Arash Sal Moslehian
+author: Arash Shahidi
 date: 2026-04-24
 venue: lab-meeting
 
