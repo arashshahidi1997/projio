@@ -1,5 +1,23 @@
 # Idea
 
+[**Handbook + Workshop initiative — architecture, conceptual frame, tools**](idea-arash-20260507-221835-382557.md){ .note-card-title }
+
+<small>**date:** 2026-05-07</small>
+
+---
+
+[**Feature: generic per-flow cohort status report**](idea-arash-20260507-010942-894375.md){ .note-card-title }
+
+<small>**date:** 2026-05-07 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Projio ecosystem audit — glue identity, drift, and the integration boundary**](idea-arash-20260428-110228-880676.md){ .note-card-title }
+
+<small>**date:** 2026-04-28</small>
+
+---
+
 [**Collect projio MCP tool usage stats per project**](idea-arash-20260413-163827-707584.md){ .note-card-title }
 
 <small>**date:** 2026-04-13</small>

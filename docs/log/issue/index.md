@@ -1,6 +1,18 @@
 # Issue
 
-## open (65)
+## open (67)
+
+[**biblio_pdf_fetch_oa: html_fallback should be a clear failure**](issue-arash-20260505-220435-150667.md){ .note-card-title }
+
+<small>**created:** 2026-05-05 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**biblio_merge: dedup by DOI, not just citekey**](issue-arash-20260505-220333-780011.md){ .note-card-title }
+
+<small>**created:** 2026-05-05 · **status:** open · **confidence:** 1.0</small>
+
+---
 
 [**Packaging & install-path cleanup: make uv tool install work, slim the umbrella repo**](issue-arash-20260421-173220-917228.md){ .note-card-title }
 

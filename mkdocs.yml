@@ -45,6 +45,7 @@ extra_javascript:
 
 nav:
   - Home: index.md
+  - Handbook: '!include ./docs/handbook/mkdocs.yml'
   - Tutorials:
       - tutorials/index.md
       - Quickstart: tutorials/quickstart.md
@@ -118,4 +119,5 @@ nav:
               - specs/research-orchestration/skills/questio-iterate.md
               - specs/research-orchestration/skills/questio-record.md
   - Deliverables: '!include ./docs/deliverables/mkdocs.yml'
+  - Pipelines: '!include ./docs/pipelines/mkdocs.yml'
   - Log: '!include ./docs/log/mkdocs.yml'

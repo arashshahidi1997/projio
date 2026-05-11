@@ -20,11 +20,29 @@
 
 ---
 
-## pending (29)
+## pending (32)
 
-[**report_build empty-bib edge case: skip bibliography preflight when no citations**](task-arash-20260420-195132-741415.md){ .note-card-title }
+[**Prototype marimo-WASM explorable embedded in handbook chapter 1**](task-arash-20260507-222051-589638.md){ .note-card-title }
 
-<small>**date:** 2026-04-20 · **status:** pending</small>
+<small>**date:** 2026-05-07 · **status:** pending · **tags:** [handbook, marimo, interactive, prototype]</small>
+
+---
+
+[**Sketch handbook outline + draft chapter 1 ("Interactivity as a research medium")**](task-arash-20260507-222028-504938.md){ .note-card-title }
+
+<small>**date:** 2026-05-07 · **status:** pending · **tags:** [handbook, writing, chapter-1]</small>
+
+---
+
+[**Move Interactive Mathematics deep-research PDF into projio + create handbook reference area**](task-arash-20260507-222003-098400.md){ .note-card-title }
+
+<small>**date:** 2026-05-07 · **status:** pending · **tags:** [handbook, reference, agentic-workshop-2026-09]</small>
+
+---
+
+[**Provision teaching/agentic-workshop workspace + register in worklog**](task-arash-20260507-221947-582556.md){ .note-card-title }
+
+<small>**date:** 2026-05-07 · **status:** pending · **tags:** [workshop, infra, agentic-workshop-2026-09]</small>
 
 ---
 
@@ -282,8 +300,14 @@
     
     ---
     
-??? note "done (85)"
+??? note "done (86)"
 
+    [**report_build empty-bib edge case: skip bibliography preflight when no citations**](task-arash-20260420-195132-741415.md){ .note-card-title }
+    
+    <small>**date:** 2026-04-20 · **status:** done</small>
+    
+    ---
+    
     [**Implement quarto-reports phase 1 (report_init + report_build)**](task-arash-20260420-025343-049948.md){ .note-card-title }
     
     <small>**date:** 2026-04-20 · **status:** done</small>

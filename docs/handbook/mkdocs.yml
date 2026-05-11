@@ -1,0 +1,51 @@
+site_name: handbook
+docs_dir: .
+nav:
+  - Overview: index.md
+  - "00 — Frame":
+      - Why this stack: 00-frame/why-this-stack.md
+      - Why interactivity: 00-frame/why-interactivity.md
+      - Single-author fragility: 00-frame/single-author-fragility.md
+  - "10 — BIDS":
+      - Strict raw root: 10-bids/strict-raw-root.md
+      - Derivatives and manifest: 10-bids/derivatives-and-manifest.md
+      - BIDS beyond electrophysiology: 10-bids/bids-beyond-electrophysiology.md
+  - "20 — DataLad":
+      - Superdataset and subdatasets: 20-datalad/superdataset-and-subdatasets.md
+      - Siblings and RIA: 20-datalad/siblings-and-ria.md
+      - Code as subdataset: 20-datalad/code-as-subdataset.md
+  - "30 — Snakemake":
+      - Rules and the DAG: 30-snakemake/rules-and-the-dag.md
+      - Snakebids and wildcards: 30-snakemake/snakebids-wildcards.md
+      - Config-driven pipelines: 30-snakemake/config-driven-pipelines.md
+      - Three idioms: 30-snakemake/three-idioms.md
+  - "40 — Marimo":
+      - Reactive cells: 40-marimo/reactive-cells.md
+      - Analysis notebooks: 40-marimo/analysis-notebooks.md
+      - Handbook explorables: 40-marimo/handbook-explorables.md
+  - "50 — Publication":
+      - MkDocs for the site: 50-publication/mkdocs-for-the-site.md
+      - Quarto for deliverables: 50-publication/quarto-for-deliverables.md
+      - Two surfaces, one cross-link protocol: 50-publication/two-surfaces-one-cross-link-protocol.md
+  - "60 — projio":
+      - The stack-aware layer: 60-projio/00-stack-aware-layer.md
+      - notio (project memory): 60-projio/10-notio.md
+      - pipeio (pipelines as data): 60-projio/20-pipeio.md
+      - biblio + indexio: 60-projio/30-biblio-indexio.md
+      - figio + manuscript: 60-projio/40-figio-and-manuscript.md
+      - codio (code as catalog): 60-projio/50-codio.md
+  - "70 — Agentic":
+      - Claude Code and MCP: 70-agentic/claude-code-and-mcp.md
+      - Permissions and bounded context: 70-agentic/permissions-and-bounded-context.md
+      - Skills: 70-agentic/skills.md
+      - Captures, tasks, queues: 70-agentic/captures-tasks-queues.md
+  - "80 — Orchestration":
+      - Worklog overview: 80-orchestration/worklog-overview.md
+      - Goals and critical path: 80-orchestration/goals-and-critical-path.md
+      - Cross-project dispatch: 80-orchestration/cross-project-dispatch.md
+  - "90 — Future directions":
+      - Agent hierarchies: 90-future-directions/agent-hierarchies.md
+      - Live agent-agent communication: 90-future-directions/live-agent-communication.md
+  - Honest gaps: 99-honest-gaps.md
+  - References: references.md
+  - Outline (spec): _outline.md

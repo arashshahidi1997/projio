@@ -428,3 +428,141 @@ Session: `97cf4949` | Task: `task-arash-20260420-025343-049948.md`
 **`docs/specs/quarto-reports.md` §5c**: updated the bibliography bullet to say "resolves *if the report body contains at least one citation*".
 
 Session: `ff7175f2` | Task: `task-arash-20260420-195132-741415.md`
+
+## 2026-05-08 02:14 | projio | opus | 1 steps
+
+Survey written to `docs/log/result/result-arash-20260508-tool-use-survey.md`. Covers all five projects with per-project tool inventory + subsystem footprint + conventions + teaching examples + friction, plus a 10-entry teaching artifact shortlist mapped to handbook chapters and workshop days, and 8 honest gaps. Headline findings: pixecog has 15 pipeio flows (most active), gecog has the cleanest mod-doc convention plus the only first-party FigureSpec across all studies, the gecog mlclassifier ...
+
+Session: `96343d2f` | Task: `task-arash-20260508-020130-100001.md`
+
+## 2026-05-08 02:19 | projio | opus | 1 steps
+
+- **§A** two-workspace contract (handbook in projio, workshop as new dataset under `teaching/agentic-workshop/`)
+- **§B** handbook tree (00-frame → 60-publication + 99-honest-gaps), co-resident with existing Diátaxis dirs, blog under same mkdocs site
+- **§C** workshop tree (4-day Quarto project with `shared/` for cross-iteration assets, including a `scaffolds/` addition for participant template repos)
+- **§D** 10-row mapping table from each survey artifact → handbook chapter + workshop sessio...
+
+Session: `9e5912b9` | Task: `task-arash-20260508-020131-100002.md`
+
+## 2026-05-08 02:23 | projio | opus | 1 steps
+
+No code, no chapter prose, no task-note files filed. One note flagged in the doc: the dispatcher referenced `_outline.md` and a separate "workshop-syllabus-spec" result that don't exist by those names — the layout/spec result `021908-627443.md` is the spec source and the chapter-1 task is what creates `_outline.md`.
+
+Session: `98f20c58` | Task: `task-arash-20260508-020200-100003.md`
+
+## 2026-05-08 16:16 | projio | opus | 1 steps
+
+The graded projio-introduction sequence (stage 0 → 5) and the agentic-on-top inventory required by the spec are both included as their own tables in components 6 and 7.
+
+Session: `a3957921` | Task: `task-arash-20260508-160000-200001.md`
+
+## 2026-05-08 16:21 | projio | opus | 1 steps
+
+The earlier chapter-1 task references `_outline.md` — that file now exists. Two flagged TBDs in mapping (worklog dashboard artifact, anonymized goal example) are honest gaps from the survey.
+
+Session: `6255a460` | Task: `task-arash-20260508-160001-200002.md`
+
+## 2026-05-08 16:27 | projio | opus | 1 steps
+
+Key non-trivial calls:
+- §2: kept the prior order (B → A → C → D), but noted task C's outline portion is now discharged by `_outline.md`, so only chapter-1 prose remains.
+- §3: split chapter `60-projio/` into 5 draft tasks because pipeio is the densest single page and figio/codio are honest-aspirational lighter tasks.
+- §5: budget gap is ~65 h (157 h ceiling vs. ~92 h available); flagged that Tier-1+ cuts must begin landing by July for feasibility.
+- §6 risk 3: marimo-WASM failure no longer c...
+
+Session: `d0917936` | Task: `task-arash-20260508-160002-200003.md`
+
+## 2026-05-11 16:04 | projio | sonnet | 1 steps
+
+Done. Here's what was accomplished:
+
+**Migrated:**
+- `docs/reference/research/Interactive Mathematics Beyond the Static Page.pdf` — 197 KB, valid PDF, committed to projio dataset
+
+**Updated:**
+- `docs/log/idea/idea-arash-20260507-221835-382557.md` — cross-reference updated from worklog path to repo-
+
+Session: `aabf2232` | Task: `task-arash-20260507-222003-098400.md`
+
+## 2026-05-11 16:11 | projio | opus | 1 steps
+
+**Build status (caveat)**: `conda run -n rag python -m mkdocs build --strict` fails — but the failure is **pre-existing** and unrelated to my edits. I verified by stashing my changes and rebuilding: same failure. Root cause is the PDF at `docs/reference/research/Interactive Mathematics Beyond the Static Page.pdf` (added in commit `edfb056`) — it's a relative git-annex symlink that breaks when the `monorepo` plugin stages files via `shutil.copyfile`, because the relative target resolves outsid...
+
+Session: `bea1cf2d` | Task: `task-arash-20260507-222028-504938.md`
+
+## 2026-05-11 16:46 | projio | sonnet | 1 steps
+
+**Build validation:** `mkdocs build --strict` fails with the pre-existing `FileNotFoundError` on `Interactive Mathematics Beyond the Static Page.pdf` (a dangling git-annex symlink added in commit `edfb056`). This failure predates these edits and was documented by the previous agent session (`bea1cf2d`). No new ERRORs were introduced.
+
+Session: `473f3e43` | Task: `task-arash-20260511-handbook-20-datalad.md`
+
+## 2026-05-11 16:48 | projio | sonnet | 1 steps
+
+Every sub-chapter preserves the admonition block and `## Frame` one-liner, has `## TBD` replaced with prose, and references `99-honest-gaps.md` where honest gaps are mentioned.
+
+Session: `d7e3f5ae` | Task: `task-arash-20260511-handbook-10-bids.md`
+
+## 2026-05-11 16:48 | projio | sonnet | 1 steps
+
+- `rules-and-the-dag.md` — Concrete `raw_zarr` rule from `cogpy/src/cogpy/workflows/preprocess/Snakefile`; DAG as a graph definition; staleness model with `--dryrun`; parallelism via `--cores` + `threads`; Python-native / file-based / snakebids reasons for choosing Snakemake over alternatives.
+- `snakebids-wildcards.md` — The wildcard problem; cogpy's four-step chain (`raw_zarr → lowpass → downsample → feature → badlabel`) as the rule chain example; `generate_inputs()` with the `pixecog/lfp_e...
+
+Session: `37b78b73` | Task: `task-arash-20260511-handbook-30-snakemake.md`
+
+## 2026-05-11 16:50 | projio | sonnet | 1 steps
+
+**Build:** `mkdocs build --strict` fails on the same pre-existing git-annex PDF symlink error documented by prior session `bea1cf2d`. No new errors or warnings from the 40-marimo chapters.
+
+Session: `e5255714` | Task: `task-arash-20260511-handbook-40-marimo.md`
+
+## 2026-05-11 16:58 | projio | sonnet | 1 steps
+
+Build validation: no new errors introduced. Pre-existing `--strict` failures (dangling PDF symlink in `00-frame/`, NeuroPySeminar task links) are unchanged from before these edits.
+
+Session: `dd8f64d7` | Task: `task-arash-20260511-handbook-50-publication.md`
+
+## 2026-05-11 17:00 | projio | opus | 1 steps
+
+- `worklog-overview.md` (204 lines) — four-component shape; registry/captures/queue/goals; three-server baseline recap.
+- `goals-and-critical-path.md` (265 lines) — goal note schema, agenda output, banded ranking, critical path, weekly `focus()`, capacity; canonical workshop goal as the worked example (anonymized).
+- `cross-project-dispatch.md` (260 lines) — `run_prompt` vs `worklog_note(auto_dispatch)` vs `schedule_queue`; model selection; `kind` prompt templates; `after=` dependency rule; p...
+
+Session: `e66238f0` | Task: `task-arash-20260511-handbook-80-orchestration.md`
+
+## 2026-05-11 17:01 | projio | opus | 1 steps
+
+The background task that completed was an earlier `find` invocation for skills directories — superseded by the targeted searches I ran immediately after. No action needed.
+
+Session: `ff9e7179` | Task: `task-arash-20260511-handbook-70-agentic.md`
+
+## 2026-05-11 17:20 | projio | opus | 1 steps
+
+Same — that background search completed after the drafts shipped; the chapter already cites gecog's `2026-05-02-mlclassifier-cohort-figs/figurespec.yaml` from the task spec, no follow-up needed.
+
+Session: `3608dc8e` | Task: `task-arash-20260511-handbook-60-projio.md`
+
+## 2026-05-11 17:23 | projio | opus | 1 steps
+
+The chapter `99-honest-gaps.md` now synthesizes all 8 gaps from the survey's §"Honest gaps" section. Each gap follows the pattern *gap → what the handbook does about it*, with each "what the handbook does" pointing at the specific chapter that resolves it (e.g. gap 3 → `30-snakemake/three-idioms.md`, gap 8 → `00-frame/single-author-fragility.md`). The opening frame states the audit-trail role of the chapter; the closing "Reading the audit" reframes the eight gaps as a forward calibration tool...
+
+Session: `323842ea` | Task: `task-arash-20260511-handbook-99-honest-gaps.md`
+
+## 2026-05-11 18:43 | projio | opus | 1 steps
+
+- Anchors in a concrete present-day mechanism (Claude Code's `Agent` tool / the `schedule_queue(after=...)` chain), so a reader sees the *first half* of the pattern already working.
+- States what would have to change in projio + worklog conventions to reach the future shape (parent-id propagation, result-note backlinks, hub-routed live channels, on-disk transcript convention).
+- Names new failure modes plainly (context drift, model-tier mismatch, audit-trail loss, deadlock, state divergence, ...
+
+Session: `6ff2293a` | Task: `task-arash-20260511-handbook-90-future-directions.md`
+
+## 2026-05-11 18:48 | projio | sonnet | 1 steps
+
+The edit is clean — no new warnings introduced. The "Pairing: HoloViews + xarray" section is live in `docs/handbook/40-marimo/analysis-notebooks.md`.
+
+Session: `6b152f66` | Task: `task-arash-20260511-handbook-40-marimo-holoviews.md`
+
+## 2026-05-11 19:02 | projio | sonnet | 1 steps
+
+Link selection criteria: only documentation URLs I'm confident exist (official tool docs, GitHub repos, doi.org for peer-reviewed papers, stable community handbooks like Turing Way). Avoided speculative deep-links into handbook subsections that might have moved.
+
+Session: `a763f762` | Task: `task-arash-20260511-handbook-references.md`
