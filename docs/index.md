@@ -116,10 +116,11 @@ The **engineering vs. science** split is deliberate — see the [delegation mode
 
 ## Documentation
 
-The docs follow the [Diataxis](https://diataxis.fr/) structure:
+The docs follow the [Diataxis](https://diataxis.fr/) structure, plus a long-form **Handbook** for the agentic research workflow:
 
 | Section | Purpose | Start here |
 |---------|---------|-----------|
+| [Handbook](handbook/index.md) | Narrative textbook for the open-science research stack (BIDS, DataLad, Snakemake, Marimo, Quarto/MkDocs, projio, agentic on top); companion to the September 2026 workshop | [Why this stack](handbook/00-frame/why-this-stack.md), [Outline](handbook/_outline.md) |
 | [Tutorials](tutorials/index.md) | End-to-end guided paths | [Quickstart](tutorials/quickstart.md) |
 | [How-to guides](how-to/index.md) | Task-focused recipes | [Initialize a workspace](how-to/init.md) |
 | [Explanation](explanation/index.md) | Design choices and concepts | [Ecosystem](explanation/ecosystem.md), [Delegation model](explanation/delegation-model.md) |
