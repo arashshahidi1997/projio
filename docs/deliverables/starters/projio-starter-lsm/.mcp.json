@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "projio": {
+      "command": "pixi",
+      "args": ["run", "python", "-m", "projio.mcp.server"],
+      "env": {
+        "PROJIO_ROOT": "${PWD}"
+      }
+    }
+  }
+}

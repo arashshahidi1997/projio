@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__projio__*",
+      "Read(./**)",
+      "Read(./.projio/**)",
+      "Read(./.claude/**)",
+      "Read(./.mcp.json)",
+      "Bash(pixi run *)",
+      "Bash(snakemake *)",
+      "Bash(datalad *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(grep *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push*)",
+      "Bash(git reset --hard*)"
+    ]
+  },
+  "allowedTools": [
+    "mcp__projio__*",
+    "Read",
+    "Bash"
+  ]
+}
