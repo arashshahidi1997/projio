@@ -1,0 +1,359 @@
+---
+title: "Treating your research workflow as a manipulable object"
+subtitle: "an agentic stack experiment · LSM Future Skills 2026"
+author: "Arash Shahidi"
+date: "2026-09-22"
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    incremental: false
+    transition: fade
+    chalkboard: false
+    embed-resources: true
+    fig-cap-location: bottom
+    aspect-ratio: "16:9"
+    width: 1280
+    height: 720
+---
+
+## the prompt
+
+Most AI-in-research demos are about **one task**.
+
+- Clean a function. Summarise a paper. Draft an email.
+- Closed, single-shot, single-context.
+
+What if your **whole workflow** — data, pipelines, notes, dispatched
+compute — was an object an agent could navigate?
+
+::: {.notes}
+45s. Set up the contrast. The audience has seen single-task demos; what
+makes *this* talk different is the unit of analysis — workflow, not
+task. Don't define "workflow" yet; let slide 2 land it.
+:::
+
+---
+
+## the static parts vs the moving whole
+
+::: {.columns}
+::: {.column width="50%"}
+**Already legible:**
+
+- Raw data: versioned trees
+- Pipelines: declarative DAGs
+- Figures: produced by code
+- Manuscripts: compile from the same tree
+:::
+::: {.column width="50%"}
+**Still in your head:**
+
+- *Why* this file exists
+- *Which* config produced it
+- *Where* the next decision should come from
+- *Whether* the agent's claim matches the data
+:::
+:::
+
+The right column is what this talk is about.
+
+::: {.notes}
+60s. The audience nods at the left column — most LSM postdocs have at
+least some of it. The right column is the gap: the workflow itself,
+the *seam between layers*. Don't say "projio" yet.
+:::
+
+---
+
+## six layers you may already use
+
+| Layer | Tool | Role |
+|---|---|---|
+| Data layout | **BIDS** | the directory *is* the API |
+| Versioning | **DataLad** | data + code + receipts |
+| Pipelines | **Snakemake** | declarative DAG, staleness-aware |
+| Notebooks | **Marimo** | reactive cells, no hidden state |
+| Publication | **Quarto** / **MkDocs** | one source → site + slides + book |
+| Agent permissions | **MCP** | scoped, auditable tool surface |
+
+::: {.fragment .smaller}
+None of these is new. The point is what happens when you treat them as
+*one* surface.
+:::
+
+::: {.notes}
+45s. The audience scans the table. Don't read it row-by-row — point at
+two they know and one they don't. The fragment lands the actual move:
+this isn't novel tools; it's the *composition*.
+
+For a wet-lab audience: emphasise MCP and Marimo as the unfamiliar
+ones; BIDS/DataLad/Snakemake are familiar to anyone touching imaging
+or omics.
+:::
+
+---
+
+## the pattern
+
+Treat those layers as **one queryable surface** an agent can navigate.
+
+Three conventions make it real:
+
+1. **Receipts on disk.** Every action leaves a file the next caller can read.
+2. **Permissioned tools.** The agent sees what you allow, by glob, by tool name.
+3. **File-mediated handoff.** Agents pass work to each other through markdown, not through ephemeral state.
+
+::: {.fragment .smaller}
+That's the pattern. The rest is an existence proof.
+:::
+
+::: {.notes}
+60s. This is the slide that pivots from "stack" to "pattern". The three
+conventions are durable — they survive whatever the orchestration layer
+becomes (batched chains today, live SDK dialogue tomorrow).
+
+The fragment is honest: I'm going to show one implementation, but the
+pattern is the takeaway.
+:::
+
+---
+
+## demo: three agents, one prompt
+
+::: {.columns}
+::: {.column width="55%"}
+**Input:** a research idea
+(`docs/log/idea/handbook-initiative.md`)
+
+**Output (in `docs/log/result/`):**
+
+1. A literature survey
+2. A design spec
+3. A roadmap
+
+**Mechanism:** each agent reads what the previous one wrote. File-mediated handoff.
+:::
+::: {.column width="45%"}
+::: {.fragment .smaller}
+Split-screen during the demo:
+
+- left: terminal + dispatch
+- right: `watch -n 1 ls docs/log/result/`
+
+Files appear as agents finish.
+:::
+:::
+:::
+
+::: {.notes}
+30s set-up before the demo runs. State: input, outputs, mechanism. The
+mechanism word matters: "file-mediated handoff" is the durable phrase.
+
+Switch to recording/live now. ~5 min for the demo.
+:::
+
+---
+
+## demo
+
+::: {.columns}
+::: {.column width="60%"}
+**Input** (one file):
+
+`docs/log/idea/handbook-initiative.md`
+
+**Outputs** (three files, agent-written):
+
+::: {.fragment fragment-index=1}
+- `docs/log/result/result-survey-…md` ✓
+:::
+::: {.fragment fragment-index=2}
+- `docs/log/result/result-spec-…md` ✓
+:::
+::: {.fragment fragment-index=3}
+- `docs/log/result/result-roadmap-…md` ✓
+:::
+
+::: {.fragment fragment-index=4 .smaller}
+Each agent reads what the previous one wrote.
+:::
+:::
+::: {.column width="40%"}
+::: {.fragment fragment-index=0 .smaller}
+*[asciinema cast embedded here;*
+*one ~30 s `doitlive` live segment*
+*dispatches a second job that*
+*confirms the pattern]*
+:::
+:::
+:::
+
+::: {.notes}
+Hard 4-min cap (visible timer). Anchor the credibility moment on the
+*output file appearing on the right pane*, not on typing speed. Each
+fragment ticks as the corresponding file appears on disk.
+
+If the live segment fails, the asciinema fallback alone tells the
+story — and the input/output filename scaffold on this slide carries
+the narrative even if the recording stalls.
+:::
+
+---
+
+## wait — is this projio?
+
+::: {.columns}
+::: {.column width="50%"}
+**Your existing in-house helper:**
+
+```python
+def find_notes(query):
+    # grep + light ranking
+    return hits
+```
+
+A function *you* call from a notebook.
+:::
+::: {.column width="50%"}
+**Same intent, agent-callable:**
+
+```text
+rag_query("burst threshold",
+          corpus="notes")
+```
+
+A tool the *next agent in the chain*
+can call without you. Semantic recall,
+multi-corpus, returns a structured
+object.
+:::
+:::
+
+::: {.fragment .smaller}
+The difference isn't ranking — it's **who can invoke it.** Any MCP
+server that exposes project state as an agent-callable tool can host
+this pattern: filesystem-MCP, git-MCP, your own 50-line indexer.
+projio is one such host, not the host.
+:::
+
+::: {.notes}
+30s. This is the **non-projio anchor.** The contrast is *function the
+human calls* vs *tool the agent calls*. Grep was the wrong benchmark
+(too easy to argue against — `rg --json` does the same). The real
+move is agent-callability + composition. A skeptical postdoc with a
+`find_notes()` helper in their utils file recognises the gap
+immediately.
+
+If a postdoc asks "what does a non-projio implementation look like?"
+— say: a 50-line filesystem-MCP server with one tool that returns
+embeddings-ranked file paths. That's it.
+:::
+
+---
+
+## what works
+
+- **MCP permissions as real constraints.**
+  The agent only sees the files and tools you allow. Auditable, scoped,
+  revocable.
+- **File-mediated agent handoffs.**
+  Durable: works for batched chains today, and for live SDK dialogue
+  tomorrow. The principle survives the mechanism.
+- **Structured project memory.**
+  Every idea, task, and result is a file. Indexable, greppable,
+  citeable.
+- **Model routing.**
+  Opus for synthesis, Haiku for triage. Cost and latency both drop.
+
+::: {.notes}
+2 min. Each bullet is one observable claim, not rhetoric. The audience
+should be able to verify each from the demo they just saw.
+
+Specifically *not* on this slide: "projio is great." The slide is about
+the convention work, not the implementation.
+:::
+
+---
+
+## what I haven't solved
+
+**Provenance.** An agent writes `result-X.md` claiming a p-value.
+Nothing forces it to cite the executed notebook cell that produced
+the value. I still re-run analyses by hand to verify.
+
+::: {.fragment .smaller}
+**Bench-biology workflows.** The pattern assumes file-shaped artifacts.
+Microscope sessions, ELISA plates, behavioural protocols don't fit
+cleanly. The convention work for instrument-mediated workflows isn't
+written yet.
+:::
+
+::: {.fragment .smaller}
+**Single-author fragility.** The conventions are durable. The
+implementation might not be — and if your project depends on one
+person's tool, that's a research risk.
+:::
+
+::: {.notes}
+2 min. Provenance is the headline failure — state the concrete
+instance.
+
+The bench-biology bullet is the pattern-level limit, not a projio gap.
+For an LSM room with wet-lab attendees, this is the failure they will
+recognise from their own work. Naming it earns more trust than any
+amount of receipts-on-disk talk.
+
+Don't apologise. Don't deflect. The talk's authority depends on
+naming what the *pattern* cannot do, not on what one implementation
+hasn't gotten around to.
+:::
+
+---
+
+## adopt or adapt
+
+::: {.columns}
+::: {.column width="50%"}
+**Try it today** *(10 min):*
+
+```bash
+git clone github.com/arashshahidi1997/projio-starter-lsm
+cd projio-starter-lsm
+projio init
+```
+
+Then ask the agent: *"summarise the idea in `docs/log/idea/`."*
+
+:::
+::: {.column width="50%"}
+**Go deeper** *(4 days, late Sept):*
+
+- Workshop on the same stack
+- BIDS + DataLad + Snakemake +
+  Marimo + Quarto + MCP +
+  one stack-aware tool
+
+Details on request.
+
+::: {.fragment .smaller}
+**Or build your own** — talk to me.
+This is a genuine open research
+problem, not a fork-and-rename.
+:::
+:::
+:::
+
+::: {.notes}
+60s. Two-tier CTA: starter repo first (low-commitment, high-conversion),
+workshop second (high-commitment, narrow audience).
+
+Third option is *honest about its cost*: an LSM postdoc swapping projio
+for a custom MCP server is a 2-week build, not a fork. Naming it as a
+research project rather than a sidegrade attracts the right tiny
+minority who'd actually do it. Adversarial review §Q2(d) flagged the
+earlier "adapt the conventions to your own stack — they're portable"
+framing as hand-waving; this fragment owns the cost.
+
+Stop the talk. Open for discussion.
+:::

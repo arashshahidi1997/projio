@@ -92,10 +92,13 @@ these registered pipelines, this notebook, and these notes, what is the
 state of the workflow and what should happen next?" In the language of the
 Deep Research synthesis, this is the project's *operator theory*: the
 domain where individual computations are well-instrumented but the
-ambient structure is not. projio fills that gap by representing the
-workflow itself as a manipulable object: a registry of flows, a graph of
-captures and tasks, a corpus of project knowledge, and an agent layer
-that can act on all three through one API.
+ambient structure is not. The pattern this handbook calls *stack-aware
+tooling* fills that gap by representing the workflow itself as a
+manipulable object: a registry of flows, a graph of captures and tasks,
+a corpus of project knowledge, and an agent layer that can act on all
+three through one API. projio is one implementation of this pattern;
+the chapters that follow show what's involved in building or adopting
+others.
 
 ## Reading the rest of the handbook
 
