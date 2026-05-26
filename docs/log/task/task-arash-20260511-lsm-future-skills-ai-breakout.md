@@ -57,9 +57,12 @@ Treat the breakout as a **soft launch** for the workshop:
 
 ## Proposed contribution
 
-**Working title:** *"Treating your research workflow as a manipulable
-object: an agentic stack experiment"* (lead with the pattern; introduce
-projio mid-talk as one implementation, not the headline).
+**Working title:** *"Open-science conventions as agent infrastructure — a
+stack-aware workflow experiment"* (committed 2026-05-26; earlier titles
+*"Treating your research workflow as a manipulable object"* and *"An AI
+assistant is only as good as the project around it"* are superseded). The
+final wording inverts the rhetorical move: open-science conventions are
+the headline, AI agent is the convenient interface to them.
 
 **Slot:** 12–15 min talk + ~5 min Q&A. Confirm slot length with Tobias.
 
