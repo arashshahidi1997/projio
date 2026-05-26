@@ -1,7 +1,7 @@
 ---
-title: "Treating your research workflow as a manipulable object"
-subtitle: "an agentic stack experiment · LSM Future Skills 2026"
-author: "Arash Shahidi"
+title: "Open-science conventions as agent infrastructure"
+subtitle: "a stack-aware workflow experiment · LSM Future Skills 2026"
+author: "Arash Shahidi · Sirota Lab, GSN-LMU · A.Shahidi@bio.lmu.de"
 date: "2026-09-22"
 format:
   revealjs:
@@ -24,8 +24,9 @@ Most AI-in-research demos are about **one task**.
 - Clean a function. Summarise a paper. Draft an email.
 - Closed, single-shot, single-context.
 
-What if your **whole workflow** — data, pipelines, notes, dispatched
-compute — was an object an agent could navigate?
+What if the **project itself** — the way data, pipelines, notes, and
+compute are organised — already made it easy for an agent to do useful
+work?
 
 ::: {.notes}
 45s. Set up the contrast. The audience has seen single-task demos; what

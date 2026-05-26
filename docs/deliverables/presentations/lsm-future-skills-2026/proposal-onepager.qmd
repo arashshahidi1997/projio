@@ -1,0 +1,82 @@
+---
+title: "Open-science conventions as agent infrastructure"
+subtitle: "*A stack-aware workflow experiment* · Proposed contribution to the LSM Future Skills 2026 breakout — *AI in Daily Research: Sharing What Works (and What Doesn't)* · 22 September 2026"
+author: "Arash Shahidi · Sirota Lab · GSN-LMU, Ludwig-Maximilians-Universität München · `A.Shahidi@bio.lmu.de`"
+format:
+  pdf:
+    geometry:
+      - margin=1.3cm
+    fontsize: 10pt
+    papersize: a4
+    documentclass: scrartcl
+    colorlinks: true
+    linkcolor: "blue"
+    urlcolor: "blue"
+    include-in-header:
+      text: |
+        \usepackage{microtype}
+        \usepackage{enumitem}
+        \setlist[itemize]{leftmargin=1.1em,topsep=0pt,itemsep=1pt,parsep=0pt}
+        \setlength{\parskip}{0.3em}
+        \setlength{\parindent}{0pt}
+        \addtokomafont{disposition}{\rmfamily}
+        \setkomafont{section}{\normalsize\bfseries}
+        \setkomafont{subtitle}{\small\itshape}
+        \setkomafont{author}{\small}
+        \pagestyle{empty}
+        \RedeclareSectionCommand[beforeskip=0.5em,afterskip=0.15em]{section}
+---
+
+Most AI-in-research demos I come across focus on a single task --- cleaning
+code, summarising a paper, drafting an email. I'd like to share something
+I've found surprisingly important: how *useful* an AI agent is on a
+research project depends less on the agent than on how the project itself
+is organised. When the project follows familiar open-science conventions,
+an agent can navigate it with very little hand-holding --- read the right
+file, run the right pipeline, write its output back in the same structured
+form. The conventions do most of the work; the agent is a convenient
+interface to them.
+
+## The stack I rely on
+
+| Layer | Tool | Role |
+|---|---|---|
+| Data layout | **BIDS** | the directory *is* the API |
+| Versioning | **DataLad** + git | data and code, with receipts |
+| Pipelines | **Snakemake** | declarative, inspectable DAGs |
+| Notebooks | **Marimo** | reactive cells; no hidden state; great for exploration |
+| Publication | **Quarto** / **MkDocs** | one source $\rightarrow$ site, slides, book, reports |
+| Agent permissions | **Model Context Protocol (MCP)** | scoped, auditable agent--tool surface |
+
+None of these is new --- which is part of the point. What I find interesting
+is how they compose: treated as **one surface**, they turn into something an
+agent can navigate end-to-end.
+
+## A quick demo ($\approx$ 4 min)
+
+- One prompt $\rightarrow$ three linked documents (a short literature survey,
+  a design spec, a roadmap) written by three agents in under 20 minutes.
+- Each agent reads what the previous one wrote --- **file-mediated handoff**,
+  not ephemeral state. The audit trail back to source stays visible
+  throughout.
+
+## What I haven't solved yet
+
+Agents still write confident result-claims that aren't tied back to the
+executed notebook cell that produced them, so I end up re-running analyses
+by hand to check provenance. I'd be curious to hear how others in the room
+handle this.
+
+## Format
+
+$\approx$ **10 min talk + discussion** (very flexible to whatever fits the
+session best). I'll demo one open-source implementation I've been working on
+--- [projio](https://arashshahidi1997.github.io/projio/) --- but the
+takeaway I'd most like to land is the *convention work itself*, which is
+portable to whatever stack you already use. Attendees would leave with a
+small starter repository and one MCP query they can try against their own
+project.
+
+This also doubles as a soft preview for a 4-day follow-up workshop on the
+same stack I'm planning at LMU in late September 2026 (PhDs and postdocs
+welcome). Happy to share more if it's useful.
