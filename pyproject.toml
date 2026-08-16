@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "projio"
-version = "0.1.2"
+version = "0.1.3"
 description = "Project knowledge orchestrator and MCP server for research repositories"
 readme = "README.md"
 requires-python = ">=3.11"

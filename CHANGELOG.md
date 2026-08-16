@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.3 — 2026-08-16
+
 <!-- Detailed change descriptions live in docs/log/commit/ notes.
      CHANGELOG stays condensed — one line per feature, grouped by subsystem. -->
 
@@ -26,10 +28,12 @@
 - 5 new MCP tools: `biblio_openalex_resolve`, `biblio_status`, `biblio_crossref_resolve`, `biblio_graph_promote`, `biblio_extract`
 - `questio_prior_art` tool — aggregates paper relevance per research question
 - `questio_gap` now includes literature expectations from `biblio_extract`
+- Reports index gains a GDoc column linking to a report's Google Doc when its front matter carries a `gdoc` field
 
 **notio** (notes + platform)
 - Remote platform integration — bidirectional bridge with GitHub/GitLab issues (`promote`, `capture`, `pull`, `remote-status`)
 - Card feed styling for note indexes with collapsible closed groups
+- `note_search` corpus fallback — searches `docs` (or all corpora) when the `notes` corpus is absent from the indexio config, reporting the substitution
 
 **projio** (core)
 - Multi-agent MCP config — `projio add codex` / `projio add copilot` alongside `projio add claude`
@@ -39,6 +43,9 @@
 - Deliverables convention — `docs/deliverables/` with questio indexing
 - ezlinks + bibtex mkdocs plugins auto-configured by sync
 - Index staleness reported in `ecosystem_status()`
+- `session-wrap` skill — end-of-session boundary: classify the tree, verify, commit coherent units, write a handoff note + kickoff prompt, update memory. `projio skill new --from-ecosystem <skill>` forks a bundled skill into `.projio/skills/` for per-project tailoring
+- `projio-orient` skill — read-only workspace tour that surveys active subsystems and existing work, then suggests next actions (onboarding companion to `projio-setup`)
+- Named render profiles — `.projio/render.yml` profiles (note/report/manuscript) each emit `pandoc-defaults-<name>.yaml`; `projio render run <file>` renders a doc with its front-matter-selected profile (`render: <profile>`)
 
 ### Changed
 - **pipeio BREAKING rename** — `pipeio_report` → `pipeio_flow_report`, `pipeio_nb_report` → `pipeio_nb_extract`, skill `pipeio-report` → `pipeio-nb-extract`, slash-command `/pipeio-report` → `/pipeio-nb-extract`. Motivation: two tools that both sounded like "make a report" did completely different things (snakemake HTML report vs. notebook figure extraction). No backward-compat aliases — callers must update. See [commit note](docs/log/commit/commit-arash-20260413-153016-000000.md) for full change table.
@@ -47,6 +54,8 @@
 - Conda env rename: `rag` → `projio`
 - Cross-platform compatibility — removed hardcoded lab paths, Windows support
 - README and docs/index.md rewritten for PyPI publication
+- Datalad-per-derivative relaxed to opt-in — a flow's `derivatives/<flow>/` is a plain directory by default; make it a subdataset only when the project versions derivatives and the outputs are stable (was framed as mandatory in the flow-create skill/guide, ontology spec, and handbook)
+- `projio.mk` uses bare uv-tool commands — `PROJIO ?= projio`, `NOTIO ?= notio` (was `$(PYTHON) -m projio`); only MKDOCS still needs a configured Python
 
 ### Fixed
 - `pipeio_nb_exec` output placed in `.src/` instead of workspace `.ipynb`
@@ -54,6 +63,7 @@
 - Silent zero returns in biblio pipeline when `resolved.jsonl` missing
 - 7 questio link/index/cycle/load fixes (docs_collect, result filenames, dangling refs, _find_roots)
 - `projio.mk` env resolution fallback chain (`projio` ↔ `docs`)
+- Render custom output paths — `_dump_yaml` creates parent dirs, so writing pandoc defaults to a path outside `.projio/render/` no longer errors
 
 ## 0.1.1 — 2026-04-08
 
