@@ -8,7 +8,7 @@ pipeio manages a hierarchy of **flows**, **mods**, and their artifacts. Each con
 
 A **flow** is the primary unit of work — a self-contained computational workflow with its own Snakefile, config, notebooks, scripts, and derivative output. Flow names are globally unique.
 
-The flow's **derivative directory** (`derivatives/{flow}/`) is a datalad subdataset containing all pipeline outputs, organized by subject/session.
+The flow's **derivative directory** (`derivatives/{flow}/`) holds all pipeline outputs, organized by subject/session. By default it is a plain directory. Projects that version derivatives with datalad may make it a subdataset, but this is optional — for work-in-progress derivatives that are regenerated on every iteration, a plain directory is usually less friction (see the datalad handbook for the trade-off).
 
 ### Mod
 

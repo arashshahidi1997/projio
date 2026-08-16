@@ -116,10 +116,14 @@ disk, as long as the alias entry exists inside the store.
 ## The subdataset-per-derivative convention
 
 The convention across this stack (gecog and pixecog follow it fully; msol is
-mid-adoption) is: **every Snakemake flow's derivative output lives in its own
-subdataset.** When `pipeio_flow_new` scaffolds `derivatives/<flow>/`, the
-recommended next step is registering it as a DataLad subdataset before the
-first `snakemake` run. The rationale: reproducibility requires stating "this
+mid-adoption) is: **a mature Snakemake flow's derivative output can live in its
+own subdataset.** This is an option, not a requirement. When `pipeio_flow_new`
+scaffolds `derivatives/<flow>/`, it stays a plain directory by default;
+registering it as a DataLad subdataset is worthwhile once the outputs stabilize
+and are worth versioning or sharing independently. Work-in-progress derivatives
+that get regenerated on every iteration are usually more hassle than benefit as
+subdatasets, so promote them later rather than up front. Where the convention is
+applied, the rationale is: reproducibility requires stating "this
 brainstate result was produced by this version of the preprocess_ieeg pipeline
 at this commit of cogpy." A flat git repository cannot make that statement in
 an auditable form — only the subdataset graph can.

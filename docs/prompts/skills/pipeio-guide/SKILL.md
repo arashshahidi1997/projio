@@ -366,7 +366,8 @@ pipeio: config_read(flow)              → check input_manifest/output_manifest
 When extracting a mod into its own flow (e.g., hpclayers from sharpwaveripple):
 1. `pipeio flow new <new_flow>` — scaffold
 2. Move rules + scripts from source flow
-3. Create `derivatives/<new_flow>/` as datalad subdataset
+3. Create `derivatives/<new_flow>/` (a plain directory; make it a datalad
+   subdataset only if the project versions derivatives and the outputs are stable)
 4. Update downstream configs: `input_manifest: "derivatives/<new_flow>/manifest.yml"`
 5. `pipeio registry scan` + `contracts_validate()`
 

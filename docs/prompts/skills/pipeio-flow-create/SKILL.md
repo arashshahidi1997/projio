@@ -2,8 +2,8 @@
 name: pipeio-flow-create
 description: >
   Guide agent through creating a new pipeline flow end-to-end: survey existing
-  patterns, scaffold, write config and Snakefile, create scripts, set up datalad
-  subdataset, and verify with dry-run.
+  patterns, scaffold, write config and Snakefile, create scripts, optionally set
+  up a datalad subdataset, and verify with dry-run.
 metadata:
   short-description: Create a new pipeline flow step-by-step
   tags: [pipeline, pipeio, authoring]
@@ -37,7 +37,7 @@ metadata:
 
 Use this skill when the user wants to create a new pipeline flow from scratch.
 Walks through the full lifecycle: survey → scaffold → config → Snakefile →
-scripts → datalad → verify.
+scripts → (optional datalad) → verify.
 
 ## Inputs
 
@@ -327,17 +327,23 @@ codio_get(name="<library>")
 Import from core libraries rather than reimplementing. If a needed function
 doesn't exist, consider adding it to the core library.
 
-## Step 6 — Datalad subdataset
+## Step 6 — Datalad subdataset (optional)
 
-Before the first run, create a datalad subdataset for the derivative output:
+A flow writes its outputs to `derivatives/<FLOW_NAME>/` — the directory name
+**must match the flow name** exactly. Whether that directory is a plain folder or
+its own datalad subdataset is a **project choice, not a pipeio requirement**.
+
+Default to a plain directory. Reach for a subdataset only when the project already
+tracks derivatives with datalad **and** these outputs are stable enough to be
+worth versioning or publishing. Work-in-progress derivatives that get regenerated
+on every iteration are usually more hassle than benefit as subdatasets — start
+plain, and promote to a subdataset later once the outputs settle.
+
+If you do want a subdataset for this derivative:
 
 ```bash
 datalad run-procedure create-reckless-subdataset derivatives/<FLOW_NAME>
 ```
-
-The derivative directory name **must match the flow name** exactly.
-
-If the project doesn't use datalad, skip this step.
 
 ## Step 7 — Verify
 
@@ -367,7 +373,9 @@ Check that the registry is consistent and I/O contracts across flows resolve.
 - **Never remove `configfile: "config.yml"`** from the Snakefile
 - **Always call `pipeio_registry_scan`** after `pipeio_flow_new`
 - **Always use `pipeio_run`** for execution — never manual conda/snakemake
-- **Always create the datalad subdataset** before the first run
+- **Datalad subdataset is optional** — add it only when the project versions
+  derivatives with datalad and the outputs are stable (see Step 6); a plain
+  directory is the default
 - **Survey first** — match existing project patterns before writing code
 - **Do not create notebooks at this stage** — focus on getting the pipeline
   running. Notebooks come later for investigation and demos.
