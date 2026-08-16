@@ -17,6 +17,7 @@ Agents discover skills via `agent_instructions()` and load the full body via `sk
 
 | Skill | Purpose |
 |-------|---------|
+| `projio-orient` | Tour an unfamiliar projio workspace and suggest concrete next actions |
 | `projio-setup` | Initialize a projio workspace and enable relevant packages |
 | `agent-orchestration` | Pattern guide for coordinating multiple agents across subsystems |
 | `idea-capture` | Record an idea note with structured frontmatter and linked refs |
