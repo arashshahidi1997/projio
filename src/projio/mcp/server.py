@@ -498,9 +498,13 @@ def note_types_tool():
 
 
 @server.tool("note_search")
-def note_search_tool(query: str, k: int = 5):
-    """Semantic search over notes via indexio."""
-    return notio.note_search(query=query, k=k)
+def note_search_tool(query: str, k: int = 5, corpus: str = "notes"):
+    """Semantic search over notes via indexio.
+
+    corpus defaults to "notes"; auto-detects the best available alternative
+    when "notes" is not present in the indexio config (prefers "docs").
+    """
+    return notio.note_search(query=query, k=k, corpus=corpus)
 
 
 @server.tool("notio_reindex")

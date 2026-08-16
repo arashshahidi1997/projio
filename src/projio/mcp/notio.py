@@ -357,12 +357,15 @@ def note_remote_status() -> JsonDict:
         return json_dict({"error": str(exc)})
 
 
-def note_search(query: str, k: int = 5) -> JsonDict:
+def note_search(query: str, k: int = 5, corpus: str = "notes") -> JsonDict:
     """Semantic search over notes via indexio.
 
     Args:
         query: Search query.
         k: Number of results.
+        corpus: Corpus to search (default "notes"). When the default "notes" corpus
+            is not present in the indexio config, auto-detects the best available
+            alternative (prefers "docs", then searches all corpora).
     """
     root = get_project_root()
     try:
@@ -373,14 +376,37 @@ def note_search(query: str, k: int = 5) -> JsonDict:
         idx_cfg = cfg.get("indexio") or {}
         config_rel = idx_cfg.get("config", "infra/indexio/config.yaml")
         config_path = str(root / config_rel)
+
+        resolved_corpus = corpus
+        corpus_note: str | None = None
+        if corpus == "notes":
+            try:
+                from indexio.config import load_indexio_config
+                idx_config = load_indexio_config(config_path, root=str(root))
+                available = {s.corpus for s in idx_config.sources}
+                if "notes" not in available:
+                    if "docs" in available:
+                        resolved_corpus = "docs"
+                    else:
+                        resolved_corpus = ""
+                    corpus_note = (
+                        f"corpus 'notes' not found in indexio config; "
+                        f"searched corpus={resolved_corpus!r} instead "
+                        f"(available: {sorted(available)})"
+                    )
+            except Exception:
+                pass
+
         payload = query_index(
             config_path=config_path,
             root=str(root),
             query=query,
-            corpus="notes",
+            corpus=resolved_corpus or None,
             k=k,
             prefer_canonical=True,
         )
+        if corpus_note:
+            payload["corpus_note"] = corpus_note
         return json_dict(payload)
     except Exception as exc:
         return json_dict({"error": str(exc), "query": query})
