@@ -202,6 +202,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p_skill_new = skill_sub.add_parser("new", help="Scaffold a new skill in .projio/skills/.")
     p_skill_new.add_argument("name", help="Skill name (slug, e.g. my-analysis).")
+    p_skill_new.add_argument(
+        "--from-ecosystem",
+        metavar="SKILL",
+        default=None,
+        help="Fork a bundled ecosystem skill of this name as the starting point "
+             "(e.g. --from-ecosystem session-wrap) instead of a blank template.",
+    )
 
     p_skill_list = skill_sub.add_parser("list", help="List available skills.")
 
@@ -492,7 +499,7 @@ def main(argv: Iterable[str] | None = None) -> None:
     if args.command == "skill":
         from .skills import skill_new, skill_list
         if args.skill_command == "new":
-            skill_new(args.root, args.name)
+            skill_new(args.root, args.name, from_ecosystem=args.from_ecosystem)
         elif args.skill_command == "list":
             skill_list(args.root)
         return

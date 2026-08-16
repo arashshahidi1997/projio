@@ -66,6 +66,12 @@ Agents discover skills via `agent_instructions()` and load the full body via `sk
 | `issue-triage` | Triage a newly filed issue into scope, priority, and owner |
 | `issue-fix` | Fix a triaged issue and probe for related robustness problems |
 
+### Session lifecycle
+
+| Skill | Purpose |
+|-------|---------|
+| `session-wrap` | End-of-session boundary: commit coherent units, write a handoff note + kickoff prompt, update memory. Fork per-project with `projio skill new session-wrap --from-ecosystem session-wrap` |
+
 ## Skill shape
 
 Every skill is a `SKILL.md` file with YAML frontmatter (`name`, `description`, `metadata.tags`, `metadata.tooling.mcp[]`) followed by sections named **When to use**, **Inputs**, **Workflow** (numbered steps with MCP tool examples), and **Hard rules**. The structure is enforced by convention, not by a validator.
