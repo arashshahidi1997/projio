@@ -241,6 +241,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
     render_sub.add_parser("show", help="Print resolved render config.")
 
+    p_render_run = render_sub.add_parser("run", help="Render a markdown file to PDF using its profile.")
+    p_render_run.add_argument("file", help="Markdown file to render.")
+    p_render_run.add_argument("--profile", default=None,
+                              help="Override profile (default: front-matter render:/default_profile).")
+    p_render_run.add_argument("--output", default=None, help="Output PDF path (default: _build/pdf/<name>.pdf).")
+    p_render_run.add_argument("--dry-run", action="store_true", help="Print the pandoc command without running it.")
+
     p_questio = sub.add_parser("questio", help="Research orchestration (questio).")
     questio_sub = p_questio.add_subparsers(dest="questio_command", required=True)
     p_questio_docs = questio_sub.add_parser("docs", help="Regenerate docs/plan/ pages from YAML.")
@@ -522,17 +529,20 @@ def main(argv: Iterable[str] | None = None) -> None:
 
     if args.command == "render":
         from pathlib import Path
-        from .render import load_render_config, write_pandoc_defaults
+        from .render import load_render_config, run_render, write_pandoc_defaults
         root = Path(args.root).expanduser().resolve()
         if args.render_command == "sync":
             cfg = load_render_config(root)
             output = Path(args.output) if args.output else None
-            out_path = write_pandoc_defaults(cfg, root, output=output)
-            print(f"[OK] wrote {out_path.relative_to(root)}")
+            for out_path in write_pandoc_defaults(cfg, root, output=output):
+                print(f"[OK] wrote {out_path.relative_to(root)}")
         elif args.render_command == "show":
             import yaml
             cfg = load_render_config(root)
             print(yaml.dump(cfg.to_dict(), default_flow_style=False, sort_keys=False).rstrip())
+        elif args.render_command == "run":
+            cfg = load_render_config(root)
+            run_render(args.file, cfg, root, profile=args.profile, output=args.output, yes=not args.dry_run)
         return
 
     if args.command == "questio":
