@@ -246,8 +246,8 @@ PYTHON    ?= python
 SNAKEMAKE ?= snakemake
 DATALAD   ?= datalad
 MKDOCS    ?= $(PYTHON) -m mkdocs
-PROJIO    ?= $(PYTHON) -m projio
-NOTIO     ?= $(PYTHON) -m notio
+PROJIO    ?= projio
+NOTIO     ?= notio
 PANDOC    ?= pandoc
 MATLAB    ?= matlab
 PUBLISH   ?= $(PYTHON) -m twine upload
@@ -495,21 +495,22 @@ def _projio_mk(root: Path) -> str:
         pandoc_bin = None
         matlab_bin = runtime.get("matlab_bin")
 
-    # Warn when projio/docs envs are not explicitly configured
+    # Warn when no docs env is configured. PROJIO/NOTIO default to the bare
+    # `projio`/`notio` commands on PATH (e.g. uv tool install), so they no
+    # longer require a configured Python — only MKDOCS does.
     import sys
-    if not projio_python and not docs_python:
+    if not docs_python:
         print(
-            "Warning: no projio/docs Python configured — PROJIO and MKDOCS will "
-            "use the default Python, which may lack projio or mkdocs.\n"
+            "Warning: no docs Python configured — MKDOCS will use the default "
+            "Python, which may lack mkdocs.\n"
             "  Configure via code.envs in .projio/config.yml:\n"
             "    code:\n"
             "      conda_prefix: /path/to/anaconda3\n"
             "      envs:\n"
-            "        projio: rag    # env with projio + mkdocs\n"
             "        docs: rag      # env for site builds\n"
             "  Or via legacy runtime keys in ~/.config/projio/config.yml:\n"
             "    runtime:\n"
-            "      projio_python: /path/to/env/bin/python",
+            "      docs_python: /path/to/env/bin/python",
             file=sys.stderr,
         )
 
@@ -529,23 +530,23 @@ def _projio_mk(root: Path) -> str:
         )
     if projio_python:
         mk = mk.replace(
-            "PROJIO    ?= $(PYTHON) -m projio",
+            "PROJIO    ?= projio",
             f"PROJIO    ?= {projio_python} -m projio",
             1,
         )
         mk = mk.replace(
-            "NOTIO     ?= $(PYTHON) -m notio",
+            "NOTIO     ?= notio",
             f"NOTIO     ?= {projio_python} -m notio",
             1,
         )
     elif python_bin:
         mk = mk.replace(
-            "PROJIO    ?= $(PYTHON) -m projio",
+            "PROJIO    ?= projio",
             f"PROJIO    ?= {python_bin} -m projio",
             1,
         )
         mk = mk.replace(
-            "NOTIO     ?= $(PYTHON) -m notio",
+            "NOTIO     ?= notio",
             f"NOTIO     ?= {python_bin} -m notio",
             1,
         )
