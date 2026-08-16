@@ -1197,15 +1197,17 @@ def _generate_type_index(
         return "\n".join(lines)
 
     if dtype == "reports":
-        lines.append("| Date | Title | Audience | Period |")
-        lines.append("|------|-------|----------|--------|")
+        lines.append("| Date | Title | Audience | Period | GDoc |")
+        lines.append("|------|-------|----------|--------|------|")
         for item in items:
             date = str(item.get("date", ""))
             title = item.get("title", item.get("_filename", ""))
             rel = item.get("_rel", "")
             audience = item.get("audience", "")
             period = item.get("period", "")
-            lines.append(f"| {date} | [{title}]({rel}) | {audience} | {period} |")
+            gdoc = item.get("gdoc", "")
+            gdoc_cell = f"[💬]({gdoc})" if gdoc else "—"
+            lines.append(f"| {date} | [{title}]({rel}) | {audience} | {period} | {gdoc_cell} |")
     else:
         lines.append("| Date | Title | Event | Audience |")
         lines.append("|------|-------|-------|----------|")
