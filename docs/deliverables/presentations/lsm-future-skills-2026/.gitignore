@@ -1,0 +1,10 @@
+# Copyrighted third-party comics (Jorge Cham / phdcomics.com).
+# Used under academic fair use for the live talk, with visible credit on-slide.
+# Kept local only — not redistributed via the repo. Must be present locally to render.
+phd-desk-entropy.gif
+let-me-do-that-by-hand.png
+let-me-do-that-by-hand-frustration.png
+
+# Rendered deck embeds the comics above as base64 — regenerate locally with:
+#   ( unset LD_LIBRARY_PATH; quarto render slides.qmd )
+slides.html

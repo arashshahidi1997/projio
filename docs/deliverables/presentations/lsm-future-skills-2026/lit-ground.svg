@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 470" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="la" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8a95a0"/>
+    </marker>
+  </defs>
+  <style>
+    .t   { font-size: 17px; text-anchor: middle; fill: #1a1a1a; }
+    .sub { font-size: 14px; text-anchor: middle; fill: #55606b; }
+    .lab { font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: 14px; fill: #c9741f; font-weight: 700; text-anchor: middle; }
+  </style>
+
+  <!-- papers -->
+  <g>
+    <rect x="196" y="18" width="96" height="58" rx="6" fill="#fff" stroke="#b8c0c8" stroke-width="2"/>
+    <rect x="204" y="26" width="96" height="58" rx="6" fill="#fff" stroke="#b8c0c8" stroke-width="2"/>
+    <rect x="212" y="34" width="96" height="58" rx="6" fill="#fff" stroke="#b8c0c8" stroke-width="2"/>
+    <line x1="222" y1="50" x2="298" y2="50" stroke="#c9ced3" stroke-width="2"/>
+    <line x1="222" y1="62" x2="298" y2="62" stroke="#c9ced3" stroke-width="2"/>
+    <line x1="222" y1="74" x2="280" y2="74" stroke="#c9ced3" stroke-width="2"/>
+  </g>
+  <text class="t" x="250" y="112" font-weight="700">papers (PDFs)</text>
+
+  <line x1="250" y1="122" x2="250" y2="150" stroke="#8a95a0" stroke-width="2.5" marker-end="url(#la)"/>
+  <text class="lab" x="320" y="140">Docling</text>
+
+  <!-- structured -->
+  <rect x="120" y="152" width="260" height="60" rx="12" fill="#fff3e6" stroke="#e8912e" stroke-width="2.5"/>
+  <text class="t" x="250" y="180">structured text</text>
+  <text class="sub" x="250" y="200">+ cropped figures &amp; captions</text>
+
+  <line x1="250" y1="212" x2="250" y2="242" stroke="#8a95a0" stroke-width="2.5" marker-end="url(#la)"/>
+
+  <!-- corpus -->
+  <rect x="120" y="244" width="260" height="60" rx="12" fill="#eef2f6" stroke="#3b5b7a" stroke-width="2.5"/>
+  <text class="t" x="250" y="272">project corpus</text>
+  <text class="sub" x="250" y="292">50 to 1000 papers, searchable</text>
+
+  <line x1="250" y1="304" x2="250" y2="334" stroke="#8a95a0" stroke-width="2.5" marker-end="url(#la)"/>
+  <text class="lab" x="300" y="324" fill="#2f6fd0">RAG</text>
+
+  <!-- agent grounds -->
+  <rect x="120" y="336" width="260" height="60" rx="12" fill="#e9f4ec" stroke="#2f8f4e" stroke-width="2.5"/>
+  <text class="t" x="250" y="364">the agent interprets</text>
+  <text class="sub" x="250" y="384">grounded in the sources</text>
+
+  <text x="250" y="438" text-anchor="middle" font-size="16" fill="#55606b">from prepping slides to driving analysis</text>
+</svg>

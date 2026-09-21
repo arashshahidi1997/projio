@@ -1,13 +1,13 @@
 ---
 title: "Open-science conventions as agent infrastructure"
-subtitle: "a stack-aware workflow experiment · LSM Future Skills 2026"
 author: "Arash Shahidi · Sirota Lab, GSN-LMU · A.Shahidi@bio.lmu.de"
 date: "2026-09-22"
 format:
   revealjs:
-    theme: simple
+    theme: [white, custom.scss]
     slide-number: true
-    incremental: false
+    auto-stretch: false
+    incremental: true
     transition: fade
     chalkboard: false
     embed-resources: true
@@ -17,344 +17,214 @@ format:
     height: 720
 ---
 
-## the prompt
+## the mess
 
-Most AI-in-research demos are about **one task**.
+![](phd-desk-entropy.gif){width="60%" fig-align="center" fig-alt="PhD Comics Desk Entropy: a workspace degenerating into clutter as entropy rises over time."}
 
-- Clean a function. Summarise a paper. Draft an email.
-- Closed, single-shot, single-context.
+::: {.smaller}
+Workspaces tend to entropy. **AI without specs climbs the curve faster.**
+:::
 
-What if the **project itself** — the way data, pipelines, notes, and
-compute are organised — already made it easy for an agent to do useful
-work?
+::: {.tinyfoot}
+Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
+:::
 
 ::: {.notes}
-45s. Set up the contrast. The audience has seen single-task demos; what
-makes *this* talk different is the unit of analysis — workflow, not
-task. Don't define "workflow" yet; let slide 2 land it.
+~90s. Merges origin + sprawl + entropy.
+
+- start of my PhD: a dataset from a departing postdoc, no naming convention, changing every session
+- couldn't list sessions or find paired files, so I hand-built a DB manager, a batch runner, a tool that emailed me when batches finished (repo PyRatECoG, if asked)
+- built a personal lab-ops stack before doing any science; every new analysis meant more
+- months later I could not reorient: what is this file, which config produced it; the conventions lived only in my head
+- the comic: every project trends to disorder, tidying is temporary
+- the new risk: an agent generates files fast, so without specs it adds entropy faster than I remove it
+- land it: never doing this by hand again
+- then the pivot: with a well-described problem, AI's first win was discovery — it surveys for the best existing tools, so I stop reinventing; the rest of the talk is the specs that hold entropy down
+- credit: Jorge Cham, phdcomics.com (Desk Entropy, 2005)
 :::
 
 ---
 
-## the static parts vs the moving whole
+## Data specification (BIDS)
+
+[the folder is the specification: source → raw → derivatives]{.take}
 
 ::: {.columns}
-::: {.column width="50%"}
-**Already legible:**
-
-- Raw data: versioned trees
-- Pipelines: declarative DAGs
-- Figures: produced by code
-- Manuscripts: compile from the same tree
+::: {.column width="21%"}
+![](bids-source.png){.fragment fragment-index=1 width="100%" fig-alt="Source data: raw ingredients."}
 :::
-::: {.column width="50%"}
-**Still in your head:**
+::: {.column width="10%"}
+![](robot-chop.svg){.fragment fragment-index=4 width="100%" fig-alt="A robot chopping, fed a SPECS document."}
 
-- *Why* this file exists
-- *Which* config produced it
-- *Where* the next decision should come from
-- *Whether* the agent's claim matches the data
+![](curved-arrow.svg){.fragment fragment-index=4 width="100%" fig-alt="source becomes raw"}
+:::
+::: {.column width="21%"}
+![](bids-raw.png){.fragment fragment-index=2 width="100%" fig-alt="Raw data: chopped and prepped."}
+:::
+::: {.column width="10%"}
+![](robot-cook.svg){.fragment fragment-index=5 width="100%" fig-alt="A robot cooking, fed a SPECS document."}
+
+![](curved-arrow.svg){.fragment fragment-index=5 width="100%" fig-alt="raw becomes derivative"}
+:::
+::: {.column width="21%"}
+![](bids-deriv.png){.fragment fragment-index=3 width="100%" fig-alt="Derivative data: the cooked dish."}
 :::
 :::
 
-The right column is what this talk is about.
+::: {.fragment .qwrap fragment-index=6}
+[how can we get derivatives and results **reliably**?]{.bubble}
+:::
+
+::: {.tinyfoot}
+![](logos/bids.png){height="30px"} meal-prep images adapted from the BIDS Starter Kit · doi.org/10.5281/zenodo.5872274 (CC-BY)
+:::
 
 ::: {.notes}
-60s. The audience nods at the left column — most LSM postdocs have at
-least some of it. The right column is the gap: the workflow itself,
-the *seam between layers*. Don't say "projio" yet.
+~90s. One BIDS slide; the agent transforms source → raw → derivatives.
+
+- BIDS = community standard for how a dataset is laid out; self-describing, so I stop writing bespoke loaders
+- the filename carries the metadata (subject / session / datatype); the S is for Specification, a spec keeps a coding agent inside your rules
+- modular: source, raw, derivatives kept apart (ingredients, mise en place, the dish); raw stays pristine, derivatives regenerable
+- end on the question (bubble): how do we get derivatives reliably? → next slide answers with pipelines
+- images adapted from the BIDS Starter Kit (DOI 10.5281/zenodo.5872274, CC-BY)
 :::
 
 ---
 
-## six layers you may already use
+## Pipelines (Snakemake)
 
-| Layer | Tool | Role |
-|---|---|---|
-| Data layout | **BIDS** | the directory *is* the API |
-| Versioning | **DataLad** | data + code + receipts |
-| Pipelines | **Snakemake** | declarative DAG, staleness-aware |
-| Notebooks | **Marimo** | reactive cells, no hidden state |
-| Publication | **Quarto** / **MkDocs** | one source → site + slides + book |
-| Agent permissions | **MCP** | scoped, auditable tool surface |
-
-::: {.fragment .smaller}
-None of these is new. The point is what happens when you treat them as
-*one* surface.
-:::
-
-::: {.notes}
-45s. The audience scans the table. Don't read it row-by-row — point at
-two they know and one they don't. The fragment lands the actual move:
-this isn't novel tools; it's the *composition*.
-
-For a wet-lab audience: emphasise MCP and Marimo as the unfamiliar
-ones; BIDS/DataLad/Snakemake are familiar to anyone touching imaging
-or omics.
-:::
-
----
-
-## the pattern
-
-Treat those layers as **one queryable surface** an agent can navigate.
-
-Three conventions make it real:
-
-1. **Receipts on disk.** Every action leaves a file the next caller can read.
-2. **Permissioned tools.** The agent sees what you allow, by glob, by tool name.
-3. **File-mediated handoff.** Agents pass work to each other through markdown, not through ephemeral state.
-
-::: {.fragment .smaller}
-That's the pattern. The rest is an existence proof.
-:::
-
-::: {.notes}
-60s. This is the slide that pivots from "stack" to "pattern". The three
-conventions are durable — they survive whatever the orchestration layer
-becomes (batched chains today, live SDK dialogue tomorrow).
-
-The fragment is honest: I'm going to show one implementation, but the
-pattern is the takeaway.
-:::
-
----
-
-## demo: three agents, one prompt
+[reconstructed, and never run by hand again]{.take}
 
 ::: {.columns}
-::: {.column width="55%"}
-**Input:** a research idea
-(`docs/log/idea/handbook-initiative.md`)
+::: {.column width="30%"}
+::: {.r-stack}
+![](let-me-do-that-by-hand.png){width="100%" fig-alt="PhD Comics setup panel: a student thinking 'Let me do that by hand...'"}
 
-**Output (in `docs/log/result/`):**
-
-1. A literature survey
-2. A design spec
-3. A roadmap
-
-**Mechanism:** each agent reads what the previous one wrote. File-mediated handoff.
+![](let-me-do-that-by-hand-frustration.png){.fragment fragment-index=1 width="100%" fig-alt="PhD Comics full strip: the student grows frustrated doing it by hand."}
 :::
-::: {.column width="45%"}
-::: {.fragment .smaller}
-Split-screen during the demo:
 
-- left: terminal + dispatch
-- right: `watch -n 1 ls docs/log/result/`
-
-Files appear as agents finish.
+![](datalad-figs/local_wf.svg){.fragment fragment-index=4 width="92%" fig-align="center" fig-alt="DataLad and git keep every version of data and code; roll back a mistake."}
+:::
+::: {.column width="22%"}
+![](workflow-dag.svg){.fragment fragment-index=2 width="170" fig-align="center" fig-alt="An abstract Snakemake DAG: dataset through rule nodes to results."}
+:::
+::: {.column width="48%"}
+![](snakemake-workflow-rules.png){.fragment fragment-index=3 width="98%" fig-align="center" fig-alt="Each colored DAG node is a Snakemake rule with input, output, and a script or shell command."}
 :::
 :::
+
+::: {.tinyfoot}
+![](logos/snakemake.png){height="30px"} ![](logos/datalad.png){height="30px"} Snakemake · DataLad Handbook fig (CC BY-SA) · comic: Jorge Cham, phdcomics.com
 :::
 
 ::: {.notes}
-30s set-up before the demo runs. State: input, outputs, mechanism. The
-mechanism word matters: "file-mediated handoff" is the durable phrase.
+~2.5 min. Talk the pointers: the manual temptation (comic), then the pipeline (DAG).
 
-Switch to recording/live now. ~5 min for the demo.
+- "let me do that by hand" is fine once; across a dataset it is unmaintainable
+- the lived case: a chain built by several people, run order forgotten, provenance gone
+- I gave the agent the final files, some intermediates, and the loose scripts; it reconstructed which script produced which file and which dependency, and numerically verified by re-running and matching the intermediates
+- the colleague who wrote the scripts was surprised; a chat tab cannot do this
+- then I locked it into Snakemake: rules declare input/output/params/script; it infers the DAG from filenames and reruns only what is stale
+- DataLad + git version data and code; rebuilt a years-old analysis into a reproducible repo, published with the paper
+- DAG/automation framing after Köster; comic Jorge Cham (phdcomics.com)
 :::
 
 ---
 
-## demo
+## Exploration, grounded
+
+[the agent, grounded in your code and your literature]{.take}
+
+![](explore-ground.svg){width="90%" fig-align="center" fig-alt="Top: a notebook or script the user and agent edit together. Below, reaching up via skills and MCP: your code (libraries and a search-first skill) and your literature (PDFs through Docling into a searchable corpus)."}
+
+::: {.tinyfoot}
+![](logos/marimo.png){height="42px"} Marimo · marimo.io
+:::
+
+::: {.notes}
+~2 min. The surface is a Marimo notebook or a Python script; the agent's help there is grounded from below.
+
+- grounding cuts hallucination and reinvention: the agent reuses your real implementation, the one that captures the aspects you care about, instead of a naive from-scratch version
+- your code, reachable via a skill (search the library first) and an MCP command, even when you have many packages and thin docs
+- your literature, reachable via MCP retrieval (RAG): survey how others chose parameters, what algorithms and confounds they report, and get an organized overview
+- so the agent gives grounded support, not free-floating guesses
+:::
+
+---
+
+## Publication (Quarto)
+
+[one source; results and stats render live into every document]{.take}
+
+![](publish.svg){width="80%" fig-align="center" fig-alt="One source document with live result and stat tokens renders into slides, manuscript, and report, all showing the same value."}
+
+::: {.fragment .qwrap}
+[The agent knows the tools' details; I just describe what I want the report to show.]{.bubble .blue}
+:::
+
+::: {.tinyfoot}
+![](logos/quarto.png){height="30px"} Quarto · quarto.org
+:::
+
+::: {.notes}
+~75s.
+
+- one source document; code runs and inserts results, stats, and figures inline, no copy-paste
+- the same source renders to slides, manuscript, and report; change the data and every number updates in sync
+- the shift (bubble): I used to spend a long time learning each tool's details; now the agent knows them, so I bring the capabilities I need and a clear description of what I want
+- pruning over-generated output is still on me (see the recap's limits box)
+:::
+
+---
+
+## Conclusions
+
+[the conventions are the rules of the game; the agent knows how to play]{.take}
 
 ::: {.columns}
-::: {.column width="60%"}
-**Input** (one file):
+::: {.column width="70%"}
+::: {.r-stack}
+![](diagram.svg){width="860" fig-alt="The full stack: agent over projio over grounding and lifecycle on shared foundations."}
 
-`docs/log/idea/handbook-initiative.md`
+![](spot-1.svg){.fragment .current-visible width="860" fig-alt="BIDS data-layout spec highlighted."}
 
-**Outputs** (three files, agent-written):
+![](spot-2.svg){.fragment .current-visible width="860" fig-alt="DataLad and git versioning highlighted."}
 
-::: {.fragment fragment-index=1}
-- `docs/log/result/result-survey-…md` ✓
-:::
-::: {.fragment fragment-index=2}
-- `docs/log/result/result-spec-…md` ✓
-:::
-::: {.fragment fragment-index=3}
-- `docs/log/result/result-roadmap-…md` ✓
-:::
+![](spot-3.svg){.fragment .current-visible width="860" fig-alt="Code libraries highlighted."}
 
-::: {.fragment fragment-index=4 .smaller}
-Each agent reads what the previous one wrote.
-:::
-:::
-::: {.column width="40%"}
-::: {.fragment fragment-index=0 .smaller}
-*[asciinema cast embedded here;*
-*one ~30 s `doitlive` live segment*
-*dispatches a second job that*
-*confirms the pattern]*
+![](spot-4.svg){.fragment .current-visible width="860" fig-alt="Bibliography highlighted."}
+
+![](spot-5.svg){.fragment .current-visible width="860" fig-alt="Marimo notebooks highlighted."}
+
+![](spot-6.svg){.fragment .current-visible width="860" fig-alt="Snakemake pipelines highlighted."}
+
+![](spot-7.svg){.fragment .current-visible width="860" fig-alt="Quarto publication highlighted."}
+
+![](spot-8.svg){.fragment .current-visible width="860" fig-alt="Agent and projio orchestrator highlighted."}
+
+![](diagram.svg){.fragment width="860" fig-alt="The whole stack lit."}
 :::
 :::
+::: {.column width="30%"}
+::: {.fragment}
+**sustainable science**<br>[reproducible]{style="color:#2bb996;font-weight:700"}<br>[adaptable]{style="color:#e8912e;font-weight:700"}<br>[transparent]{style="color:#3a86c8;font-weight:700"}
 :::
 
-::: {.notes}
-Hard 4-min cap (visible timer). Anchor the credibility moment on the
-*output file appearing on the right pane*, not on typing speed. Each
-fragment ticks as the corresponding file appears on disk.
+::: {.fragment}
+![](workshop-qr.png){width="34%" fig-alt="QR code linking to the workshop"}
 
-If the live segment fails, the asciinema fallback alone tells the
-story — and the input/output filename scaffold on this slide carries
-the narrative even if the recording stalls.
-:::
-
----
-
-## wait — is this projio?
-
-::: {.columns}
-::: {.column width="50%"}
-**Your existing in-house helper:**
-
-```python
-def find_notes(query):
-    # grep + light ranking
-    return hits
-```
-
-A function *you* call from a notebook.
-:::
-::: {.column width="50%"}
-**Same intent, agent-callable:**
-
-```text
-rag_query("burst threshold",
-          corpus="notes")
-```
-
-A tool the *next agent in the chain*
-can call without you. Semantic recall,
-multi-corpus, returns a structured
-object.
-:::
-:::
-
-::: {.fragment .smaller}
-The difference isn't ranking — it's **who can invoke it.** Any MCP
-server that exposes project state as an agent-callable tool can host
-this pattern: filesystem-MCP, git-MCP, your own 50-line indexer.
-projio is one such host, not the host.
-:::
-
-::: {.notes}
-30s. This is the **non-projio anchor.** The contrast is *function the
-human calls* vs *tool the agent calls*. Grep was the wrong benchmark
-(too easy to argue against — `rg --json` does the same). The real
-move is agent-callability + composition. A skeptical postdoc with a
-`find_notes()` helper in their utils file recognises the gap
-immediately.
-
-If a postdoc asks "what does a non-projio implementation look like?"
-— say: a 50-line filesystem-MCP server with one tool that returns
-embeddings-ranked file paths. That's it.
-:::
-
----
-
-## what works
-
-- **MCP permissions as real constraints.**
-  The agent only sees the files and tools you allow. Auditable, scoped,
-  revocable.
-- **File-mediated agent handoffs.**
-  Durable: works for batched chains today, and for live SDK dialogue
-  tomorrow. The principle survives the mechanism.
-- **Structured project memory.**
-  Every idea, task, and result is a file. Indexable, greppable,
-  citeable.
-- **Model routing.**
-  Opus for synthesis, Haiku for triage. Cost and latency both drop.
-
-::: {.notes}
-2 min. Each bullet is one observable claim, not rhetoric. The audience
-should be able to verify each from the demo they just saw.
-
-Specifically *not* on this slide: "projio is great." The slide is about
-the convention work, not the implementation.
-:::
-
----
-
-## what I haven't solved
-
-**Provenance.** An agent writes `result-X.md` claiming a p-value.
-Nothing forces it to cite the executed notebook cell that produced
-the value. I still re-run analyses by hand to verify.
-
-::: {.fragment .smaller}
-**Bench-biology workflows.** The pattern assumes file-shaped artifacts.
-Microscope sessions, ELISA plates, behavioural protocols don't fit
-cleanly. The convention work for instrument-mediated workflows isn't
-written yet.
-:::
-
-::: {.fragment .smaller}
-**Single-author fragility.** The conventions are durable. The
-implementation might not be — and if your project depends on one
-person's tool, that's a research risk.
-:::
-
-::: {.notes}
-2 min. Provenance is the headline failure — state the concrete
-instance.
-
-The bench-biology bullet is the pattern-level limit, not a projio gap.
-For an LSM room with wet-lab attendees, this is the failure they will
-recognise from their own work. Naming it earns more trust than any
-amount of receipts-on-disk talk.
-
-Don't apologise. Don't deflect. The talk's authority depends on
-naming what the *pattern* cannot do, not on what one implementation
-hasn't gotten around to.
-:::
-
----
-
-## adopt or adapt
-
-::: {.columns}
-::: {.column width="50%"}
-**Try it today** *(10 min):*
-
-```bash
-git clone github.com/arashshahidi1997/projio-starter-lsm
-cd projio-starter-lsm
-projio init
-```
-
-Then ask the agent: *"summarise the idea in `docs/log/idea/`."*
-
-:::
-::: {.column width="50%"}
-**Go deeper** *(4 days, late Sept):*
-
-- Workshop on the same stack
-- BIDS + DataLad + Snakemake +
-  Marimo + Quarto + MCP +
-  one stack-aware tool
-
-Details on request.
-
-::: {.fragment .smaller}
-**Or build your own** — talk to me.
-This is a genuine open research
-problem, not a fork-and-rename.
+**4-day agentic workshop** · Oct 2026
+[A.Shahidi@bio.lmu.de](mailto:A.Shahidi@bio.lmu.de)
 :::
 :::
 :::
 
 ::: {.notes}
-60s. Two-tier CTA: starter repo first (low-commitment, high-conversion),
-workshop second (high-commitment, narrow audience).
+~2.5 min. Combined finale: walk the stack (each click lights one, dims the rest), then the right panel builds: sustainable science, the honest limits, the workshop.
 
-Third option is *honest about its cost*: an LSM postdoc swapping projio
-for a custom MCP server is a 2-week build, not a fork. Naming it as a
-research project rather than a sidegrade attracts the right tiny
-minority who'd actually do it. Adversarial review §Q2(d) flagged the
-earlier "adapt the conventions to your own stack — they're portable"
-framing as hand-waving; this fragment owns the cost.
-
-Stop the talk. Open for discussion.
+- every hand-built thing from slide 1 now has an agent-legible standard: BIDS · DataLad+git · code · bibliography · Marimo · Snakemake · Quarto · projio+agent
+- the payoff: reproducible, adaptable, transparent; sustainable science that outlives the project and the person (framing after Köster)
+- still on me: verify key numbers by hand, prune over-generated reports, single-author fragility
+- the value is in the conventions, which outlive any one tool
+- workshop: 4 days, 5–8 Oct 2026, LMU Martinsried; scan the QR or email me
 :::

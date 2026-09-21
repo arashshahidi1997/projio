@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 380" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ga" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8a95a0"/>
+    </marker>
+  </defs>
+  <style>
+    .pill { rx: 16; stroke-width: 3; }
+    .plab { font-size: 30px; font-weight: 700; text-anchor: middle; }
+    .edge { stroke: #8a95a0; stroke-width: 3; }
+  </style>
+
+  <!-- three pillars -->
+  <rect x="40"  y="40" width="280" height="90" rx="16" fill="#c8f0e2" stroke="#2bb996" stroke-width="3"/>
+  <text class="plab" x="180" y="98" fill="#1a1a1a">reproducible</text>
+
+  <rect x="360" y="40" width="280" height="90" rx="16" fill="#ffe0b8" stroke="#e8912e" stroke-width="3"/>
+  <text class="plab" x="500" y="98" fill="#1a1a1a">adaptable</text>
+
+  <rect x="680" y="40" width="280" height="90" rx="16" fill="#bfe0f7" stroke="#3a86c8" stroke-width="3"/>
+  <text class="plab" x="820" y="98" fill="#1a1a1a">transparent</text>
+
+  <!-- converging arrows -->
+  <line class="edge" x1="180" y1="130" x2="470" y2="235" marker-end="url(#ga)"/>
+  <line class="edge" x1="500" y1="130" x2="500" y2="235" marker-end="url(#ga)"/>
+  <line class="edge" x1="820" y1="130" x2="530" y2="235" marker-end="url(#ga)"/>
+
+  <!-- base -->
+  <rect x="230" y="240" width="540" height="96" rx="18" fill="#e9f4ec" stroke="#3f9d4f" stroke-width="3"/>
+  <text x="500" y="288" text-anchor="middle" font-size="34" font-weight="700" fill="#2f8f4e">sustainable</text>
+  <text x="500" y="322" text-anchor="middle" font-size="20" fill="#55606b">science that outlives the project</text>
+</svg>

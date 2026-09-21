@@ -1,0 +1,187 @@
+/*-- scss:defaults --*/
+// Custom theme for the LSM Future Skills 2026 talk.
+// Base: revealjs `white`. Intent: clean, light, restrained; one accent used
+// sparingly; code that survives a bright room and a bad projector.
+
+// --- accent -----------------------------------------------------------------
+$accent:       #3b5b7a;   // muted slate-blue, the only accent
+$accent-soft:  #eef2f6;   // tinted panel background for code
+$ink:          #1a1a1a;   // near-black body text
+$ink-soft:     #55606b;   // secondary text / subtitles
+
+// --- fonts ------------------------------------------------------------------
+$font-family-sans-serif: "Helvetica Neue", Helvetica, Arial, sans-serif !default;
+$font-family-monospace:  "SFMono-Regular", "JetBrains Mono", "Menlo", "Consolas", monospace !default;
+
+// --- sizing (readable from the back of the room) ----------------------------
+$presentation-font-size-root: 34px;
+$presentation-h1-font-size:   1.9em;
+$presentation-h2-font-size:   1.4em;
+$presentation-heading-font-weight: 650;
+
+// --- palette hooks reveal reads --------------------------------------------
+$body-color:  $ink;
+$link-color:  $accent;
+$link-color-hover: darken($accent, 10%);
+$selection-bg: rgba($accent, 0.25);
+
+/*-- scss:rules --*/
+
+.reveal .slides section {
+  text-align: left;
+}
+
+// Headings: quiet, with a thin accent rule under h2 to structure the deck.
+.reveal h2 {
+  color: $ink;
+  border-bottom: 2px solid $accent;
+  padding-bottom: 0.25em;
+  margin-bottom: 0.6em;
+  letter-spacing: -0.01em;
+}
+
+.reveal h1 { color: $ink; letter-spacing: -0.01em; }
+
+// Title slide: accent the subtitle/author so the cover has one touch of color.
+.reveal .title-slide h1.title { color: $ink; }
+.reveal .title-slide .subtitle,
+.reveal .title-slide .author,
+.reveal .title-slide .date { color: $ink-soft; }
+
+// Body text
+.reveal p, .reveal li { color: $ink; line-height: 1.35; }
+.reveal .smaller { color: $ink-soft; }
+
+// Emphasis in accent, used only for **bold** run-ins on slides.
+.reveal strong { color: $accent; }
+
+// Code: soft-tinted panel, no glare, high contrast.
+.reveal pre {
+  box-shadow: none;
+  border: 1px solid darken($accent-soft, 6%);
+  border-radius: 6px;
+  background: $accent-soft;
+}
+.reveal pre code {
+  background: transparent;
+  font-family: $font-family-monospace;
+  font-size: 0.78em;
+  line-height: 1.4;
+  padding: 0.8em 1em;
+}
+.reveal code:not(pre code) {
+  color: $accent;
+  background: $accent-soft;
+  padding: 0.05em 0.3em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+// Two-column blocks: keep them side by side (no horizontal padding, which
+// would push the widths past 100% and wrap the right column underneath).
+.reveal .columns { align-items: center; }
+.reveal .columns > .column { padding: 0; }
+.reveal .columns > .column img { display: block; margin-left: auto; margin-right: auto; }
+
+// Slide number: quiet, in the accent.
+.reveal .slide-number {
+  background-color: transparent;
+  color: $ink-soft;
+  font-size: 0.5em;
+}
+
+// Fragments that are ".smaller" read as asides; nudge them down slightly.
+.reveal .fragment.smaller { font-size: 0.82em; }
+
+// Takeaway subtitle under a slide title.
+.reveal .take {
+  display: block;
+  font-size: 0.58em;
+  color: $accent;
+  font-weight: 600;
+  margin: -0.35em 0 0.5em 0;
+}
+
+// Full-bleed recap slide: hide the title so the diagram fills the slide.
+.reveal .fillslide h2 { display: none; }
+.reveal section.fillslide { padding-top: 0; padding-bottom: 0; }
+
+// Question speech-bubble (motivates the next slide).
+.reveal .qwrap { text-align: center; margin-top: 0.5em; }
+.reveal .qwrap .bubble {
+  display: inline-block;
+  background: #fff7d6;
+  border: 2.5px solid #e0a92e;
+  border-radius: 16px;
+  padding: 0.45em 1em;
+  font-size: 0.9em;
+  font-weight: 600;
+  position: relative;
+}
+.reveal .qwrap .bubble::after {
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: 60px;
+  border: 9px solid transparent;
+  border-bottom-color: #e0a92e;
+}
+.reveal .qwrap .bubble.blue { background: #eef4fb; border-color: #3a86c8; }
+.reveal .qwrap .bubble.blue::after { border-bottom-color: #3a86c8; }
+
+// Limitations box on the recap slide.
+.reveal .limits {
+  border: 2px solid #c98a3a;
+  background: #fdf3e6;
+  border-radius: 10px;
+  padding: 0.5em 0.7em;
+  font-size: 0.62em;
+  line-height: 1.35;
+}
+.reveal .limits strong { color: #b9781f; }
+
+// Per-slide footer: tool logos + citation, pinned bottom-left, muted.
+.reveal .tinyfoot {
+  position: absolute;
+  left: 26px;
+  right: 26px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.4em;
+  color: #9aa4ad;
+}
+.reveal .tinyfoot img {
+  height: 30px;
+  width: auto;
+  margin: 0;
+  vertical-align: middle;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.reveal .tinyfoot a { color: #9aa4ad; text-decoration: none; }
+
+// Grounding chips (Exploration slide).
+.reveal .gchip {
+  display: inline-block;
+  border-radius: 11px;
+  padding: 0.22em 0.7em;
+  margin: 0 0.3em;
+  font-size: 0.8em;
+  border: 2px solid;
+}
+.reveal .gchip.code { background: #e9f4ec; border-color: #3f9d4f; }
+.reveal .gchip.lit  { background: #fff3e6; border-color: #e8912e; }
+
+// Boxed takeaway message.
+.reveal .boxed {
+  border: 2px solid $accent;
+  background: $accent-soft;
+  border-radius: 10px;
+  padding: 0.5em 0.85em;
+  margin-top: 0.7em;
+  font-size: 0.86em;
+  line-height: 1.35;
+}
