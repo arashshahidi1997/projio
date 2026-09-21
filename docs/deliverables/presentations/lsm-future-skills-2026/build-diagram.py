@@ -15,7 +15,7 @@ MASTER = (HERE / "diagram.svg").read_text()
 
 # Every group id in the diagram, so we can hide the complement of "shown".
 ALL = [
-    "g-agent", "g-execarrow", "g-projio",
+    "g-agent", "g-execarrow",
     "g-ground", "g-biblio", "g-code",
     "g-life", "g-notebooks", "g-promote", "g-pipelines", "g-render",
     "g-publication", "g-plant-seed", "g-plant-sprout", "g-plant-fruit",
@@ -31,7 +31,7 @@ STEPS = [
      ["g-pipelines", "g-datalad"]),                                       # 4 reproducible
     (["g-notebooks", "g-promote", "g-plant-seed"], ["g-notebooks"]),      # 5 exploration
     (["g-render", "g-publication", "g-plant-fruit"], ["g-publication"]),  # 6 reporting
-    (["g-projio", "g-execarrow", "g-agent"], ["g-agent"]),                # 7 full picture
+    (["g-execarrow", "g-agent"], ["g-agent"]),                            # 7 full picture
 ]
 
 
@@ -55,13 +55,24 @@ SPOTS = [
     ["g-notebooks", "g-plant-seed"],
     ["g-pipelines", "g-plant-sprout"],
     ["g-publication", "g-plant-fruit"],
-    ["g-agent", "g-projio", "g-execarrow"],
+    ["g-agent", "g-execarrow"],
 ]
+
+
+# The lead layer (robot + its arrow) stays fully hidden until its own spotlight,
+# so it appears together with the closing line rather than sitting there dimmed.
+HIDE_UNTIL_LIT = {"g-agent", "g-execarrow"}
 
 
 def spot_css(lit):
     dim = [g for g in ALL if g not in lit]
-    rules = [",".join(f"#{g}" for g in dim) + "{opacity:0.14;}"]
+    hide = [g for g in dim if g in HIDE_UNTIL_LIT]
+    soft = [g for g in dim if g not in HIDE_UNTIL_LIT]
+    rules = []
+    if soft:
+        rules.append(",".join(f"#{g}" for g in soft) + "{opacity:0.14;}")
+    if hide:
+        rules.append(",".join(f"#{g}" for g in hide) + "{opacity:0;}")
     rules.append(",".join(f"#{g}" for g in lit) + "{filter:url(#glow);}")
     return "\n    ".join(rules)
 
@@ -77,6 +88,28 @@ def main():
         svg = MASTER.replace("/*STAGECSS*/", spot_css(lit))
         (HERE / f"spot-{i}.svg").write_text(svg)
         print(f"wrote spot-{i}.svg  (lit={lit})")
+
+    # Conclusions base image: the full stack with the agent (robot) hidden until
+    # its spotlight, so nothing at the top shows before the closing beat.
+    base = MASTER.replace("/*STAGECSS*/", "#g-agent,#g-execarrow{opacity:0;}")
+    (HERE / "diagram-stack.svg").write_text(base)
+    print("wrote diagram-stack.svg (agent hidden until spotlight)")
+
+    # Exploration slide: cumulative reveal of the grounding schematic, so the
+    # notebook, then the agent, then code, then literature come in one at a time.
+    explore_master = (HERE / "explore-ground.svg").read_text()
+    explore_all = ["g-surface", "g-agent", "g-code", "g-lit"]
+    explore_steps = [
+        ["g-surface"],
+        ["g-surface", "g-agent"],
+        ["g-surface", "g-agent", "g-code"],
+    ]
+    for i, shown in enumerate(explore_steps, start=1):
+        hidden = [g for g in explore_all if g not in shown]
+        css = (",".join(f"#{g}" for g in hidden) + "{opacity:0;}") if hidden else ""
+        svg = explore_master.replace("/*STAGECSS*/", css)
+        (HERE / f"explore-{i}.svg").write_text(svg)
+        print(f"wrote explore-{i}.svg  (shown={shown})")
 
 
 if __name__ == "__main__":

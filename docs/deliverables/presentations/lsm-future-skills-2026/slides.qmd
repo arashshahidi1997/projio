@@ -37,7 +37,7 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 - built a personal lab-ops stack before doing any science; every new analysis meant more
 - months later I could not reorient: what is this file, which config produced it; the conventions lived only in my head
 - the comic: every project trends to disorder, tidying is temporary
-- the new risk: an agent generates files fast, so without specs it adds entropy faster than I remove it
+- the new risk: an agent is an amplifier, raising the rate at which structure or disorder accumulates; without specs it adds entropy faster than I remove it
 - land it: never doing this by hand again
 - then the pivot: with a well-described problem, AI's first win was discovery — it surveys for the best existing tools, so I stop reinventing; the rest of the talk is the specs that hold entropy down
 - credit: Jorge Cham, phdcomics.com (Desk Entropy, 2005)
@@ -83,7 +83,7 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 ~90s. One BIDS slide; the agent transforms source → raw → derivatives.
 
 - BIDS = community standard for how a dataset is laid out; self-describing, so I stop writing bespoke loaders
-- the filename carries the metadata (subject / session / datatype); the S is for Specification, a spec keeps a coding agent inside your rules
+- the filename carries the metadata (subject / session / datatype); the S is for Specification, a spec makes the rules explicit, for people and agents alike
 - modular: source, raw, derivatives kept apart (ingredients, mise en place, the dish); raw stays pristine, derivatives regenerable
 - end on the question (bubble): how do we get derivatives reliably? → next slide answers with pipelines
 - images adapted from the BIDS Starter Kit (DOI 10.5281/zenodo.5872274, CC-BY)
@@ -135,7 +135,17 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 
 [the agent, grounded in your code and your literature]{.take}
 
-![](explore-ground.svg){width="90%" fig-align="center" fig-alt="Top: a notebook or script the user and agent edit together. Below, reaching up via skills and MCP: your code (libraries and a search-first skill) and your literature (PDFs through Docling into a searchable corpus)."}
+::: {.r-stack}
+![](explore-1.svg){width="1120" fig-alt="Surface: a notebook or script you and the agent edit together."}
+
+![](explore-2.svg){.fragment width="1120" fig-alt="The agent joins, reaching in via skills and MCP."}
+
+![](explore-3.svg){.fragment width="1120" fig-alt="Grounded in your code libraries via a search-first skill."}
+
+![](explore-ground.svg){.fragment width="1120" fig-alt="Grounded also in your literature: PDFs through Docling into a searchable corpus."}
+
+![](explore-promote.svg){.fragment width="1120" fig-alt="Once the notebook works, the agent promotes it into a Snakemake pipeline; a promote arrow runs from the notebook to the pipeline DAG at top right."}
+:::
 
 ::: {.tinyfoot}
 ![](logos/marimo.png){height="42px"} Marimo · marimo.io
@@ -144,38 +154,37 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 ::: {.notes}
 ~2 min. The surface is a Marimo notebook or a Python script; the agent's help there is grounded from below.
 
-- grounding cuts hallucination and reinvention: the agent reuses your real implementation, the one that captures the aspects you care about, instead of a naive from-scratch version
+- grounding makes reuse easier than reinvention: with your real implementation discoverable, the agent works from the code that captures the aspects you care about, rather than a naive from-scratch version
 - your code, reachable via a skill (search the library first) and an MCP command, even when you have many packages and thin docs
-- your literature, reachable via MCP retrieval (RAG): survey how others chose parameters, what algorithms and confounds they report, and get an organized overview
-- so the agent gives grounded support, not free-floating guesses
+- your literature, reachable via MCP retrieval (RAG): survey how others chose parameters, what algorithms and confounds they report, and get an organized overview; this covers your corpus, not a systematic literature review
+- retrieval gives the agent evidence to reason from, and the answer still needs checking; grounded support, not free-floating guesses
+- (fragment) once the notebook works, the agent promotes it into a Snakemake pipeline (the DAG from the Pipelines slide); the loop is explore here, then lock it in
 :::
 
 ---
 
 ## Publication (Quarto)
 
-[one source; the same results render live into every document]{.take}
+[one source; every document draws from the same results]{.take}
 
 ::: {.columns}
-::: {.column width="28%"}
+::: {.column width="26%"}
 ![](results-folder.svg){.fragment fragment-index=1 width="100%" fig-alt="A results folder holding a figure, a schematic, and a stats table (mean 4.2, sd, p, n) — the deliverables from the previous slide."}
 :::
-::: {.column width="8%"}
+::: {.column width="7%"}
 ![](curved-arrow.svg){.fragment fragment-index=2 width="100%" fig-alt="results become one source document"}
 :::
-::: {.column width="17%"}
-![](robot-assemble.svg){.fragment fragment-index=2 width="100%" fig-alt="A robot, fed a SPECS document, assembling the results into one source document."}
+::: {.column width="22%"}
+![](robot-assemble.svg){.fragment fragment-index=2 width="86%" fig-alt="A robot, fed a SPECS document, assembling the results into one source document."}
+
+![](writing-grounding.svg){.fragment fragment-index=4 width="100%" fig-alt="Beneath the agent: your literature (to cite sources) and your pipeline (to trace methods) reach up as grounding for the write-up."}
 :::
-::: {.column width="8%"}
+::: {.column width="7%"}
 ![](curved-arrow.svg){.fragment fragment-index=3 width="100%" fig-alt="one source renders into every document"}
 :::
-::: {.column width="34%"}
+::: {.column width="32%"}
 ![](docs-stack.svg){.fragment fragment-index=3 width="100%" fig-alt="Slides, manuscript, and report — each showing the same live value 4.2."}
 :::
-:::
-
-::: {.fragment .qwrap fragment-index=4}
-[the agent knows the tools; I bring the capability I need and describe what I want]{.bubble .blue}
 :::
 
 ::: {.tinyfoot}
@@ -188,7 +197,8 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 - the previous slide left a folder of results: figures, schematics, and the numbers
 - the agent, working from your SPECS, assembles them into one source document — code runs and inserts results, stats, and figures inline, no copy-paste
 - that one source renders to slides, manuscript, and report; 4.2 is 4.2 everywhere, and change the data and every number updates in sync
-- the shift (bubble): I used to spend a long time learning each tool's details; now the agent knows them, so I bring the capabilities I need and a clear description of what I want
+- (fragment) the write-up is grounded too: it cites your literature and traces your pipeline, so sources and methods are documented in the output; that is the transparency
+- the shift: I used to spend a long time learning each tool's details; now the agent knows them, so I bring the capabilities I need and a clear description of what I want
 - pruning over-generated output is still on me (see the recap's limits box)
 :::
 
@@ -196,52 +206,74 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 
 ## Conclusions
 
-[the conventions are the rules of the game; the agent knows how to play]{.take}
+[the conventions are the rules of the game; the agent knows how to play]{.take .fragment fragment-index=8}
 
 ::: {.columns}
 ::: {.column width="70%"}
 ::: {.r-stack}
-![](diagram.svg){width="860" fig-alt="The full stack: agent over projio over grounding and lifecycle on shared foundations."}
+![](diagram-stack.svg){width="860" fig-alt="The stack so far, with the agent still to come."}
 
-![](spot-1.svg){.fragment .current-visible width="860" fig-alt="BIDS data-layout spec highlighted."}
+![](spot-1.svg){.fragment .current-visible fragment-index=1 width="860" fig-alt="BIDS data-layout spec highlighted."}
 
-![](spot-2.svg){.fragment .current-visible width="860" fig-alt="DataLad and git versioning highlighted."}
+![](spot-2.svg){.fragment .current-visible fragment-index=2 width="860" fig-alt="DataLad and git versioning highlighted."}
 
-![](spot-3.svg){.fragment .current-visible width="860" fig-alt="Code libraries highlighted."}
+![](spot-3.svg){.fragment .current-visible fragment-index=3 width="860" fig-alt="Code libraries highlighted."}
 
-![](spot-4.svg){.fragment .current-visible width="860" fig-alt="Bibliography highlighted."}
+![](spot-4.svg){.fragment .current-visible fragment-index=4 width="860" fig-alt="Bibliography highlighted."}
 
-![](spot-5.svg){.fragment .current-visible width="860" fig-alt="Marimo notebooks highlighted."}
+![](spot-5.svg){.fragment .current-visible fragment-index=5 width="860" fig-alt="Marimo notebooks highlighted."}
 
-![](spot-6.svg){.fragment .current-visible width="860" fig-alt="Snakemake pipelines highlighted."}
+![](spot-6.svg){.fragment .current-visible fragment-index=6 width="860" fig-alt="Snakemake pipelines highlighted."}
 
-![](spot-7.svg){.fragment .current-visible width="860" fig-alt="Quarto publication highlighted."}
+![](spot-7.svg){.fragment .current-visible fragment-index=7 width="860" fig-alt="Quarto publication highlighted."}
 
-![](spot-8.svg){.fragment .current-visible width="860" fig-alt="Agent and projio orchestrator highlighted."}
+![](spot-8.svg){.fragment .current-visible fragment-index=8 width="860" fig-alt="The agent highlighted."}
 
-![](diagram.svg){.fragment width="860" fig-alt="The whole stack lit."}
+![](diagram.svg){.fragment fragment-index=9 width="860" fig-alt="The whole stack lit."}
+:::
+
+::: {.fragment .smaller fragment-index=10 style="text-align:center;margin-top:0.35em"}
+[reproducible]{style="color:#2bb996;font-weight:700"} · [adaptable]{style="color:#e8912e;font-weight:700"} · [transparent]{style="color:#3a86c8;font-weight:700"}<br>
+[human remains responsible for judgment and validation]{style="font-size:0.8em;color:#55606b"}
 :::
 :::
 ::: {.column width="30%"}
-::: {.fragment}
-**sustainable science**<br>[reproducible]{style="color:#2bb996;font-weight:700"}<br>[adaptable]{style="color:#e8912e;font-weight:700"}<br>[transparent]{style="color:#3a86c8;font-weight:700"}
+
+::: {.fragment fragment-index=12}
+
+<div style="font-size:0.9em;font-weight:700;margin-bottom:0.35em;">
+4-day agentic workshop
+</div>
+
+::: {style="display:flex;align-items:center;gap:24px"}
+
+::: {style="flex:0 0 66%;text-align:center"}
+![](workshop-qr.png){style="width:100%;max-width:360px" fig-alt="QR code linking to the workshop"}
 :::
 
-::: {.fragment}
-![](workshop-qr.png){width="34%" fig-alt="QR code linking to the workshop"}
-
-**4-day agentic workshop** · Oct 2026
+::: {style="flex:0 0 30%;font-size:0.6em;line-height:1.5"}
+Oct 2026  
 [A.Shahidi@bio.lmu.de](mailto:A.Shahidi@bio.lmu.de)
 :::
+
+:::
+:::
+
+::: {.fragment .limits fragment-index=11}
+**still brittle:**
+
+agents produce structure faster than I can maintain it. context retrieval still needs human checking
+:::
+
 :::
 :::
 
 ::: {.notes}
-~2.5 min. Combined finale: walk the stack (each click lights one, dims the rest), then the right panel builds: sustainable science, the honest limits, the workshop.
+~2.5 min. Combined finale: walk the stack (each click lights one, dims the rest); the agent (robot) stays hidden until the last spotlight, where it appears together with the closing line "the agent knows how to play"; then the whole stack lights; then the right panel builds: sustainable science, the honest limits, the workshop.
 
-- every hand-built thing from slide 1 now has an agent-legible standard: BIDS · DataLad+git · code · bibliography · Marimo · Snakemake · Quarto · projio+agent
+- every hand-built thing from slide 1 now has an agent-legible standard: BIDS · DataLad+git · code · bibliography · Marimo · Snakemake · Quarto · the agent on top
 - the payoff: reproducible, adaptable, transparent; sustainable science that outlives the project and the person (framing after Köster)
-- still on me: verify key numbers by hand, prune over-generated reports, single-author fragility
+- still brittle: agents produce structure faster than I can maintain it; context retrieval still needs human checking (the researcher stays in charge of the research)
 - the value is in the conventions, which outlive any one tool
 - workshop: 4 days, 5–8 Oct 2026, LMU Martinsried; scan the QR or email me
 :::

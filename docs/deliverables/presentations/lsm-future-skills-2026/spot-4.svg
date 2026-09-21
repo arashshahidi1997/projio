@@ -12,28 +12,30 @@
     .lab { font-weight: 700; }
     .accent { fill: #2f6fd0; font-weight: 700; }
     .muted { fill: #3f3f3f; }
-    #g-agent,#g-execarrow,#g-projio,#g-ground,#g-code,#g-life,#g-notebooks,#g-promote,#g-pipelines,#g-render,#g-publication,#g-plant-seed,#g-plant-sprout,#g-plant-fruit,#g-datalad,#g-bids{opacity:0.14;}
+    #g-ground,#g-code,#g-life,#g-notebooks,#g-promote,#g-pipelines,#g-render,#g-publication,#g-plant-seed,#g-plant-sprout,#g-plant-fruit,#g-datalad,#g-bids{opacity:0.14;}
+    #g-agent,#g-execarrow{opacity:0;}
     #g-biblio{filter:url(#glow);}
   </style>
 
   <rect x="0" y="0" width="1280" height="720" fill="#ffffff"/>
 
-  <!-- ================= AGENT ================= -->
+  <!-- ================= AGENT (robot mascot) ================= -->
   <g class="blk" id="g-agent">
-    <rect x="458" y="12" width="364" height="56" rx="28" fill="#d9c9f5" stroke="#7c5fc0" stroke-width="3"/>
-    <text x="640" y="48" text-anchor="middle" font-size="24" class="lab">Agent (MCP-permissioned)</text>
+    <line x1="640" y1="24" x2="640" y2="14" stroke="#6b7787" stroke-width="3"/>
+    <circle cx="640" cy="9" r="6" fill="#e0483d"/>
+    <rect x="600" y="24" width="80" height="58" rx="13" fill="#d3dbe6" stroke="#6b7787" stroke-width="3"/>
+    <circle cx="622" cy="54" r="7" fill="#2f6fd0"/>
+    <circle cx="658" cy="54" r="7" fill="#2f6fd0"/>
+    <line x1="626" y1="70" x2="654" y2="70" stroke="#6b7787" stroke-width="3" stroke-linecap="round"/>
+    <rect x="608" y="88" width="64" height="44" rx="10" fill="#c2cdda" stroke="#6b7787" stroke-width="3"/>
+    <rect x="592" y="92" width="11" height="34" rx="5" fill="#c2cdda" stroke="#6b7787" stroke-width="3"/>
+    <rect x="677" y="92" width="11" height="34" rx="5" fill="#c2cdda" stroke="#6b7787" stroke-width="3"/>
   </g>
 
   <!-- ============ reads/writes/executes ============ -->
   <g class="blk" id="g-execarrow">
-    <text x="640" y="92" text-anchor="middle" font-size="18" class="accent">reads · writes · executes</text>
-    <line x1="640" y1="98" x2="640" y2="108" stroke="#2f6fd0" stroke-width="2.5" marker-end="url(#arr)"/>
-  </g>
-
-  <!-- ================= PROJIO ================= -->
-  <g class="blk" id="g-projio">
-    <rect x="40" y="112" width="1200" height="46" rx="12" fill="#bfe0f7" stroke="#3a86c8" stroke-width="3"/>
-    <text x="640" y="142" text-anchor="middle" font-size="21" class="lab">projio · MCP orchestrator (optional)</text>
+    <text x="640" y="152" text-anchor="middle" font-size="18" class="accent">reads · writes · executes</text>
+    <line x1="640" y1="158" x2="640" y2="172" stroke="#2f6fd0" stroke-width="2.5" marker-end="url(#arr)"/>
   </g>
 
   <!-- ================= GROUNDING ================= -->

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="pm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#3b5b7a"/>
+    </marker>
+    <marker id="wd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#222"/>
+    </marker>
+  </defs>
+
+  <!-- promote arrow: notebook -> pipeline -->
+  <path d="M852 104 Q975 56 1094 66" fill="none" stroke="#3b5b7a" stroke-width="4.5" marker-end="url(#pm)"/>
+  <text x="972" y="42" text-anchor="middle" font-size="22" font-weight="700" fill="#3b5b7a">promote</text>
+
+  <!-- agent (same mascot), fed a SPECS doc -->
+  <line x1="955" y1="138" x2="955" y2="129" stroke="#6b7787" stroke-width="3"/>
+  <circle cx="955" cy="125" r="5" fill="#e0483d"/>
+  <rect x="920" y="138" width="70" height="52" rx="11" fill="#d3dbe6" stroke="#6b7787" stroke-width="3"/>
+  <circle cx="942" cy="164" r="6" fill="#2f6fd0"/>
+  <circle cx="968" cy="164" r="6" fill="#2f6fd0"/>
+  <line x1="946" y1="179" x2="964" y2="179" stroke="#6b7787" stroke-width="3" stroke-linecap="round"/>
+  <rect x="928" y="194" width="54" height="44" rx="9" fill="#c2cdda" stroke="#6b7787" stroke-width="3"/>
+  <rect x="914" y="198" width="10" height="32" rx="5" fill="#c2cdda" stroke="#6b7787" stroke-width="2.5"/>
+  <rect x="986" y="198" width="10" height="32" rx="5" fill="#c2cdda" stroke="#6b7787" stroke-width="2.5"/>
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0 0; 42 34" dur="2.4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;1;0" keyTimes="0;0.72;1" dur="2.4s" repeatCount="indefinite"/>
+    <rect x="900" y="126" width="34" height="26" rx="3" fill="#ffffff" stroke="#6b7787" stroke-width="1.5"/>
+    <line x1="906" y1="134" x2="928" y2="134" stroke="#c9ced3" stroke-width="1.3"/>
+    <text x="917" y="147" text-anchor="middle" font-size="9" font-weight="700" fill="#2f6fd0">SPECS</text>
+  </g>
+
+  <!-- pipeline DAG (the same one from the Pipelines slide) -->
+  <g transform="translate(1065,45) scale(0.6)">
+    <rect x="55" y="14" width="150" height="52" rx="14" fill="#ffffff" stroke="#222222" stroke-width="3"/>
+    <text x="130" y="47" text-anchor="middle" font-size="26">dataset</text>
+    <line x1="130" y1="66" x2="130" y2="102" stroke="#222" stroke-width="3" marker-end="url(#wd)"/>
+    <circle cx="130" cy="120" r="14" fill="#c0392b"/>
+    <line x1="121" y1="131" x2="80"  y2="178" stroke="#222" stroke-width="3" marker-end="url(#wd)"/>
+    <line x1="139" y1="131" x2="180" y2="178" stroke="#222" stroke-width="3" marker-end="url(#wd)"/>
+    <circle cx="70"  cy="192" r="14" fill="#e8912e"/>
+    <circle cx="190" cy="192" r="14" fill="#e8912e"/>
+    <line x1="78"  y1="203" x2="120" y2="250" stroke="#222" stroke-width="3" marker-end="url(#wd)"/>
+    <line x1="182" y1="203" x2="140" y2="250" stroke="#222" stroke-width="3" marker-end="url(#wd)"/>
+    <circle cx="130" cy="264" r="14" fill="#c0392b"/>
+    <line x1="130" y1="278" x2="130" y2="320" stroke="#222" stroke-width="3" marker-end="url(#wd)"/>
+    <circle cx="130" cy="336" r="13" fill="#3f9d4f"/>
+    <line x1="130" y1="349" x2="130" y2="390" stroke="#222" stroke-width="3" marker-end="url(#wd)"/>
+    <rect x="55" y="394" width="150" height="52" rx="14" fill="#ffffff" stroke="#222222" stroke-width="3"/>
+    <text x="130" y="427" text-anchor="middle" font-size="26">results</text>
+  </g>
+</svg>

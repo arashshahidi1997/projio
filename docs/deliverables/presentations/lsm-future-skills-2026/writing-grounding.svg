@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="gup" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#3b5b7a"/>
+    </marker>
+  </defs>
+
+  <!-- grounding reaches up into the agent above -->
+  <line x1="78" y1="38" x2="78" y2="10" stroke="#3b5b7a" stroke-width="3" marker-end="url(#gup)"/>
+  <line x1="222" y1="38" x2="222" y2="10" stroke="#3b5b7a" stroke-width="3" marker-end="url(#gup)"/>
+
+  <!-- your literature (cite sources) -->
+  <rect x="12" y="42" width="132" height="98" rx="10" fill="#fff3e6" stroke="#e8912e" stroke-width="2.5"/>
+  <rect x="44" y="60" width="28" height="36" rx="2" fill="#ffffff" stroke="#e8912e" stroke-width="1.4"/>
+  <rect x="51" y="55" width="28" height="36" rx="2" fill="#ffffff" stroke="#e8912e" stroke-width="1.4"/>
+  <rect x="58" y="50" width="28" height="36" rx="2" fill="#ffffff" stroke="#e8912e" stroke-width="1.4"/>
+  <line x1="63" y1="59" x2="81" y2="59" stroke="#f0c89a" stroke-width="1.6"/>
+  <line x1="63" y1="65" x2="81" y2="65" stroke="#f0c89a" stroke-width="1.6"/>
+  <line x1="63" y1="71" x2="76" y2="71" stroke="#f0c89a" stroke-width="1.6"/>
+  <text x="78" y="114" text-anchor="middle" font-size="13" font-weight="700" fill="#c9741f">your literature</text>
+  <text x="78" y="131" text-anchor="middle" font-size="11" fill="#b0824a">cite sources</text>
+
+  <!-- your pipeline (trace methods) -->
+  <rect x="156" y="42" width="132" height="98" rx="10" fill="#e8f7f1" stroke="#2bb996" stroke-width="2.5"/>
+  <line x1="222" y1="60" x2="212" y2="74" stroke="#7a8a86" stroke-width="1.8"/>
+  <line x1="222" y1="60" x2="232" y2="74" stroke="#7a8a86" stroke-width="1.8"/>
+  <line x1="212" y1="78" x2="222" y2="90" stroke="#7a8a86" stroke-width="1.8"/>
+  <line x1="232" y1="78" x2="222" y2="90" stroke="#7a8a86" stroke-width="1.8"/>
+  <circle cx="222" cy="57" r="5" fill="#c0392b"/>
+  <circle cx="212" cy="76" r="5" fill="#e8912e"/>
+  <circle cx="232" cy="76" r="5" fill="#e8912e"/>
+  <circle cx="222" cy="92" r="5" fill="#3f9d4f"/>
+  <text x="222" y="114" text-anchor="middle" font-size="13" font-weight="700" fill="#1a8f73">your pipeline</text>
+  <text x="222" y="131" text-anchor="middle" font-size="11" fill="#4d9182">trace methods</text>
+</svg>

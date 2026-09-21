@@ -16,7 +16,7 @@ Derived from `draft.md` (the raw talking draft). This is the pruned plan.
 Total: 6 slides, ~11 min. (Entry numbers below are approximate labels.)
 
 **Slide titles are the stack components, each with a takeaway subtitle:**
-1. the mess (Desk Entropy comic + one line; story in notes) · 2. **Data specification (BIDS)** (3 meal-prep photos; robot chopping source→raw and cooking raw→derivative, SPECS doc into head, curved arrow under each; staged reveal; ends on a question bubble "how can we get derivatives and results reliably?") · 3. **Pipelines (Snakemake)** (reconstructed, and never run by hand again; three columns — "Let me do that by hand…" comic that animates setup→frustration strip, workflow-dag, snakemake-workflow-rules; DataLad `local_wf` versioning figure bottom-left; story + pointers in notes) · 4. **Exploration, grounded (Marimo)** (Notebooks + Code&Bibliography merged into one `explore-ground.svg`: left 1/3 = minimal Marimo notebook, you+agent live; middle = MCP·skills channel; right 2/3 = code (libs + search-first skill → codio_get) and literature (PDFs → Docling → searchable corpus → rag_query); larger Marimo logo bottom-left; explore-loop/code-ground/lit-ground retired to disk) · 5. **Publication (Quarto)** (staged flow: `results-folder.svg` → agent `robot-assemble.svg` (fed SPECS, assembles one source) → `docs-stack.svg` (slides·manuscript·report, same live `4.2` everywhere); the folder is the prior slide's deliverables, the identical `4.2` carries the live-sync mechanism; blue bubble on the capabilities shift) · 7. **what carried over** (combined finale: animated spotlight stack recap medium-left; right panel builds — sustainable science vertical, "still on me" limits, workshop QR + small text; Sustainable/workshop/Agent/"what I don't trust" all folded in here).
+1. the mess (Desk Entropy comic + one line; story in notes) · 2. **Data specification (BIDS)** (3 meal-prep photos; robot chopping source→raw and cooking raw→derivative, SPECS doc into head, curved arrow under each; staged reveal; ends on a question bubble "how can we get derivatives and results reliably?") · 3. **Pipelines (Snakemake)** (reconstructed, and never run by hand again; three columns — "Let me do that by hand…" comic that animates setup→frustration strip, workflow-dag, snakemake-workflow-rules; DataLad `local_wf` versioning figure bottom-left; story + pointers in notes) · 4. **Exploration, grounded (Marimo)** (Notebooks + Code&Bibliography merged into one `explore-ground.svg`: left 1/3 = minimal Marimo notebook, you+agent live; middle = MCP·skills channel; right 2/3 = code (libs + search-first skill → codio_get) and literature (PDFs → Docling → searchable corpus → rag_query); larger Marimo logo bottom-left; explore-loop/code-ground/lit-ground retired to disk) · 5. **Publication (Quarto)** (staged flow: `results-folder.svg` → agent `robot-assemble.svg` (fed SPECS, assembles one source) → `docs-stack.svg` (slides·manuscript·report, same live `4.2` everywhere); the folder is the prior slide's deliverables, the identical `4.2` carries the live-sync mechanism; blue bubble on the capabilities shift) · 7. **what carried over** (combined finale: animated spotlight stack recap medium-left; below the stack: reproducible · adaptable · transparent + "human remains responsible for judgment and validation"; right column = workshop QR (larger, text beside) top, "still brittle" limits bottom (from the flyer: structure outpaces upkeep · retrieval needs checking)).
 
 ---
 
@@ -115,12 +115,12 @@ Total: 6 slides, ~11 min. (Entry numbers below are approximate labels.)
 ## 9 — what carried over  *(~75s · FULL-BLEED 16:9 animated spotlight recap, no title)*
 
 **On slide:**
-- *visual (hero, animated): the full stack; each click lights one component, dims the rest, in a bottom-up flow (BIDS → DataLad → code → bibliography → Marimo → Snakemake → Quarto → projio+agent), last click lights all*
+- *visual (hero, animated): the full stack; each click lights one component, dims the rest, in a bottom-up flow (BIDS → DataLad → code → bibliography → Marimo → Snakemake → Quarto → the agent, shown as the robot mascot on top), last click lights all*
 
 **Speaker (name each piece as it lights):**
 - every hand-built thing from slide 1 now has an agent-legible standard
 - BIDS (data) · DataLad + git (versioning) · code libraries · bibliography · Marimo (explore) · Snakemake (pipelines) · Quarto (publish)
-- projio + agent on top: the optional orchestrator; you need the conventions, not my package
+- the agent (robot mascot) on top; you need the conventions, not any one package (projio deliberately unnamed on-slide)
 
 ## 10 — the agent's two handles: MCP and skills  *(~50s · mcp-skills)*
 

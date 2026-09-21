@@ -7,4 +7,6 @@ let-me-do-that-by-hand-frustration.png
 
 # Rendered deck embeds the comics above as base64 — regenerate locally with:
 #   ( unset LD_LIBRARY_PATH; quarto render slides.qmd )
+# PDF is printed from slides.html via headless chromium, so it embeds them too.
 slides.html
+slides.pdf
