@@ -22,7 +22,7 @@ format:
 ![](phd-desk-entropy.gif){width="60%" fig-align="center" fig-alt="PhD Comics Desk Entropy: a workspace degenerating into clutter as entropy rises over time."}
 
 ::: {.smaller}
-Workspaces tend to entropy. **AI without specs climbs the curve faster.**
+Workspaces tend toward entropy. **AI without specs climbs the curve faster.**
 :::
 
 ::: {.tinyfoot}
@@ -154,12 +154,28 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 
 ## Publication (Quarto)
 
-[one source; results and stats render live into every document]{.take}
+[one source; the same results render live into every document]{.take}
 
-![](publish.svg){width="80%" fig-align="center" fig-alt="One source document with live result and stat tokens renders into slides, manuscript, and report, all showing the same value."}
+::: {.columns}
+::: {.column width="28%"}
+![](results-folder.svg){.fragment fragment-index=1 width="100%" fig-alt="A results folder holding a figure, a schematic, and a stats table (mean 4.2, sd, p, n) — the deliverables from the previous slide."}
+:::
+::: {.column width="8%"}
+![](curved-arrow.svg){.fragment fragment-index=2 width="100%" fig-alt="results become one source document"}
+:::
+::: {.column width="17%"}
+![](robot-assemble.svg){.fragment fragment-index=2 width="100%" fig-alt="A robot, fed a SPECS document, assembling the results into one source document."}
+:::
+::: {.column width="8%"}
+![](curved-arrow.svg){.fragment fragment-index=3 width="100%" fig-alt="one source renders into every document"}
+:::
+::: {.column width="34%"}
+![](docs-stack.svg){.fragment fragment-index=3 width="100%" fig-alt="Slides, manuscript, and report — each showing the same live value 4.2."}
+:::
+:::
 
-::: {.fragment .qwrap}
-[The agent knows the tools' details; I just describe what I want the report to show.]{.bubble .blue}
+::: {.fragment .qwrap fragment-index=4}
+[the agent knows the tools; I bring the capability I need and describe what I want]{.bubble .blue}
 :::
 
 ::: {.tinyfoot}
@@ -167,10 +183,11 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 :::
 
 ::: {.notes}
-~75s.
+~75s. The agent takes the results from the last slide and assembles the documents.
 
-- one source document; code runs and inserts results, stats, and figures inline, no copy-paste
-- the same source renders to slides, manuscript, and report; change the data and every number updates in sync
+- the previous slide left a folder of results: figures, schematics, and the numbers
+- the agent, working from your SPECS, assembles them into one source document — code runs and inserts results, stats, and figures inline, no copy-paste
+- that one source renders to slides, manuscript, and report; 4.2 is 4.2 everywhere, and change the data and every number updates in sync
 - the shift (bubble): I used to spend a long time learning each tool's details; now the agent knows them, so I bring the capabilities I need and a clear description of what I want
 - pruning over-generated output is still on me (see the recap's limits box)
 :::

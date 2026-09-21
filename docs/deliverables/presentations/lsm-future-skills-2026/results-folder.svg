@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 248" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <!-- folder -->
+  <rect x="16" y="44" width="120" height="26" rx="6" fill="#dfe7ef" stroke="#3b5b7a" stroke-width="2.5"/>
+  <rect x="12" y="64" width="196" height="172" rx="10" fill="#eef2f6" stroke="#3b5b7a" stroke-width="2.5"/>
+  <text x="76" y="63" text-anchor="middle" font-size="15" font-weight="700" fill="#3b5b7a">results/</text>
+
+  <!-- figure chip -->
+  <rect x="28" y="84" width="80" height="62" rx="6" fill="#ffffff" stroke="#c4ccd4" stroke-width="1.5"/>
+  <rect x="40" y="112" width="9" height="20" fill="#3a86c8"/>
+  <rect x="54" y="104" width="9" height="28" fill="#3a86c8"/>
+  <rect x="68" y="118" width="9" height="14" fill="#3a86c8"/>
+  <rect x="82" y="108" width="9" height="24" fill="#3a86c8"/>
+  <text x="68" y="142" text-anchor="middle" font-size="10" fill="#55606b">fig.png</text>
+
+  <!-- schematic chip -->
+  <rect x="116" y="84" width="80" height="62" rx="6" fill="#ffffff" stroke="#c4ccd4" stroke-width="1.5"/>
+  <line x1="138" y1="106" x2="158" y2="118" stroke="#9aa8b8" stroke-width="2"/>
+  <line x1="158" y1="118" x2="180" y2="104" stroke="#9aa8b8" stroke-width="2"/>
+  <circle cx="138" cy="106" r="6" fill="#e9f4ec" stroke="#3f9d4f" stroke-width="2"/>
+  <circle cx="158" cy="118" r="6" fill="#e9f4ec" stroke="#3f9d4f" stroke-width="2"/>
+  <circle cx="180" cy="104" r="6" fill="#e9f4ec" stroke="#3f9d4f" stroke-width="2"/>
+  <text x="156" y="142" text-anchor="middle" font-size="10" fill="#55606b">schema.svg</text>
+
+  <!-- stats chip -->
+  <rect x="28" y="156" width="168" height="66" rx="6" fill="#ffffff" stroke="#c4ccd4" stroke-width="1.5"/>
+  <text x="40" y="176" font-size="10" fill="#55606b">stats.csv</text>
+  <text x="40" y="196" font-size="12" fill="#8a95a0" font-family="SFMono-Regular, Menlo, Consolas, monospace">mean   sd     p     n</text>
+  <text x="40" y="212" font-size="12" fill="#1a1a1a" font-family="SFMono-Regular, Menlo, Consolas, monospace"><tspan fill="#2f8f4e" font-weight="700">4.2</tspan>    0.8   .012   32</text>
+</svg>
