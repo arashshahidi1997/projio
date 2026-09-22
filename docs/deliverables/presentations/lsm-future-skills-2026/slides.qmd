@@ -251,22 +251,15 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 
 ::: {.fragment fragment-index=12}
 
-<div style="font-size:0.9em;font-weight:700;margin-bottom:0.35em;">
+<div style="font-size:0.9em;font-weight:700;">
 4-day agentic workshop
 </div>
 
-::: {style="display:flex;align-items:center;gap:24px"}
-
-::: {style="flex:0 0 66%;text-align:center"}
-![](workshop-qr.png){style="width:100%;max-width:360px" fig-alt="QR code linking to the workshop"}
+::: {style="font-size:0.58em;color:#55606b;margin:0.15em 0 0.55em;line-height:1.4"}
+Oct 2026 · [A.Shahidi@bio.lmu.de](mailto:A.Shahidi@bio.lmu.de)
 :::
 
-::: {style="flex:0 0 30%;font-size:0.6em;line-height:1.5"}
-Oct 2026  
-[A.Shahidi@bio.lmu.de](mailto:A.Shahidi@bio.lmu.de)
-:::
-
-:::
+![](workshop-qr.png){style="width:100%;max-width:320px" fig-alt="QR code linking to the workshop"}
 :::
 
 ::: {.fragment .limits fragment-index=11}
