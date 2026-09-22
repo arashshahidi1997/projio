@@ -72,10 +72,10 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 ::: {.column width="2%"}
 :::
 ::: {.column width="32%"}
-![](bids-tree.svg){.fragment fragment-index=6 width="92%" fig-alt="An example BIDS folder tree: dataset_description.json, sourcedata (source), sub-01 with anat and func files whose names carry the metadata (raw, BIDS), and derivatives (derived)."}
+![](bids-tree.svg){.fragment fragment-index=6 width="100%" fig-alt="An example BIDS folder tree: dataset_description.json, sourcedata (source), raw/sub-01/ses-01 with anat and func files whose names carry the sub/ses/task entities (raw, BIDS), and derivatives (derived)."}
 
 ::: {.fragment fragment-index=7 style="font-size:0.62em;line-height:1.35;margin-top:0.35em"}
-**it gives us** [provenance]{style="color:#2f8f4e;font-weight:700"} (a traceable source → raw → derivatives chain) and [transparency]{style="color:#3a86c8;font-weight:700"} (the filename is the metadata; the layout reads itself)
+**it gives us** [provenance]{style="color:#2f8f4e;font-weight:700"} (a traceable source → raw → derivatives chain) and [transparency]{style="color:#3a86c8;font-weight:700"}
 :::
 :::
 :::
@@ -94,7 +94,7 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 - BIDS = community standard for how a dataset is laid out; self-describing, so I stop writing bespoke loaders
 - the filename carries the metadata (subject / session / datatype); the S is for Specification, a spec makes the rules explicit, for people and agents alike
 - modular: source, raw, derivatives kept apart (ingredients, mise en place, the dish); raw stays pristine, derivatives regenerable
-- the real tree (right): dataset_description.json, sourcedata/, sub-01/ (anat + func, filenames carry the entities), derivatives/; it gives provenance (a traceable source → raw → derivatives chain) and transparency (the filename is the metadata, the layout reads itself)
+- the real tree (right): dataset_description.json, sourcedata/, raw/sub-01/ses-01/ (anat + func, filenames carry the sub/ses/task entities), derivatives/; it gives provenance (a traceable source → raw → derivatives chain) and transparency (the filename is the metadata, the layout reads itself)
 - end on the question (bubble): how do we get derivatives reliably? → next slide answers with pipelines
 - images adapted from the BIDS Starter Kit (DOI 10.5281/zenodo.5872274, CC-BY)
 :::
@@ -214,7 +214,7 @@ Comic: Jorge Cham · phdcomics.com (Desk Entropy, 2005)
 
 ---
 
-## Conclusions
+## Overview
 
 [the conventions are the rules of the game; the agent knows how to play]{.take .fragment fragment-index=8}
 
