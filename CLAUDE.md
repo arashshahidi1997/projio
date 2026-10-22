@@ -91,10 +91,13 @@ Projio promotes **search before creation**: discover existing implementations, c
 
 ### Skills
 
-Skills are prompt-based workflow templates discoverable via `agent_instructions()` and readable via `skill_read(name)`. Two locations, project overrides ecosystem:
+Skills are prompt-based workflow templates discoverable via `agent_instructions()` and readable via `skill_read(name)`. Three locations, in order of precedence:
 
-- **Ecosystem skills** (bundled): `src/projio/data/skills/{name}/SKILL.md`
 - **Project skills** (per-project): `.projio/skills/{name}/SKILL.md` (or via `docs/prompts/skills/`)
+- **Package skills**: shipped by an installed package and declared with the `projio.skills` entry point (`[project.entry-points."projio.skills"] biblio = "biblio.skills_bundle:skills_dir"`); ecosystem packages with a `<pkg>/skills/` folder are found without one. biblio ships `wiki-ingest`, `wiki-maintain`, `wiki-review`, `zotero-add`. See `projio.mcp.context.package_skill_dirs`.
+- **Ecosystem skills** (bundled with projio): `src/projio/data/skills/{name}/SKILL.md`
+
+`projio sync` writes a `.claude/commands/` wrapper for every discovered skill.
 
 **To create a new ecosystem skill:** create `src/projio/data/skills/{name}/SKILL.md` with YAML frontmatter (`name`, `description`, `metadata.short-description`, `metadata.tags`, `metadata.tooling.mcp[].server`, `metadata.tooling.mcp[].tools`) followed by markdown body with sections: When to use, Workflow (numbered steps with MCP tool examples), Hard rules. Copy to `docs/prompts/skills/{name}/SKILL.md` for documentation site. Run `projio sync` to regenerate skill index. See `pipeio-nb-extract` or `marimo-session` skills as templates.
 

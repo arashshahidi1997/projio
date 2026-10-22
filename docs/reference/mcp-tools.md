@@ -348,7 +348,7 @@ Notebook tools support multiple backends via the `NotebookBackend` protocol. Eac
 
 `module_context` extracts goal, assumptions, parameters, I/O, and limitations sections from a markdown document. Useful for reading pipeline doc stubs without loading the full file.
 
-`skill_read` returns metadata and the full markdown body for a named skill. Use `agent_instructions()` first to see available skill names.
+`skill_read` returns metadata and the full markdown body for a named skill. Use `agent_instructions()` first to see available skill names. Skills are looked up in the project (`.projio/skills/`), then in installed packages that declare a `projio.skills` entry point (biblio's wiki and Zotero skills), then in projio's bundled skills.
 
 `ecosystem_status` checks all enabled subsystems (biblio, codio, notio, pipeio, figio, indexio) and returns per-subsystem health. For indexio, it reports `built_at` timestamp, `stale` flag, and `stale_sources` list by comparing the status manifest against current file states. Stale sources set `overall_healthy` to false.
 
