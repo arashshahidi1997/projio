@@ -12,6 +12,54 @@ _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?\n)---\s*\n", re.DOTALL)
 
 # Bundled skills shipped with the projio package
 _BUNDLED_SKILLS_DIR = Path(__file__).resolve().parent.parent / "data" / "skills"
+# Ecosystem packages whose bundled ``<pkg>/skills/`` folder is found without an entry point
+_ECOSYSTEM_PACKAGES = ("biblio", "codio", "figio", "indexio", "notio", "pipeio")
+SKILLS_ENTRY_POINT_GROUP = "projio.skills"
+
+
+def package_skill_dirs() -> list[tuple[str, Path]]:
+    """``(package, skills dir)`` for installed packages that ship agent skills.
+
+    A package declares its folder of ``<name>/SKILL.md`` skills with an entry
+    point, e.g. in pyproject.toml::
+
+        [project.entry-points."projio.skills"]
+        biblio = "biblio.skills_bundle:skills_dir"
+
+    where the target is a path or a function returning one. Ecosystem packages
+    with a ``<pkg>/skills/`` folder are found without one (editable installs
+    made before the entry point existed).
+    """
+    found: list[tuple[str, Path]] = []
+    seen: set[Path] = set()
+
+    def add(pkg: str, path: Path | str | None) -> None:
+        if not path:
+            return
+        path = Path(path).resolve()
+        if path.is_dir() and path not in seen and any(path.glob("*/SKILL.md")):
+            seen.add(path)
+            found.append((pkg, path))
+
+    try:
+        from importlib.metadata import entry_points
+        for ep in entry_points(group=SKILLS_ENTRY_POINT_GROUP):
+            try:
+                target = ep.load()
+                add(ep.name, target() if callable(target) else target)
+            except Exception:  # a broken plugin must not break discovery
+                continue
+    except Exception:
+        pass
+    import importlib.util
+    for pkg in _ECOSYSTEM_PACKAGES:
+        try:
+            spec = importlib.util.find_spec(pkg)
+        except (ImportError, ValueError):
+            spec = None
+        if spec is not None and spec.origin:
+            add(pkg, Path(spec.origin).parent / "skills")
+    return found
 
 _ASSIGN_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(\?=|:=|=)\s*(.*?)\s*$")
 _VAR_REF_RE = re.compile(r"\$\(([A-Za-z_][A-Za-z0-9_]*)\)")
@@ -166,7 +214,8 @@ def module_context(doc_path: str) -> JsonDict:
 def skill_read(name: str) -> JsonDict:
     """Read a skill's full SKILL.md content by name.
 
-    Searches project skills (.projio/skills/) first, then ecosystem skills
+    Searches project skills (.projio/skills/) first, then skills shipped by
+    installed packages (see ``package_skill_dirs``), then ecosystem skills
     bundled with projio. Returns the skill's metadata and full markdown body.
     """
     root = get_project_root()
@@ -176,11 +225,10 @@ def skill_read(name: str) -> JsonDict:
     project_path = layout.resolve(root, "skills") / name / "SKILL.md"
     bundled_path = _BUNDLED_SKILLS_DIR / name / "SKILL.md"
 
-    if project_path.exists():
-        skill_path = project_path
-    elif bundled_path.exists():
-        skill_path = bundled_path
-    else:
+    package_paths = [d / name / "SKILL.md" for _, d in package_skill_dirs()]
+    candidates = [project_path, *package_paths, bundled_path]
+    skill_path = next((p for p in candidates if p.exists()), None)
+    if skill_path is None:
         return json_dict({"error": f"Skill not found: {name!r}"})
 
     text = skill_path.read_text(encoding="utf-8", errors="ignore")
@@ -234,7 +282,16 @@ def _discover_skills(root: Path, layout: Layout | None = None) -> list[dict[str,
                 seen_names.add(entry["name"])
                 skills.append(entry)
 
-    # 2. Bundled skills shipped with the projio package (skip if project overrides)
+    # 2. Skills shipped by installed packages (e.g. biblio's wiki skills)
+    for pkg, skills_dir in package_skill_dirs():
+        for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
+            entry = _parse_skill_md(skill_md, None)
+            if entry and entry["name"] not in seen_names:
+                entry["source"] = f"package:{pkg}"
+                seen_names.add(entry["name"])
+                skills.append(entry)
+
+    # 3. Bundled skills shipped with the projio package (skip if project overrides)
     if _BUNDLED_SKILLS_DIR.is_dir():
         for skill_md in sorted(_BUNDLED_SKILLS_DIR.glob("*/SKILL.md")):
             entry = _parse_skill_md(skill_md, None)

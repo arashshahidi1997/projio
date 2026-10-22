@@ -60,16 +60,66 @@ def test_parse_frontmatter_no_frontmatter() -> None:
 
 
 def test_discover_skills_no_project_skills(tmp_path: Path) -> None:
-    # With no project skills dir, only bundled skills are returned
+    # With no project skills dir, only bundled and package-shipped skills are returned
     skills = _discover_skills(tmp_path)
-    assert all(s.get("source") == "bundled" for s in skills)
+    assert all(s.get("source") == "bundled" or s.get("source", "").startswith("package:") for s in skills)
+
+
+def _fake_package(tmp_path: Path, monkeypatch, names=("wiki-ingest",)) -> Path:
+    import projio.mcp.context as ctx
+    pkg_skills = tmp_path / "site" / "fakepkg" / "skills"
+    for name in names:
+        _write(pkg_skills / name / "SKILL.md", f"---\nname: {name}\ndescription: from fakepkg\n---\n\nPkg body.")
+    monkeypatch.setattr(ctx, "package_skill_dirs", lambda: [("fakepkg", pkg_skills)])
+    return pkg_skills
+
+
+def test_discover_skills_from_packages(tmp_path: Path, monkeypatch) -> None:
+    _fake_package(tmp_path, monkeypatch, ("wiki-ingest", "pipeio-guide"))
+    skills = {s["name"]: s for s in _discover_skills(tmp_path)}
+    assert skills["wiki-ingest"]["source"] == "package:fakepkg"
+    assert skills["pipeio-guide"]["source"] == "package:fakepkg"      # a package beats projio's bundled copy
+    _write(tmp_path / ".projio" / "skills" / "wiki-ingest" / "SKILL.md",
+           "---\nname: wiki-ingest\ndescription: project copy\n---\n")
+    skills = [s for s in _discover_skills(tmp_path) if s["name"] == "wiki-ingest"]
+    assert len(skills) == 1 and skills[0]["description"] == "project copy"   # the project beats the package
+
+
+def test_skill_read_from_package(tmp_path: Path, monkeypatch) -> None:
+    _set_root(monkeypatch, tmp_path)
+    _minimal_project(tmp_path)
+    _fake_package(tmp_path, monkeypatch)
+    result = skill_read("wiki-ingest")
+    assert "Pkg body." in result["content"]
+
+
+def test_package_skill_dirs_entry_points_and_ecosystem(tmp_path: Path, monkeypatch) -> None:
+    import importlib.metadata
+    from projio.mcp.context import package_skill_dirs
+    good = tmp_path / "good"
+    _write(good / "s" / "SKILL.md", "---\nname: s\n---\n")
+
+    class EP:
+        def __init__(self, name, target):
+            self.name, self._target = name, target
+
+        def load(self):
+            if isinstance(self._target, Exception):
+                raise self._target
+            return self._target
+
+    eps = [EP("goodpkg", lambda: good), EP("broken", ImportError("boom")), EP("empty", tmp_path / "nothing")]
+    monkeypatch.setattr(importlib.metadata, "entry_points", lambda group=None: eps)
+    found = dict(package_skill_dirs())
+    assert found["goodpkg"] == good.resolve()
+    assert "broken" not in found and "empty" not in found
 
 
 def test_discover_skills_finds_project_skills(tmp_path: Path) -> None:
     skill_dir = tmp_path / ".projio" / "skills" / "my-skill"
     _write(skill_dir / "SKILL.md", "---\nname: my-skill\ndescription: test skill\n---\n\nBody.")
     skills = _discover_skills(tmp_path)
-    project_skills = [s for s in skills if s.get("source") != "bundled"]
+    project_skills = [s for s in skills if "source" not in s]   # bundled and package skills carry a source
     assert len(project_skills) == 1
     assert project_skills[0]["name"] == "my-skill"
 
