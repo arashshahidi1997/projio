@@ -1,0 +1,122 @@
+---
+title: "Open-science conventions as agent infrastructure"
+subtitle: "*A stack-aware workflow experiment*. Proposed contribution to the LSM Future Skills 2026 breakout, \\\\ *AI in Daily Research: Sharing What Works (and What Doesn't)*. 22 September 2026"
+author: "Arash Shahidi · Sirota Lab · GSN-LMU, Ludwig-Maximilians-Universität München · `A.Shahidi@bio.lmu.de`"
+format:
+  pdf:
+    geometry:
+      - margin=2.0cm
+    fontsize: 10.5pt
+    papersize: a4
+    documentclass: scrartcl
+    colorlinks: true
+    linkcolor: "primary"
+    urlcolor: "primary"
+    include-in-header:
+      text: |
+        \usepackage{microtype}
+        \usepackage{enumitem}
+        \usepackage{xcolor}
+        \usepackage{tikz}
+        \usetikzlibrary{positioning,decorations.pathreplacing,arrows.meta,calc,shadows.blur}
+        % accent palette
+        \definecolor{primary}{HTML}{1B4F72}
+        \definecolor{accent}{HTML}{2E86C1}
+        \definecolor{soft}{HTML}{EBF5FB}
+        \definecolor{tint}{HTML}{D6EAF8}
+        \definecolor{ink}{HTML}{1B2631}
+        \definecolor{muted}{HTML}{566573}
+        % modern sans-serif body
+        \renewcommand{\familydefault}{\sfdefault}
+        % friendlier lists
+        \setlist[itemize]{leftmargin=1.1em,topsep=2pt,itemsep=4pt,parsep=0pt,label=\color{accent}\textbullet}
+        \setlength{\parskip}{0.55em}
+        \setlength{\parindent}{0pt}
+        % title-area + section styling
+        \addtokomafont{title}{\fontsize{19pt}{22pt}\selectfont\bfseries\color{primary}}
+        \addtokomafont{subtitle}{\small\itshape\color{muted}}
+        \addtokomafont{author}{\small\color{ink}}
+        \setkomafont{section}{\large\bfseries\color{primary}}
+        \pagestyle{empty}
+        \RedeclareSectionCommand[beforeskip=1.0em,afterskip=0.25em]{section}
+---
+
+Agentic workflows operate in a project workspace, reading and writing
+across the same files, pipelines, notes, and references a researcher uses.
+Their effectiveness on any given project depends heavily on the structure
+of that workspace.
+
+When a project follows mature conventions, an agent navigates it with
+little prompting and writes its output back into the same structured form.
+The conventions do most of the work.
+
+\vspace{0.6em}
+
+\begin{center}
+\includegraphics[width=\textwidth]{proposal-diagram.png}
+\end{center}
+
+\vspace{0.4em}
+
+\begin{center}
+\itshape Each of these tools is mature in its own right. Together they form a \textbf{project surface} an agent can read and write across without leaving the repository.
+\end{center}
+
+\newpage
+
+## What the agent works with
+
+Four structured pieces a project exposes when organized this way.
+
+- **Memory.** A structured set of project notes (ideas, tasks, results,
+  meeting records, decisions on disk) sitting next to an activity log of
+  every tool call. The reasoning behind any later claim is reconstructible
+  by reading the project's git history.
+- **Grounding in literature and existing code.** A curated project
+  bibliography and a catalog of code libraries (project plus external
+  mirrors) that the agent consults while writing. Claims get linked
+  to citations as they appear; new code builds on existing libraries.
+- **Exploratory power and rerunnable pipelines.** Interactive notebooks,
+  for example marimo with HoloViews/Bokeh. The agent can author and edit
+  these notebooks alongside the researcher in real time. Once the
+  researcher decides to apply the method across the database, the agent
+  can be prompted to promote the program into a pipeline (Snakemake with
+  config files).
+- **Communication.** Quarto reports, revealjs slide decks, and eventually manuscript
+  sections all re-render from the same data, pipelines, and bibliography.
+  The same project tree, including reports, can be published as a GitHub or GitLab Pages site
+  that an agent keeps up to date for collaborators.
+
+## Still brittle
+
+- Agents produce structure faster than researchers can maintain it.
+- Context retrieval still needs human checking.
+
+\begin{center}
+\itshape Open-science structure makes a project legible to agents. The researcher stays in charge of the research.
+\end{center}
+
+## References
+
+\begin{center}
+\small
+\begin{tabular}{@{}c@{\hspace{0.5em}}l @{\hspace{1.5em}} c@{\hspace{0.5em}}l@{}}
+\includegraphics[height=12pt]{logos/bids.png} & BIDS, Gorgolewski et al., \textit{Sci Data} 2016 &
+\includegraphics[height=12pt]{logos/openalex.png} & OpenAlex, Priem et al. 2022 \\[4pt]
+\includegraphics[height=12pt]{logos/datalad.png} & DataLad, Halchenko et al., \textit{JOSS} 2021 &
+\includegraphics[height=12pt]{logos/docling.png} & docling, Auer et al., \textit{arXiv} 2024 \\[4pt]
+\includegraphics[height=12pt]{logos/snakemake.png} & Snakemake, Mölder et al., \textit{F1000Research} 2021 &
+\includegraphics[height=12pt]{logos/grobid.png} & GROBID, Lopez, \textit{ECDL} 2009 \\[4pt]
+\includegraphics[height=12pt]{logos/marimo.png} & Marimo, \href{https://marimo.io}{marimo.io} 2024 &
+\includegraphics[height=12pt]{logos/quarto.png} & Quarto, \href{https://quarto.org}{quarto.org} 2022 \\
+\end{tabular}
+\end{center}
+
+\vspace{0.3em}
+\hrule
+\vspace{0.3em}
+
+\begin{small}
+\textit{Handbook (work in progress):} \href{https://arashshahidi1997.github.io/projio/handbook/}{arashshahidi1997.github.io/projio/handbook} \\
+\textit{Source:} \href{https://github.com/arashshahidi1997/projio}{github.com/arashshahidi1997/projio}
+\end{small}

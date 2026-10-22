@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 470" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ca" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8a95a0"/>
+    </marker>
+  </defs>
+  <style>
+    .h    { font-size: 20px; font-weight: 700; text-anchor: middle; }
+    .t    { font-size: 16px; text-anchor: middle; fill: #1a1a1a; }
+    .warn { fill: #d63a2f; }
+    .ok   { fill: #2f8f4e; }
+  </style>
+
+  <!-- request -->
+  <rect x="150" y="16" width="200" height="52" rx="12" fill="#eef2f6" stroke="#3b5b7a" stroke-width="2.5"/>
+  <text class="t" x="250" y="48" font-weight="700">a coding request</text>
+
+  <line x1="200" y1="68" x2="140" y2="112" stroke="#8a95a0" stroke-width="2.5" marker-end="url(#ca)"/>
+  <line x1="300" y1="68" x2="360" y2="112" stroke="#8a95a0" stroke-width="2.5" marker-end="url(#ca)"/>
+
+  <!-- from scratch (naive) -->
+  <rect x="20" y="116" width="220" height="250" rx="14" fill="#fdeceb" stroke="#e0483d" stroke-width="2.5"/>
+  <text class="h warn" x="130" y="150">✗ from scratch</text>
+  <text class="t" x="130" y="196">naive, simplest</text>
+  <text class="t" x="130" y="224">approach</text>
+  <text class="t" x="130" y="268">reinvents what</text>
+  <text class="t" x="130" y="296">you already have</text>
+  <text class="t" x="130" y="340">fragile, unverified</text>
+
+  <!-- grounded -->
+  <rect x="260" y="116" width="220" height="250" rx="14" fill="#e9f4ec" stroke="#2f8f4e" stroke-width="2.5"/>
+  <text class="h ok" x="370" y="150">✓ grounded</text>
+  <text class="t" x="370" y="196">libraries relevant</text>
+  <text class="t" x="370" y="224">to your analysis</text>
+  <text class="t" x="370" y="268">your own</text>
+  <text class="t" x="370" y="296">verified code</text>
+  <text class="t" x="370" y="340">reuse, robust</text>
+
+  <text x="250" y="414" text-anchor="middle" font-size="17" font-weight="700" fill="#3b5b7a">a skill: search first,</text>
+  <text x="250" y="440" text-anchor="middle" font-size="17" font-weight="700" fill="#3b5b7a">write only what is missing</text>
+</svg>

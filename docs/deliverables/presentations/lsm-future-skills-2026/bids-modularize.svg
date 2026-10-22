@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ma" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8a95a0"/>
+    </marker>
+  </defs>
+  <style>
+    .ptitle { font-size: 26px; font-weight: 700; text-anchor: middle; }
+    .psub   { font-size: 16px; text-anchor: middle; fill: #55606b; }
+    .mono   { font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: 18px; fill: #1a1a1a; }
+    .tree   { fill: #9aa4ad; }
+  </style>
+
+  <!-- ============ SOURCE ============ -->
+  <rect x="16" y="24" width="292" height="184" rx="14" fill="#f4f4f4" stroke="#b0b0b0" stroke-width="2.5"/>
+  <text class="ptitle" x="162" y="60" fill="#555">source</text>
+  <text class="psub"   x="162" y="86">ingredients</text>
+  <!-- tomato + carrot -->
+  <circle cx="128" cy="150" r="22" fill="#e0483d" stroke="#b83227" stroke-width="2"/>
+  <path d="M128 128 l-6 -9 m6 9 l6 -9" stroke="#3f9d4f" stroke-width="3" fill="none"/>
+  <path d="M182 128 l16 44 l-32 0 z" fill="#e8912e" stroke="#c9741f" stroke-width="2"/>
+  <path d="M182 128 l-4 -10 m4 10 l4 -10" stroke="#3f9d4f" stroke-width="3" fill="none"/>
+
+  <line x1="316" y1="116" x2="346" y2="116" stroke="#8a95a0" stroke-width="3" marker-end="url(#ma)"/>
+
+  <!-- ============ RAW ============ -->
+  <rect x="354" y="24" width="292" height="184" rx="14" fill="#d7f2ea" stroke="#0a9c82" stroke-width="2.5"/>
+  <text class="ptitle" x="500" y="60" fill="#0a7a66">raw</text>
+  <text class="psub"   x="500" y="86">prepped (mise en place)</text>
+  <!-- bowl with diced bits -->
+  <rect x="470" y="120" width="14" height="14" rx="3" fill="#e0483d"/>
+  <rect x="492" y="116" width="14" height="14" rx="3" fill="#e8912e"/>
+  <rect x="514" y="120" width="14" height="14" rx="3" fill="#3f9d4f"/>
+  <path d="M456 140 a44 30 0 0 0 88 0 z" fill="#ffffff" stroke="#0a9c82" stroke-width="2.5"/>
+
+  <line x1="654" y1="116" x2="684" y2="116" stroke="#8a95a0" stroke-width="3" marker-end="url(#ma)"/>
+
+  <!-- ============ DERIVATIVES ============ -->
+  <rect x="692" y="24" width="292" height="184" rx="14" fill="#efe4fb" stroke="#8a4fd0" stroke-width="2.5"/>
+  <text class="ptitle" x="838" y="60" fill="#6b3fb0">derivatives</text>
+  <text class="psub"   x="838" y="86">the dish</text>
+  <!-- plate with pasta + sauce -->
+  <ellipse cx="838" cy="150" rx="60" ry="26" fill="#ffffff" stroke="#8a4fd0" stroke-width="2.5"/>
+  <path d="M804 148 q10 -10 20 0 q10 10 20 0 q10 -10 20 0" fill="none" stroke="#e8b23a" stroke-width="3"/>
+  <circle cx="820" cy="150" r="4" fill="#e0483d"/><circle cx="846" cy="146" r="4" fill="#e0483d"/><circle cx="856" cy="154" r="4" fill="#e0483d"/>
+
+  <!-- ============ FOLDER TREE ============ -->
+  <text class="mono" x="40"  y="270">MyBidsProject/</text>
+  <text class="mono" x="40"  y="300"><tspan class="tree">├─ </tspan>source/</text>
+  <text class="mono" x="40"  y="330"><tspan class="tree">├─ </tspan><tspan fill="#0a7a66" font-weight="700">raw/</tspan></text>
+  <text class="mono" x="40"  y="360"><tspan class="tree">│  ├─ </tspan>sub-01/</text>
+  <text class="mono" x="40"  y="390"><tspan class="tree">│  └─ </tspan>sub-02/</text>
+  <text class="mono" x="40"  y="420"><tspan class="tree">└─ </tspan><tspan fill="#6b3fb0" font-weight="700">derivatives/</tspan></text>
+
+  <!-- ============ RULE CALLOUT ============ -->
+  <rect x="520" y="300" width="440" height="150" rx="14" fill="#f6f7f9" stroke="#c3ccd4" stroke-width="2"/>
+  <text x="740" y="356" text-anchor="middle" font-size="22" font-weight="700" fill="#1a1a1a">keep derivatives out</text>
+  <text x="740" y="386" text-anchor="middle" font-size="22" font-weight="700" fill="#1a1a1a">of the raw folder</text>
+  <text x="740" y="422" text-anchor="middle" font-size="17" fill="#55606b">raw stays pristine; provenance stays clean</text>
+</svg>

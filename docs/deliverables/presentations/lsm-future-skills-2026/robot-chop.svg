@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260">
+  <!-- cutting board -->
+  <rect x="24" y="212" width="152" height="16" rx="5" fill="#d9b48f" stroke="#b8935f" stroke-width="2"/>
+  <rect x="120" y="200" width="12" height="12" rx="2" fill="#e0483d"/>
+  <rect x="136" y="202" width="11" height="10" rx="2" fill="#e8912e"/>
+  <rect x="150" y="200" width="12" height="12" rx="2" fill="#3f9d4f"/>
+
+  <!-- robot -->
+  <line x1="70" y1="54" x2="70" y2="38" stroke="#6b7787" stroke-width="3"/>
+  <circle cx="70" cy="34" r="5" fill="#e0483d"/>
+  <rect x="38" y="54" width="72" height="58" rx="12" fill="#d3dbe6" stroke="#6b7787" stroke-width="3"/>
+  <circle cx="60" cy="82" r="6.5" fill="#2f6fd0"/>
+  <circle cx="90" cy="82" r="6.5" fill="#2f6fd0"/>
+  <line x1="64" y1="99" x2="86" y2="99" stroke="#6b7787" stroke-width="3" stroke-linecap="round"/>
+  <rect x="48" y="114" width="54" height="66" rx="10" fill="#c2cdda" stroke="#6b7787" stroke-width="3"/>
+
+  <!-- chopping arm + knife (pivots at shoulder, bobs down) -->
+  <g>
+    <animateTransform attributeName="transform" type="rotate"
+      values="-8 104 126; 26 104 126; -8 104 126" keyTimes="0;0.4;1"
+      dur="0.62s" repeatCount="indefinite"/>
+    <rect x="99" y="122" width="12" height="70" rx="5" fill="#9aa8b8" stroke="#6b7787" stroke-width="1.5"/>
+    <!-- knife -->
+    <rect x="96" y="188" width="30" height="9" rx="3" fill="#7d8894"/>
+    <rect x="122" y="176" width="9" height="34" rx="2" fill="#dfe4e8" stroke="#9aa8b8" stroke-width="1.5"/>
+  </g>
+
+  <!-- SPECS document fed into the robot's head -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0 0; 48 60" dur="2.4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;1;0" keyTimes="0;0.72;1" dur="2.4s" repeatCount="indefinite"/>
+    <rect x="8" y="7" width="36" height="27" rx="3" fill="#ffffff" stroke="#6b7787" stroke-width="1.5"/>
+    <line x1="14" y1="15" x2="38" y2="15" stroke="#c9ced3" stroke-width="1.4"/>
+    <text x="26" y="29" text-anchor="middle" font-size="9.5" font-weight="700" fill="#2f6fd0" font-family="Helvetica Neue, Arial, sans-serif">SPECS</text>
+  </g>
+</svg>

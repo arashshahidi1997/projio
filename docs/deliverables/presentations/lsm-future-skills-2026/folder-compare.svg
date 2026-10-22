@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 560" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <style>
+    .title { font-size: 24px; font-weight: 700; }
+    .mono  { font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: 16px; fill: #1a1a1a; }
+    .dir   { fill: #3a6fb0; font-weight: 700; }
+    .warn  { fill: #d63a2f; }
+    .ok    { fill: #2f8f4e; }
+    .tree  { fill: #9aa4ad; }
+  </style>
+
+  <!-- ================= BEFORE (messy) ================= -->
+  <text x="260" y="40" text-anchor="middle" class="title" fill="#d63a2f">before · no convention</text>
+  <rect x="20" y="58" width="480" height="482" rx="12" fill="#fdeceb" stroke="#e0483d" stroke-width="2"/>
+
+  <text x="40" y="100" class="mono dir">data/</text>
+  <text x="40" y="132" class="mono"><tspan class="tree">├─ </tspan>rat7_final.mat</text>
+  <text x="40" y="164" class="mono"><tspan class="tree">├─ </tspan>rat7_final_v2.mat<tspan class="warn">   ← which?</tspan></text>
+  <text x="40" y="196" class="mono"><tspan class="tree">├─ </tspan>08-15_REC (copy).edf</text>
+  <text x="40" y="228" class="mono"><tspan class="tree">├─ </tspan>sleep_OLD.dat</text>
+  <text x="40" y="260" class="mono"><tspan class="tree">├─ </tspan>analysis_USE_THIS.mat</text>
+  <text x="40" y="292" class="mono"><tspan class="tree">├─ </tspan><tspan class="dir">scratch/</tspan></text>
+  <text x="40" y="324" class="mono"><tspan class="tree">├─ </tspan>Untitled3.ipynb</text>
+  <text x="40" y="356" class="mono"><tspan class="tree">└─ </tspan>notes_random.txt</text>
+
+  <text x="40" y="470" class="mono warn" font-size="15">names change every session.</text>
+  <text x="40" y="496" class="mono warn" font-size="15">only I know what is what,</text>
+  <text x="40" y="522" class="mono warn" font-size="15">and only for a while.</text>
+
+  <!-- ================= WITH BIDS ================= -->
+  <text x="780" y="40" text-anchor="middle" class="title" fill="#2f8f4e">with BIDS</text>
+  <rect x="540" y="58" width="480" height="482" rx="12" fill="#eef7ef" stroke="#3f9d4f" stroke-width="2"/>
+
+  <text x="560" y="100" class="mono dir">ds-sleep/</text>
+  <text x="560" y="128" class="mono"><tspan class="tree">├─ </tspan>dataset_description.json</text>
+  <text x="560" y="156" class="mono"><tspan class="tree">├─ </tspan>participants.tsv</text>
+  <text x="560" y="184" class="mono"><tspan class="tree">├─ </tspan><tspan class="dir">sub-01/</tspan></text>
+  <text x="560" y="212" class="mono"><tspan class="tree">│  └─ </tspan><tspan class="dir">ses-01/</tspan></text>
+  <text x="560" y="240" class="mono"><tspan class="tree">│     └─ </tspan><tspan class="dir">ieeg/</tspan></text>
+  <text x="560" y="268" class="mono" font-size="14"><tspan class="tree">│        ├─ </tspan>sub-01_ses-01_task-sleep_ieeg.edf</text>
+  <text x="560" y="294" class="mono" font-size="14"><tspan class="tree">│        ├─ </tspan>sub-01_ses-01_task-sleep_channels.tsv</text>
+  <text x="560" y="320" class="mono" font-size="14"><tspan class="tree">│        └─ </tspan>sub-01_ses-01_task-sleep_events.tsv</text>
+  <text x="560" y="348" class="mono"><tspan class="tree">└─ </tspan><tspan class="dir">derivatives/</tspan></text>
+  <text x="560" y="376" class="mono"><tspan class="tree">   └─ </tspan><tspan class="dir">bursts/</tspan></text>
+
+  <text x="560" y="470" class="mono ok" font-size="15">subject · session · datatype.</text>
+  <text x="560" y="496" class="mono ok" font-size="15">the filename is the metadata.</text>
+  <text x="560" y="522" class="mono ok" font-size="15">an agent can read it too.</text>
+</svg>

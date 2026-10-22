@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260">
+  <!-- steam -->
+  <g stroke="#b9c4d0" stroke-width="4" fill="none" stroke-linecap="round">
+    <path d="M86 150 q-8 -12 0 -24 q8 -12 0 -24">
+      <animate attributeName="opacity" values="0;0.9;0" dur="2s" repeatCount="indefinite"/>
+      <animateTransform attributeName="transform" type="translate" values="0 6;0 -10;0 6" dur="2s" repeatCount="indefinite"/>
+    </path>
+    <path d="M110 150 q-8 -12 0 -24 q8 -12 0 -24">
+      <animate attributeName="opacity" values="0;0.9;0" dur="2s" begin="0.7s" repeatCount="indefinite"/>
+      <animateTransform attributeName="transform" type="translate" values="0 6;0 -10;0 6" dur="2s" begin="0.7s" repeatCount="indefinite"/>
+    </path>
+  </g>
+
+  <!-- pan -->
+  <rect x="150" y="196" width="44" height="10" rx="5" fill="#555"/>
+  <ellipse cx="100" cy="200" rx="62" ry="17" fill="#3b3b3b"/>
+  <ellipse cx="100" cy="196" rx="52" ry="12" fill="#5a5a5a"/>
+  <ellipse cx="100" cy="194" rx="40" ry="8" fill="#c0472f"/>
+
+  <!-- robot -->
+  <line x1="60" y1="46" x2="60" y2="30" stroke="#6b7787" stroke-width="3"/>
+  <circle cx="60" cy="26" r="5" fill="#e0483d"/>
+  <rect x="28" y="46" width="72" height="58" rx="12" fill="#d3dbe6" stroke="#6b7787" stroke-width="3"/>
+  <circle cx="50" cy="74" r="6.5" fill="#2f6fd0"/>
+  <circle cx="80" cy="74" r="6.5" fill="#2f6fd0"/>
+  <line x1="54" y1="91" x2="76" y2="91" stroke="#6b7787" stroke-width="3" stroke-linecap="round"/>
+  <rect x="38" y="106" width="54" height="66" rx="10" fill="#c2cdda" stroke="#6b7787" stroke-width="3"/>
+
+  <!-- stirring arm + spoon (pivots at shoulder, sways) -->
+  <g>
+    <animateTransform attributeName="transform" type="rotate"
+      values="10 92 118; -10 92 118; 10 92 118" dur="1.1s" repeatCount="indefinite"/>
+    <rect x="86" y="114" width="12" height="60" rx="5" fill="#9aa8b8" stroke="#6b7787" stroke-width="1.5"/>
+    <rect x="88" y="170" width="8" height="24" rx="3" fill="#a9743e"/>
+    <ellipse cx="92" cy="196" rx="12" ry="6" fill="#c8975a" stroke="#a9743e" stroke-width="1.5"/>
+  </g>
+
+  <!-- SPECS document fed into the robot's head -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0 0; 38 52" dur="2.4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;1;0" keyTimes="0;0.72;1" dur="2.4s" repeatCount="indefinite"/>
+    <rect x="8" y="7" width="36" height="27" rx="3" fill="#ffffff" stroke="#6b7787" stroke-width="1.5"/>
+    <line x1="14" y1="15" x2="38" y2="15" stroke="#c9ced3" stroke-width="1.4"/>
+    <text x="26" y="29" text-anchor="middle" font-size="9.5" font-weight="700" fill="#2f6fd0" font-family="Helvetica Neue, Arial, sans-serif">SPECS</text>
+  </g>
+</svg>

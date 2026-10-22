@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 470" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="pa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8a95a0"/>
+    </marker>
+  </defs>
+  <style>
+    .lab { font-size: 18px; font-weight: 700; }
+    .mono{ font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: 13px; }
+    .sm  { font-size: 13px; fill: #55606b; }
+    .tok { font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: 13px; fill: #2f6fd0; font-weight: 700; }
+  </style>
+
+  <!-- ===== analysis results (source of numbers + figures) ===== -->
+  <rect x="20" y="150" width="176" height="176" rx="12" fill="#eef2f6" stroke="#3b5b7a" stroke-width="2.5"/>
+  <text class="lab" x="108" y="178" text-anchor="middle">results</text>
+  <rect x="48" y="250" width="20" height="48" fill="#3a86c8"/>
+  <rect x="78" y="224" width="20" height="74" fill="#3a86c8"/>
+  <rect x="108" y="266" width="20" height="32" fill="#3a86c8"/>
+  <rect x="138" y="238" width="20" height="60" fill="#3a86c8"/>
+  <text class="sm" x="108" y="318" text-anchor="middle">figures · mean · sd · p · n</text>
+
+  <line x1="196" y1="238" x2="230" y2="238" stroke="#8a95a0" stroke-width="2.5" marker-end="url(#pa)"/>
+
+  <!-- ===== one source document ===== -->
+  <rect x="232" y="64" width="256" height="342" rx="10" fill="#ffffff" stroke="#c25bb0" stroke-width="2.5"/>
+  <rect x="232" y="64" width="256" height="34" rx="10" fill="#f6d6f2"/>
+  <rect x="232" y="86" width="256" height="12" fill="#f6d6f2"/>
+  <text class="mono" x="248" y="87" fill="#7a3e6e">report.qmd</text>
+
+  <line x1="252" y1="122" x2="446" y2="122" stroke="#d7dde3" stroke-width="4"/>
+  <line x1="252" y1="140" x2="410" y2="140" stroke="#d7dde3" stroke-width="4"/>
+
+  <rect x="252" y="158" width="216" height="58" rx="6" fill="#f4f4f4" stroke="#cfcfcf" stroke-width="1.5"/>
+  <text class="mono" x="264" y="180" fill="#1a1a1a">stats = analyze(data)</text>
+  <text class="mono" x="264" y="202" fill="#1a1a1a">fig   = plot(data)</text>
+
+  <text class="mono" x="252" y="250" fill="#1a1a1a">the mean was</text>
+  <rect x="360" y="238" width="96" height="20" rx="5" fill="#eaf3fb" stroke="#3a86c8" stroke-width="1.4"/>
+  <text class="tok" x="368" y="252">`{stats.mean}`</text>
+
+  <rect x="252" y="276" width="216" height="112" rx="6" fill="#eef4fb" stroke="#3a86c8" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <text class="tok" x="360" y="338" text-anchor="middle" font-size="15">‹ figure ›</text>
+
+  <!-- ===== render fan-out ===== -->
+  <text x="560" y="150" text-anchor="middle" font-size="15" fill="#2f6fd0" font-weight="700">render (Quarto)</text>
+  <line x1="488" y1="200" x2="720" y2="112" stroke="#8a95a0" stroke-width="2.5" marker-end="url(#pa)"/>
+  <line x1="488" y1="238" x2="720" y2="238" stroke="#8a95a0" stroke-width="2.5" marker-end="url(#pa)"/>
+  <line x1="488" y1="276" x2="720" y2="364" stroke="#8a95a0" stroke-width="2.5" marker-end="url(#pa)"/>
+
+  <!-- ===== three outputs, same live value ===== -->
+  <g>
+    <rect x="722" y="66" width="296" height="96" rx="10" fill="#f6d6f2" stroke="#c25bb0" stroke-width="2.5"/>
+    <text class="lab" x="742" y="98">Slides</text>
+    <text class="mono" x="742" y="126" fill="#1a1a1a">the mean was <tspan fill="#2f8f4e" font-weight="700">4.2</tspan></text>
+    <rect x="742" y="134" width="180" height="14" rx="3" fill="#e7c7e0"/>
+  </g>
+  <g>
+    <rect x="722" y="190" width="296" height="96" rx="10" fill="#f6d6f2" stroke="#c25bb0" stroke-width="2.5"/>
+    <text class="lab" x="742" y="222">Manuscript</text>
+    <text class="mono" x="742" y="250" fill="#1a1a1a">the mean was <tspan fill="#2f8f4e" font-weight="700">4.2</tspan></text>
+    <rect x="742" y="258" width="180" height="14" rx="3" fill="#e7c7e0"/>
+  </g>
+  <g>
+    <rect x="722" y="314" width="296" height="96" rx="10" fill="#f6d6f2" stroke="#c25bb0" stroke-width="2.5"/>
+    <text class="lab" x="742" y="346">Report</text>
+    <text class="mono" x="742" y="374" fill="#1a1a1a">the mean was <tspan fill="#2f8f4e" font-weight="700">4.2</tspan></text>
+    <rect x="742" y="382" width="180" height="14" rx="3" fill="#e7c7e0"/>
+  </g>
+
+  <text x="360" y="440" text-anchor="middle" font-size="15" fill="#55606b">write once; results and stats are inserted live and stay in sync</text>
+</svg>

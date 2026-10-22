@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#2f6fd0" flood-opacity="0.75"/>
+    </filter>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#2f6fd0"/>
+    </marker>
+  </defs>
+  <style>
+    text { fill: #1a1a1a; }
+    .lab { font-weight: 700; }
+    .accent { fill: #2f6fd0; font-weight: 700; }
+    .muted { fill: #3f3f3f; }
+    #g-agent,#g-execarrow{opacity:0;}
+    #g-publication{filter:url(#glow);}
+  </style>
+
+  <rect x="0" y="0" width="1280" height="720" fill="#ffffff"/>
+
+  <!-- ================= AGENT (robot mascot) ================= -->
+  <g class="blk" id="g-agent">
+    <line x1="640" y1="24" x2="640" y2="14" stroke="#6b7787" stroke-width="3"/>
+    <circle cx="640" cy="9" r="6" fill="#e0483d"/>
+    <rect x="600" y="24" width="80" height="58" rx="13" fill="#d3dbe6" stroke="#6b7787" stroke-width="3"/>
+    <circle cx="622" cy="54" r="7" fill="#2f6fd0"/>
+    <circle cx="658" cy="54" r="7" fill="#2f6fd0"/>
+    <line x1="626" y1="70" x2="654" y2="70" stroke="#6b7787" stroke-width="3" stroke-linecap="round"/>
+    <rect x="608" y="88" width="64" height="44" rx="10" fill="#c2cdda" stroke="#6b7787" stroke-width="3"/>
+    <rect x="592" y="92" width="11" height="34" rx="5" fill="#c2cdda" stroke="#6b7787" stroke-width="3"/>
+    <rect x="677" y="92" width="11" height="34" rx="5" fill="#c2cdda" stroke="#6b7787" stroke-width="3"/>
+  </g>
+
+  <!-- ============ reads/writes/executes ============ -->
+  <g class="blk" id="g-execarrow">
+    <text x="640" y="152" text-anchor="middle" font-size="18" class="accent">reads · writes · executes</text>
+    <line x1="640" y1="158" x2="640" y2="172" stroke="#2f6fd0" stroke-width="2.5" marker-end="url(#arr)"/>
+  </g>
+
+  <!-- ================= GROUNDING ================= -->
+  <g class="blk" id="g-ground">
+    <rect x="40" y="176" width="580" height="388" rx="16" fill="#ece4fb" stroke="#9b7fd4" stroke-width="3"/>
+    <text x="66" y="208" font-size="21" class="lab" fill="#6b4fb0">GROUNDING</text>
+  </g>
+  <g class="blk" id="g-biblio">
+    <rect x="64" y="226" width="532" height="148" rx="12" fill="#fdf3c7" stroke="#e0a92e" stroke-width="3"/>
+    <text x="330" y="288" text-anchor="middle" font-size="24" class="lab">Bibliography</text>
+    <text x="330" y="320" text-anchor="middle" font-size="17">OpenAlex · docling · GROBID</text>
+  </g>
+  <g class="blk" id="g-code">
+    <rect x="64" y="398" width="532" height="148" rx="12" fill="#cdeccd" stroke="#3f9d4f" stroke-width="3"/>
+    <text x="330" y="460" text-anchor="middle" font-size="24" class="lab">Code libraries</text>
+    <text x="330" y="492" text-anchor="middle" font-size="17">project + external</text>
+  </g>
+
+  <!-- ================= LIFECYCLE ================= -->
+  <g class="blk" id="g-life">
+    <rect x="660" y="176" width="580" height="388" rx="16" fill="#dbe8fb" stroke="#6f9fe0" stroke-width="3"/>
+    <text x="684" y="208" font-size="21" class="lab" fill="#3a6fb0">LIFECYCLE</text>
+  </g>
+  <g class="blk" id="g-notebooks">
+    <rect x="684" y="226" width="466" height="80" rx="12" fill="#ffe0b8" stroke="#e8912e" stroke-width="3"/>
+    <text x="917" y="262" text-anchor="middle" font-size="21" class="lab">Notebooks (Marimo)</text>
+    <text x="917" y="288" text-anchor="middle" font-size="15">exploration</text>
+  </g>
+  <g class="blk" id="g-promote">
+    <text x="917" y="328" text-anchor="middle" font-size="15" class="accent">promote</text>
+    <line x1="984" y1="310" x2="984" y2="336" stroke="#2f6fd0" stroke-width="2.5" marker-end="url(#arr)"/>
+  </g>
+  <g class="blk" id="g-pipelines">
+    <rect x="684" y="338" width="466" height="80" rx="12" fill="#c8f0e2" stroke="#2bb996" stroke-width="3"/>
+    <text x="917" y="374" text-anchor="middle" font-size="21" class="lab">Pipelines (Snakemake)</text>
+    <text x="917" y="400" text-anchor="middle" font-size="15">declarative DAGs</text>
+  </g>
+  <g class="blk" id="g-render">
+    <text x="917" y="440" text-anchor="middle" font-size="15" class="accent">render</text>
+    <line x1="984" y1="422" x2="984" y2="448" stroke="#2f6fd0" stroke-width="2.5" marker-end="url(#arr)"/>
+  </g>
+  <g class="blk" id="g-publication">
+    <rect x="684" y="450" width="466" height="104" rx="12" fill="#f6d6f2" stroke="#c25bb0" stroke-width="3"/>
+    <text x="917" y="496" text-anchor="middle" font-size="21" class="lab">Publication (Quarto)</text>
+    <text x="917" y="524" text-anchor="middle" font-size="15">reports · slides · manuscripts</text>
+  </g>
+
+  <!-- ================= PLANTS (growth metaphor) ================= -->
+  <g class="blk" id="g-plant-seed">
+    <path d="M1168 288 h34 l-4 15 h-26 z" fill="#c98a5e" stroke="#9c6a44" stroke-width="1.5"/>
+    <circle cx="1179" cy="277" r="2.8" fill="#6b4b2a"/><circle cx="1187" cy="274" r="2.8" fill="#6b4b2a"/><circle cx="1194" cy="278" r="2.8" fill="#6b4b2a"/>
+  </g>
+  <g class="blk" id="g-plant-sprout">
+    <path d="M1168 400 h34 l-4 15 h-26 z" fill="#c98a5e" stroke="#9c6a44" stroke-width="1.5"/>
+    <line x1="1185" y1="400" x2="1185" y2="381" stroke="#3f9d4f" stroke-width="2.5"/>
+    <path d="M1185 390 q-11 -4 -15 -15 q11 1 15 13 z" fill="#5cbf62"/>
+    <path d="M1185 387 q11 -4 15 -15 q-11 1 -15 13 z" fill="#5cbf62"/>
+  </g>
+  <g class="blk" id="g-plant-fruit">
+    <path d="M1168 522 h34 l-4 15 h-26 z" fill="#c98a5e" stroke="#9c6a44" stroke-width="1.5"/>
+    <line x1="1185" y1="522" x2="1185" y2="491" stroke="#3f9d4f" stroke-width="2.5"/>
+    <path d="M1185 508 q-12 -4 -17 -16 q12 1 17 14 z" fill="#5cbf62"/>
+    <path d="M1185 504 q12 -4 17 -16 q-12 1 -17 14 z" fill="#5cbf62"/>
+    <circle cx="1176" cy="500" r="4.6" fill="#e0483d"/><circle cx="1194" cy="502" r="4.6" fill="#e0483d"/><circle cx="1185" cy="490" r="4.6" fill="#e0483d"/>
+  </g>
+
+  <!-- ================= FOUNDATIONS ================= -->
+  <g class="blk" id="g-datalad">
+    <rect x="40" y="578" width="1200" height="62" rx="12" fill="#ececec" stroke="#8f8f8f" stroke-width="2.5"/>
+    <g>
+      <path d="M64 608 l16 -7 l16 7 l-16 7 z" fill="#e8817a" stroke="#c9564d" stroke-width="1.4"/>
+      <path d="M64 615 l16 -7 l16 7 l-16 7 z" fill="#ef9a94" stroke="#c9564d" stroke-width="1.4"/>
+    </g>
+    <text x="656" y="616" text-anchor="middle" font-size="22" font-weight="600" class="muted">Versioning · DataLad + git — receipts, roll back a mistake</text>
+  </g>
+  <g class="blk" id="g-bids">
+    <rect x="40" y="648" width="1200" height="62" rx="12" fill="#ececec" stroke="#8f8f8f" stroke-width="2.5"/>
+    <text x="640" y="686" text-anchor="middle" font-size="22" font-weight="600" class="muted">Data layout specification (for instance BIDS)</text>
+  </g>
+</svg>

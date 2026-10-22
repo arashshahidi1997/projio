@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ka" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8a95a0"/>
+    </marker>
+  </defs>
+  <style>
+    .grp   { font-size: 22px; font-weight: 700; }
+    .sub   { font-size: 15px; fill: #55606b; }
+    .tool  { font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: 20px; font-weight: 700; }
+    .skill { font-size: 20px; font-weight: 700; fill: #1a1a1a; }
+    .gloss { font-size: 15px; fill: #55606b; }
+    .edge  { stroke: #8a95a0; stroke-width: 3; }
+  </style>
+
+  <!-- agent -->
+  <rect x="360" y="18" width="280" height="60" rx="30" fill="#d9c9f5" stroke="#7c5fc0" stroke-width="3"/>
+  <text x="500" y="56" text-anchor="middle" font-size="24" font-weight="700" fill="#1a1a1a">the agent</text>
+  <line class="edge" x1="440" y1="78" x2="270" y2="128" marker-end="url(#ka)"/>
+  <line class="edge" x1="560" y1="78" x2="730" y2="128" marker-end="url(#ka)"/>
+
+  <!-- ============ MCP TOOLS ============ -->
+  <rect x="34" y="130" width="446" height="366" rx="16" fill="#eaf3fb" stroke="#3a86c8" stroke-width="2.5"/>
+  <text class="grp" x="60" y="166" fill="#2b6aa8">MCP tools</text>
+  <text class="sub" x="200" y="166">what it can call</text>
+
+  <rect x="60" y="188" width="394" height="82" rx="10" fill="#ffffff" stroke="#8fb8dd" stroke-width="2"/>
+  <text class="tool" x="80" y="222" fill="#2f6fd0">rag_query()</text>
+  <text class="gloss" x="80" y="250">search the literature and notes</text>
+
+  <rect x="60" y="280" width="394" height="82" rx="10" fill="#ffffff" stroke="#8fb8dd" stroke-width="2"/>
+  <text class="tool" x="80" y="314" fill="#2f6fd0">codio_get()</text>
+  <text class="gloss" x="80" y="342">find code I already have</text>
+
+  <rect x="60" y="372" width="394" height="82" rx="10" fill="#ffffff" stroke="#8fb8dd" stroke-width="2"/>
+  <text class="tool" x="80" y="406" fill="#2f6fd0">pipeio_run()</text>
+  <text class="gloss" x="80" y="434">run a pipeline to its outputs</text>
+
+  <!-- ============ SKILLS ============ -->
+  <rect x="520" y="130" width="446" height="366" rx="16" fill="#fff3e6" stroke="#e8912e" stroke-width="2.5"/>
+  <text class="grp" x="546" y="166" fill="#c9741f">Skills</text>
+  <text class="sub" x="640" y="166">routines it follows</text>
+
+  <rect x="546" y="188" width="394" height="82" rx="10" fill="#ffffff" stroke="#f0b877" stroke-width="2"/>
+  <text class="skill" x="566" y="222">explore</text>
+  <text class="gloss" x="566" y="250">open Marimo, load a session</text>
+
+  <rect x="546" y="280" width="394" height="82" rx="10" fill="#ffffff" stroke="#f0b877" stroke-width="2"/>
+  <text class="skill" x="566" y="314">promote</text>
+  <text class="gloss" x="566" y="342">notebook → Snakemake rule</text>
+
+  <rect x="546" y="372" width="394" height="82" rx="10" fill="#ffffff" stroke="#f0b877" stroke-width="2"/>
+  <text class="skill" x="566" y="406">report</text>
+  <text class="gloss" x="566" y="434">figures + text from results</text>
+</svg>
