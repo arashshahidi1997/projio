@@ -116,6 +116,19 @@ R1 for a client in use.
    project kind; `PROJIO_MCP_GROUPS` per server entry). A pool server such as
    `sirocampus` exposes lookups only.
 
+### Skill delivery
+
+A skill reaches Claude Code as a native skill (`.claude/skills/<name>/SKILL.md`),
+written by `projio sync` from its source (project, installed package, projio's
+bundle). The agent sees the name and `description` of every skill and loads a
+body only when it uses the skill, so the description must say what the skill
+does and when to use it. The earlier delivery, a `.claude/commands/` wrapper
+per skill that called `skill_read`, showed an HTML comment as the description
+and made every use depend on someone typing the command: on gamma2 no biblio
+skill was ever chosen by an agent. `agent_instructions` and `skill_read` stay
+for agents that do not read `.claude/skills/` (R1). A package tests that the
+commands its skills name exist (biblio: `tests/test_skills_commands.py`).
+
 ### Instructions
 
 Generated routing tables (`CLAUDE.md`, server instructions, the codegen in

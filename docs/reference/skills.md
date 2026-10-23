@@ -2,7 +2,9 @@
 
 Skills are prompt-based workflow templates that orchestrate MCP tools into a coherent task. They live under `src/projio/data/skills/<name>/SKILL.md` (ecosystem) and `.projio/skills/<name>/SKILL.md` (per-project override).
 
-Agents discover skills via `agent_instructions()` and load the full body via `skill_read(name)`.
+Skills also ship with installed packages that declare a `projio.skills` entry point (biblio: wiki, Zotero, sourcing and batch-curation skills).
+
+`projio sync` writes each discovered skill into `.claude/skills/<name>/` as a native Claude Code skill: a copy of the source folder with its name and description, so the agent picks it from the task and loads the body when it is used. The copies carry a `.projio-skill` stamp and a `.gitignore` of `*`; folders without the stamp are the project's own and are never touched. Other agents discover skills via `agent_instructions()` and load the full body via `skill_read(name)`. A skill's `description` must say what it does and when to use it: it is all the agent sees before loading the skill.
 
 ## Discovery
 
@@ -30,7 +32,7 @@ Agents discover skills via `agent_instructions()` and load the full body via `sk
 | `literature-discovery` | Search the paper corpus for methods, parameters, validation plots |
 | `codelib-discovery` | Search the code-library catalog for reusable implementations |
 | `rag-query` | Run a focused semantic search across any corpus |
-| `biblio-batch-curate` | Curate a batch of freshly ingested papers (tags, status, priority) |
+| `biblio-batch-curate` | A batch of papers from references to extracted, compiled, indexed (shipped by biblio) |
 
 ### Research orchestration (questio)
 
