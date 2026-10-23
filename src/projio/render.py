@@ -24,7 +24,7 @@ DEFAULTS = {
     "csl": ".projio/render/csl/apa.csl",
     "bibliography": ".projio/render/compiled.bib",
     "lua_filter": ".projio/filters/include.lua",
-    "conda_env": "",
+    "render_env": "",
     "resource_path": [".", "docs", "docs/assets", "bib"],
     "bib_sources": [".projio/biblio/merged.bib", ".projio/pipeio/modkey.bib"],
 }
@@ -38,7 +38,8 @@ class RenderConfig:
     csl: str = ".projio/render/csl/apa.csl"
     bibliography: str = ".projio/render/compiled.bib"
     lua_filter: str = ".projio/filters/include.lua"
-    conda_env: str = ""
+    render_env: str = ""  # pixi env for pandoc (empty = default env)
+    conda_env: str = ""   # deprecated alias for render_env (legacy render.yml)
     resource_path: list[str] = field(default_factory=lambda: [".", "docs", "docs/assets", "bib"])
     bib_sources: list[str] = field(
         default_factory=lambda: [".projio/biblio/merged.bib", ".projio/pipeio/modkey.bib"],
@@ -56,7 +57,8 @@ class RenderConfig:
             csl=data.get("csl", DEFAULTS["csl"]),
             bibliography=data.get("bibliography", DEFAULTS["bibliography"]),
             lua_filter=data.get("lua_filter", DEFAULTS["lua_filter"]),
-            conda_env=data.get("conda_env", DEFAULTS["conda_env"]),
+            render_env=data.get("render_env", "") or data.get("conda_env", "") or DEFAULTS["render_env"],
+            conda_env=data.get("conda_env", ""),
             resource_path=data.get("resource_path", DEFAULTS["resource_path"]),
             bib_sources=data.get("bib_sources", DEFAULTS["bib_sources"]),
             profiles=data.get("profiles", {}) or {},
@@ -69,7 +71,7 @@ class RenderConfig:
             "csl": self.csl,
             "bibliography": self.bibliography,
             "lua_filter": self.lua_filter,
-            "conda_env": self.conda_env,
+            "render_env": self.render_env or self.conda_env,
             "resource_path": self.resource_path,
             "bib_sources": self.bib_sources,
             "default_profile": self.default_profile,
@@ -300,7 +302,12 @@ def run_render(
         "--defaults", _rel(defaults_path, root),
         "-o", _rel(out_path, root),
     ]
-    cmd = ["conda", "run", "-n", config.conda_env, *pandoc_cmd] if config.conda_env else pandoc_cmd
+    # Dispatch pandoc through the project's runner: `pixi run [-e <env>]`
+    # for pixi, bare `pandoc` from PATH for none; conda is legacy compat.
+    from projio.runners import run_cmd
+
+    env = config.render_env or config.conda_env
+    cmd = run_cmd(root, env, "pandoc") + pandoc_cmd[1:]
 
     print(f"[render] profile={profile_name}  ->  {_rel(out_path, root)}")
     print(f"$ {' '.join(cmd)}")
@@ -322,7 +329,7 @@ bib_sources:
   - .projio/biblio/merged.bib
   - .projio/pipeio/modkey.bib
 lua_filter: .projio/filters/include.lua
-conda_env: ""
+render_env: ""   # pixi environment for pandoc (empty = default env)
 resource_path:
   - .
   - docs

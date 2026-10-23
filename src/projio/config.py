@@ -208,26 +208,45 @@ def print_effective_config(root: str | Path) -> None:
     print(yaml.safe_dump(payload, sort_keys=False))
 
 
-def _resolve_conda_python(env_name: str) -> str:
-    """Resolve a conda env name to its python binary path."""
-    import shutil
+def _resolve_env_python(root: Path, env_name: str) -> str:
+    """Resolve a project env name to its python binary path.
+
+    Runs ``python`` inside the env through the project's runner (``pixi run
+    -e <env>``; legacy conda projects: ``conda run -n <env>``) from *root*.
+    """
     import subprocess
 
-    conda = shutil.which("conda")
-    if not conda:
-        raise FileNotFoundError("conda not found on PATH")
+    from projio.runners import resolve_runner, runner_cmd
 
+    runner = resolve_runner(root)
+    if runner == "conda":
+        import shutil
+        if not shutil.which("conda"):
+            raise FileNotFoundError("conda not found on PATH")
+    cmd = runner_cmd(runner, env_name, "python")
+    if cmd == ["python"]:
+        raise FileNotFoundError(f"cannot resolve env {env_name!r}: pixi not found on PATH")
     result = subprocess.run(
-        [conda, "run", "-n", env_name, "python", "-c", "import sys; print(sys.executable)"],
-        capture_output=True, text=True, timeout=30,
+        [*cmd, "-c", "import sys; print(sys.executable)"],
+        capture_output=True, text=True, timeout=120, cwd=root,
     )
     if result.returncode != 0:
-        raise RuntimeError(f"conda env {env_name!r} not found or broken: {result.stderr.strip()}")
-    return result.stdout.strip()
+        raise RuntimeError(f"env {env_name!r} not found or broken: {result.stderr.strip()}")
+    return result.stdout.strip().splitlines()[-1]
 
 
-def set_python(root: str | Path, *, python_path: str | None = None, conda_env: str | None = None) -> None:
-    """Set runtime.python_bin in project config, then regenerate projio.mk."""
+def set_python(
+    root: str | Path,
+    *,
+    python_path: str | None = None,
+    env: str | None = None,
+    conda_env: str | None = None,
+) -> None:
+    """Set runtime.python_bin in project config, then regenerate projio.mk.
+
+    *env* names a project environment (pixi env, or conda env for legacy
+    projects); *conda_env* is a deprecated alias for it.
+    """
     import sys
 
     root_path = Path(root).expanduser().resolve()
@@ -236,8 +255,9 @@ def set_python(root: str | Path, *, python_path: str | None = None, conda_env: s
         raise FileNotFoundError(f"No .projio/config.yml in {root_path}. Run: projio init")
 
     # Resolve the python path
-    if conda_env:
-        resolved = _resolve_conda_python(conda_env)
+    env = env or conda_env
+    if env:
+        resolved = _resolve_env_python(root_path, env)
     elif python_path:
         resolved = str(Path(python_path).expanduser().resolve())
     else:

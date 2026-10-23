@@ -27,7 +27,7 @@ def test_render_config_defaults() -> None:
     assert cfg.csl == ".projio/render/csl/apa.csl"
     assert cfg.bibliography == ".projio/render/compiled.bib"
     assert cfg.lua_filter == ".projio/filters/include.lua"
-    assert cfg.conda_env == ""
+    assert cfg.render_env == ""
     assert "." in cfg.resource_path
     assert ".projio/biblio/merged.bib" in cfg.bib_sources
 
@@ -38,7 +38,7 @@ def test_render_config_from_empty_dict_uses_defaults() -> None:
     assert cfg.csl == DEFAULTS["csl"]
     assert cfg.bibliography == DEFAULTS["bibliography"]
     assert cfg.lua_filter == DEFAULTS["lua_filter"]
-    assert cfg.conda_env == DEFAULTS["conda_env"]
+    assert cfg.render_env == DEFAULTS["render_env"]
     assert cfg.resource_path == DEFAULTS["resource_path"]
     assert cfg.bib_sources == DEFAULTS["bib_sources"]
 
@@ -55,7 +55,7 @@ def test_render_config_from_dict_overrides_all_fields() -> None:
         "csl": "my.csl",
         "bibliography": "refs.bib",
         "lua_filter": "my.lua",
-        "conda_env": "myenv",
+        "render_env": "myenv",
         "resource_path": [".", "src"],
         "bib_sources": ["merged.bib"],
     }
@@ -64,7 +64,7 @@ def test_render_config_from_dict_overrides_all_fields() -> None:
     assert cfg.csl == "my.csl"
     assert cfg.bibliography == "refs.bib"
     assert cfg.lua_filter == "my.lua"
-    assert cfg.conda_env == "myenv"
+    assert cfg.render_env == "myenv"
     assert cfg.resource_path == [".", "src"]
     assert cfg.bib_sources == ["merged.bib"]
 
@@ -75,11 +75,11 @@ def test_render_config_from_dict_overrides_all_fields() -> None:
 
 
 def test_render_config_to_dict_roundtrip() -> None:
-    original = RenderConfig(pdf_engine="xelatex", conda_env="myenv")
+    original = RenderConfig(pdf_engine="xelatex", render_env="myenv")
     d = original.to_dict()
     recovered = RenderConfig.from_dict(d)
     assert recovered.pdf_engine == "xelatex"
-    assert recovered.conda_env == "myenv"
+    assert recovered.render_env == "myenv"
     assert recovered.csl == original.csl
 
 
@@ -88,7 +88,7 @@ def test_render_config_to_dict_keys() -> None:
     d = cfg.to_dict()
     assert set(d.keys()) == {
         "pdf_engine", "csl", "bibliography", "lua_filter",
-        "conda_env", "resource_path", "bib_sources",
+        "render_env", "resource_path", "bib_sources",
         "default_profile", "profiles",
     }
 
@@ -109,8 +109,17 @@ def test_load_render_config_reads_yaml_file(tmp_path: Path) -> None:
     render_yml.write_text(yaml.dump({"pdf_engine": "xelatex", "conda_env": "docenv"}))
     cfg = load_render_config(tmp_path)
     assert cfg.pdf_engine == "xelatex"
-    assert cfg.conda_env == "docenv"
+    assert cfg.render_env == "docenv"  # legacy conda_env key is an alias
     assert cfg.csl == DEFAULTS["csl"]  # not overridden → defaults
+
+
+def test_render_config_legacy_conda_env_alias() -> None:
+    cfg = RenderConfig.from_dict({"conda_env": "old"})
+    assert cfg.render_env == "old"
+    assert cfg.to_dict()["render_env"] == "old"
+    assert "conda_env" not in cfg.to_dict()
+    # render_env wins over the legacy key
+    assert RenderConfig.from_dict({"conda_env": "old", "render_env": "new"}).render_env == "new"
 
 
 def test_load_render_config_empty_file_returns_defaults(tmp_path: Path) -> None:

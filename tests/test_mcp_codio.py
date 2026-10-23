@@ -139,7 +139,30 @@ class TestCodioFuncDoc:
         ):
             result = _func_doc_subprocess("cogpy", "os", "path", None)
         assert "error" in result
-        assert "conda not found" in result["error"]
+        assert "not found" in result["error"]
+
+    def test_func_doc_subprocess_uses_pixi_runner(self) -> None:
+        import subprocess
+        proc = subprocess.CompletedProcess(args=[], returncode=0, stdout='{"module": "os.path", "functions": []}', stderr="")
+        with mock.patch("projio.runners.resolve_runner", return_value="pixi"), \
+             mock.patch("shutil.which", return_value="/usr/bin/pixi"), \
+             mock.patch("projio.mcp.codio.get_project_root", return_value="/proj"), \
+             mock.patch("subprocess.run", return_value=proc) as run:
+            result = _func_doc_subprocess("compute", "os", "path", None)
+        assert result["module"] == "os.path"
+        cmd = run.call_args.args[0]
+        assert cmd[:5] == ["/usr/bin/pixi", "run", "-e", "compute", "python"]
+        assert run.call_args.kwargs["cwd"] == "/proj"
+
+    def test_func_doc_subprocess_conda_legacy(self) -> None:
+        import subprocess
+        proc = subprocess.CompletedProcess(args=[], returncode=0, stdout='{"module": "os.path", "functions": []}', stderr="")
+        with mock.patch("projio.runners.resolve_runner", return_value="conda"), \
+             mock.patch("projio.mcp.codio._resolve_conda", return_value="/opt/conda/bin/conda"), \
+             mock.patch("projio.mcp.codio.get_project_root", return_value="/proj"), \
+             mock.patch("subprocess.run", return_value=proc) as run:
+            _func_doc_subprocess("legacy", "os", "path", None)
+        assert run.call_args.args[0][:5] == ["/opt/conda/bin/conda", "run", "-n", "legacy", "python"]
 
 
 # ---------------------------------------------------------------------------

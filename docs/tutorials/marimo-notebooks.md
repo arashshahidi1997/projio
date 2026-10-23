@@ -54,13 +54,21 @@ notebooks/explore/
 
 ### 2. Open in marimo editor
 
-Run marimo from your project's compute environment (where cogpy / numpy / etc. are installed):
+One command, from anywhere in the project:
+
+```bash
+pipeio nb open preprocess_ieeg interactive_explorer
+```
+
+This resolves the notebook inside the flow, starts `marimo edit --headless --no-token --host 0.0.0.0` on an auto-picked free port, and prints the URL. `--no-token` puts the server in marimo's local registry, so the `marimo-pair` skill (and the `pipeio_nb_open` MCP tool) can discover and attach to it. Re-running the command prints the existing URL instead of starting a duplicate — a second server on the same file silently saves over the first one's edits. Pass `--port N` to pin the port, `--force` to launch anyway. Flow and notebook names tab-complete after `eval "$(register-python-argcomplete pipeio)"`.
+
+Or run marimo directly from your project's compute environment (where cogpy / numpy / etc. are installed):
 
 ```bash
 conda run -n cogpy marimo edit notebooks/explore/interactive_explorer.py
 ```
 
-This opens a browser UI where you can edit cells, see outputs, and interact with reactive widgets (sliders, dropdowns).
+Either way you get a browser UI where you can edit cells, see outputs, and interact with reactive widgets (sliders, dropdowns).
 
 ### 3. Agent-driven editing with live feedback
 
@@ -230,6 +238,7 @@ notebooks/explore/
 | `nb_validate` | AST + import isolation | `marimo check` |
 | `nb_publish` | nbconvert HTML | `marimo export html` |
 | `nb_lab` | Creates symlinks to `.ipynb` | Skipped (no `.ipynb`) |
+| `nb_open` | Error (use `nb_lab`) | Launch/attach headless server, returns URL + pid |
 | `nb_watch` | Error (use `nb_lab`) | `marimo edit --watch` |
 | `nb_snapshot` | N/A (use `nb_exec` + ipynb) | `marimo export session` — agent reads outputs |
 | `nb_audit` | Checks pairing, sync, kernel | Checks format, skips pairing |

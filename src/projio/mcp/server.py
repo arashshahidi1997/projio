@@ -952,7 +952,7 @@ def codio_func_doc_tool(package: str, module: str, function: str = "", env: str 
     """Live introspection of an installed Python package. Returns function signatures and docstrings.
     If function is given, returns that function's full signature and docstring.
     If omitted, lists all public functions with signatures and first-line docstrings (browsing mode).
-    Set env to a conda environment name to introspect packages in that env (e.g. "cogpy")."""
+    Set env to a project environment name (pixi env; conda for legacy projects) to introspect packages in that env."""
     return codio.codio_func_doc(package=package, module=module, function=function or None, env=env or None)
 
 
@@ -1533,7 +1533,7 @@ def pipeio_nb_snapshot_tool(
     This is the agent's 'eyes' for marimo notebooks -- see what the human sees.
     Returns structured cell summaries with console output, errors, and text data.
     Binary outputs (images) are noted but not included.
-    Use python_bin to run in a specific env, e.g. 'conda run -n cogpy python'."""
+    Use python_bin to run in a specific env, e.g. 'pixi run -e compute python'."""
     return pipeio.pipeio_nb_snapshot(
         flow=flow, name=name, timeout=timeout, python_bin=python_bin,
     )

@@ -97,7 +97,7 @@ The `runtime` section configures how projio tools are invoked externally.
 
 | Key | Purpose |
 |-----|---------|
-| `runtime.python_bin` | Absolute path to the Python binary used by `projio mcp-config` to generate `.mcp.json`. Set this in your user config (`~/.config/projio/config.yml`) when the projio ecosystem lives in a specific conda env. Falls back to `sys.executable`. |
+| `runtime.python_bin` | Absolute path to the Python binary used by `projio mcp-config` to generate `.mcp.json`. Usually unnecessary: it falls back to `sys.executable`, i.e. the env the `projio` CLI runs in (e.g. a `uv tool install`). Set it only when the MCP server must run from a different env. |
 
 ## Code & runner config
 
@@ -105,20 +105,20 @@ The `code` section configures how pipeio invokes snakemake and resolves project 
 
 ```yaml
 code:
-  runner: pixi           # "conda" (default) or "pixi"; auto-detected from pixi.toml if omitted
+  runner: pixi           # "pixi" | "conda" (legacy) | "none"; auto-detected if omitted
   envs:
-    default: cogpy       # environment name for snakemake / notebook execution
+    default: compute     # environment name for snakemake / notebook execution
     docs: docs-env       # optional: environment for mkdocs
-    datalad: labpy       # optional: environment for datalad
+    datalad: ""          # optional, legacy: environment for datalad; leave empty to use `datalad` on PATH
   conda_prefix: /opt/conda  # optional: absolute path to conda installation (for conda runner)
 ```
 
 | Key | Purpose |
 |-----|---------|
-| `code.runner` | Package manager used to wrap snakemake invocations: `"conda"` or `"pixi"`. When omitted, projio auto-detects `pixi.toml` in the project root. |
+| `code.runner` | Package manager used to wrap snakemake / pandoc / quarto invocations: `"pixi"`, `"conda"` (legacy) or `"none"` (bare commands from PATH). When omitted: `pixi.toml` in the project root → pixi; `code.conda_prefix` set → conda; otherwise none. |
 | `code.envs.default` | Environment name passed to the runner. For conda: `conda run -n <name> snakemake`. For pixi: `pixi run -e <name> snakemake` (omit or leave empty for pixi's default environment). |
 | `code.envs.docs` | Optional environment for documentation builds. |
-| `code.envs.datalad` | Optional environment for DataLad operations. |
+| `code.envs.datalad` | Optional, legacy. Environment for DataLad operations. Leave unset to use `datalad` and `git-annex` from PATH (for example `pixi global install datalad`, which also brings git-annex and the RIA special remotes). |
 | `code.conda_prefix` | Absolute path to the conda envs directory. Used with `code.envs.*` to resolve binary paths. Not needed for pixi projects. |
 
 ## Ecosystem sections

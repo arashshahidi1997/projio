@@ -75,7 +75,7 @@ bib_sources:
   - .projio/biblio/merged.bib
   - .projio/pipeio/modkey.bib
 lua_filter: .projio/filters/include.lua
-conda_env: ""
+render_env: ""
 resource_path:
   - .
   - docs

@@ -21,7 +21,7 @@ def _ensure_render_yml(root: Path) -> bool:
         "bibliography": ".projio/render/compiled.bib",
         "bib_sources": [".projio/biblio/merged.bib", ".projio/pipeio/modkey.bib"],
         "lua_filter": ".projio/filters/include.lua",
-        "conda_env": "",
+        "render_env": "",
         "resource_path": [".", "docs"],
     }
     render_yml.parent.mkdir(parents=True, exist_ok=True)

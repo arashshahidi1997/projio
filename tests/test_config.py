@@ -305,3 +305,18 @@ def test_print_effective_config_outputs_merged_yaml(tmp_path: Path, monkeypatch,
     assert "project_kind: generic" in out
     assert "credential: github" in out
     assert "credential: gitlab-lrz" in out
+
+
+def test_resolve_env_python_uses_pixi_runner(tmp_path: Path, monkeypatch) -> None:
+    import subprocess
+    from unittest import mock
+
+    from projio.config import _resolve_env_python
+
+    (tmp_path / "pixi.toml").write_text("[workspace]\nname = 't'\n")
+    proc = subprocess.CompletedProcess(args=[], returncode=0, stdout="/p/.pixi/envs/compute/bin/python\n", stderr="")
+    with mock.patch("shutil.which", return_value="/usr/bin/pixi"), \
+         mock.patch("subprocess.run", return_value=proc) as run:
+        assert _resolve_env_python(tmp_path, "compute") == "/p/.pixi/envs/compute/bin/python"
+    assert run.call_args.args[0][:5] == ["/usr/bin/pixi", "run", "-e", "compute", "python"]
+    assert run.call_args.kwargs["cwd"] == tmp_path

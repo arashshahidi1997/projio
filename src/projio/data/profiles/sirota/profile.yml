@@ -1,4 +1,4 @@
-description: "Sirota lab: full stack with conda envs (cogpy/projio/labpy) and GitLab push"
+description: "Sirota lab: full stack with conda envs (cogpy/projio) and GitLab push; DataLad from PATH"
 
 packages:
   - notio
@@ -19,7 +19,7 @@ config:
       default: cogpy
       docs: projio
       projio: projio
-      datalad: labpy
+      # DataLad and git-annex come from PATH (pixi global install), not a conda env
   site:
     output_dir: _site
     mkdocs:
