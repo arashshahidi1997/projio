@@ -112,12 +112,8 @@ projio site build -C .     # build static site
 projio site serve -C .     # start dev server
 ```
 
-And via Make targets:
-
-```bash
-make docs                  # mkdocs build --strict
-make docs-serve            # mkdocs serve
-```
+`projio tasks` lists these and the project's other routine commands; see
+[Run tasks: the CLI and pixi](../how-to/task-running.md).
 
 ## GitHub Pages deployment
 

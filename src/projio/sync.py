@@ -274,12 +274,29 @@ def _sync_render_config(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
     return {"action": "generated", "output": str(out_path.relative_to(root))}
 
 
-def _validate_code_envs(root: Path) -> dict[str, Any]:
-    """Check that conda envs declared in code.envs actually exist.
+def _pixi_env_names(root: Path) -> set[str] | None:
+    """Return the environment names declared in the pixi manifest, or None."""
+    import tomllib
 
+    manifest = root / "pixi.toml"
+    if not manifest.is_file():
+        return None
+    try:
+        data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    return {"default", *(data.get("environments", {}) or {})}
+
+
+def _validate_code_envs(root: Path) -> dict[str, Any]:
+    """Check that envs declared in code.envs actually exist.
+
+    pixi projects are checked against the ``[environments]`` table of
+    ``pixi.toml``; legacy conda projects against ``code.conda_prefix/envs``.
     Returns a dict with ``valid``, ``missing``, and ``warnings`` keys.
     """
     from projio.config import load_effective_config
+    from projio.runners import resolve_runner
 
     try:
         cfg = load_effective_config(root)
@@ -292,6 +309,16 @@ def _validate_code_envs(root: Path) -> dict[str, Any]:
 
     if not envs:
         return {"valid": [], "missing": [], "warnings": []}
+    if resolve_runner(root) == "pixi":
+        declared = _pixi_env_names(root)
+        if declared is None:
+            return {"valid": [], "missing": [], "warnings": ["pixi runner but no readable pixi.toml"]}
+        names = sorted({str(n) for n in envs.values() if n})
+        return {
+            "valid": [n for n in names if n in declared],
+            "missing": [n for n in names if n not in declared],
+            "warnings": [],
+        }
     if not conda_prefix:
         return {
             "valid": [],
@@ -1040,14 +1067,20 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
     for w in env_validation.get("warnings", []):
         print(f"[!] code.envs: {w}")
     for m in env_validation.get("missing", []):
-        print(f"[!] code.envs: conda env not found: {m}")
+        print(f"[!] code.envs: env not found: {m}")
     if env_validation.get("valid"):
         print(f"[=] code.envs: validated {', '.join(env_validation['valid'])}")
 
-    # 7. Regenerate projio.mk to pick up new manuscripts/masters
-    mk_action = _sync_projio_mk(root_path, dry_run=dry_run)
-    if mk_action["action"] in ("updated", "would_update"):
-        print(f"{prefix}[~] projio.mk regenerated")
+    # 7. Task interface: regenerate projio.mk for make projects; CLI-first projects get pixi.toml
+    from projio.init import _resolve_task_runner
+    mk_action: dict[str, str] = {"action": "skipped", "reason": "task_runner=cli"}
+    if _resolve_task_runner(root_path) == "make":
+        mk_action = _sync_projio_mk(root_path, dry_run=dry_run)
+        if mk_action["action"] in ("updated", "would_update"):
+            print(f"{prefix}[~] projio.mk regenerated")
+    elif not dry_run:
+        from projio.init import _ensure_pixi_scaffold
+        _ensure_pixi_scaffold(root_path)
 
     # 8. Ensure mkdocs monorepo plugin + subsystem !includes + sub-mkdocs.yml
     mkdocs_action = _sync_mkdocs_monorepo(root_path, dry_run=dry_run)

@@ -21,6 +21,7 @@ Skills also ship with installed packages that declare a `projio.skills` entry po
 |-------|---------|
 | `projio-orient` | Tour an unfamiliar projio workspace and suggest concrete next actions |
 | `projio-setup` | Initialize a projio workspace and enable relevant packages |
+| `projio-remotes` | Check credentials, create RIA and GitHub/GitLab siblings (preview first), wire publish-depends, save and push |
 | `agent-orchestration` | Pattern guide for coordinating multiple agents across subsystems |
 | `idea-capture` | Record an idea note with structured frontmatter and linked refs |
 | `mcp-tool-scaffold` | Build a new MCP tool end-to-end across a package + projio wrapper |

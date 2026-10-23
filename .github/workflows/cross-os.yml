@@ -1,0 +1,36 @@
+# Cross-OS check of the CLI-first task interface (Linux, macOS, Windows):
+# the pixi environment solves, projio runs as a command, and the generator,
+# render and runner tests pass.
+#
+# NOTE: bump `prefix-dev/setup-pixi` to its latest release if this fails to start.
+name: cross-os
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  projio-cli:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          environments: |
+            default
+            dev
+          cache: true
+      - name: projio runs as a command
+        run: pixi run projio tasks
+      - name: project tasks are listed
+        run: pixi task list
+      - name: task interface, render and runner tests
+        run: pixi run -e dev python -m pytest tests/test_task_interface.py tests/test_render.py -q

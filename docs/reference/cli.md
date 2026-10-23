@@ -222,7 +222,7 @@ Sets `runtime.python_bin` in the project `.projio/config.yml`.
 ```bash
 projio config -C . set-python                      # use current interpreter
 projio config -C . set-python /path/to/python      # explicit path
-projio config -C . set-python --env projio          # resolve conda env name
+projio config -C . set-python --env compute         # resolve a pixi env (conda for legacy projects)
 ```
 
 This is used by `projio mcp-config` to generate the correct `.mcp.json`.

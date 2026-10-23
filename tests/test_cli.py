@@ -181,13 +181,13 @@ def test_cli_parses_config_set_python() -> None:
     assert args.command == "config"
     assert args.config_command == "set-python"
     assert args.python_path == "/path/to/python"
-    assert args.conda_env is None
+    assert args.env is None
 
 
 def test_cli_parses_config_set_python_env() -> None:
     parser = _build_parser()
-    args = parser.parse_args(["config", "set-python", "--env", "cogpy"])
-    assert args.conda_env == "cogpy"
+    args = parser.parse_args(["config", "set-python", "--env", "compute"])
+    assert args.env == "compute"
     assert args.python_path is None
 
 

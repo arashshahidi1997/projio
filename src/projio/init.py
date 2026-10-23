@@ -478,6 +478,8 @@ def _projio_mk(root: Path) -> str:
         # resolve them from code.envs (if configured) or leave as defaults.
         projio_python = envs.get("projio")
         docs_python = envs.get("docs")
+        if not docs_python and envs_cfg.get("docs"):
+            docs_python = _pixi_cmd("python", envs_cfg["docs"])
     elif has_envs:
         python_bin = envs["python"]
         snakemake_bin = None  # resolved from PYTHON env at runtime
@@ -495,20 +497,24 @@ def _projio_mk(root: Path) -> str:
         pandoc_bin = None
         matlab_bin = runtime.get("matlab_bin")
 
-    # Warn when no docs env is configured. PROJIO/NOTIO default to the bare
-    # `projio`/`notio` commands on PATH (e.g. uv tool install), so they no
-    # longer require a configured Python — only MKDOCS does.
+    # PROJIO/NOTIO default to the bare `projio`/`notio` commands on PATH
+    # (e.g. uv tool install), so they no longer require a configured Python —
+    # only MKDOCS does.  projio and docs share requirements, so without a
+    # configured docs env fall back to the Python running projio itself when
+    # it has mkdocs (the uv tool env carries the docs plugins).
+    import importlib.util
     import sys
+    if not docs_python and importlib.util.find_spec("mkdocs") is not None:
+        docs_python = sys.executable
     if not docs_python:
         print(
             "Warning: no docs Python configured — MKDOCS will use the default "
             "Python, which may lack mkdocs.\n"
-            "  Configure via code.envs in .projio/config.yml:\n"
+            "  Configure a docs env in .projio/config.yml (pixi environment):\n"
             "    code:\n"
-            "      conda_prefix: /path/to/anaconda3\n"
             "      envs:\n"
-            "        docs: rag      # env for site builds\n"
-            "  Or via legacy runtime keys in ~/.config/projio/config.yml:\n"
+            "        docs: docs     # env for site builds\n"
+            "  Or via runtime keys in ~/.config/projio/config.yml:\n"
             "    runtime:\n"
             "      docs_python: /path/to/env/bin/python",
             file=sys.stderr,
@@ -539,7 +545,8 @@ def _projio_mk(root: Path) -> str:
             f"NOTIO     ?= {projio_python} -m notio",
             1,
         )
-    elif python_bin:
+    elif python_bin and runner != "pixi":
+        # pixi project envs don't carry projio — keep bare `projio`/`notio`.
         mk = mk.replace(
             "PROJIO    ?= projio",
             f"PROJIO    ?= {python_bin} -m projio",
@@ -640,6 +647,165 @@ PANDOC_COMMON_ARGS = --lua-filter=$(PANDOC_FILTER) $(PANDOC_CITE_ARGS)
     lines.append("PANDOC_COMMON_ARGS = --lua-filter=$(PANDOC_FILTER) $(PANDOC_CITE_ARGS)")
     lines.append("")
     return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# Task interface: the CLI first (docs/how-to/task-running.md)
+#
+# New projects get no task file: projio and notio are commands (`projio sync`,
+# `notio manuscript build NAME`), project tasks live in pixi.toml `[tasks]`,
+# and `projio tasks` prints the project-aware menu. Projects that already have
+# a Makefile keep the generated `.projio/projio.mk` (legacy, Unix only).
+# ---------------------------------------------------------------------------
+
+MINIMAL_PIXI_TOML = """\
+[workspace]
+name = "{name}"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+[dependencies]
+python = ">=3.11,<3.13"
+
+[pypi-dependencies]
+projio = {{ version = "*", extras = ["indexio", "notio"] }}
+
+# --- Optional capability features (enable per project) ---------------------
+# Render (pandoc + TeX for PDF) — manuscript/master build tasks need this.
+[feature.render.dependencies]
+pandoc = ">=3.1"
+[feature.render.target.linux-64.dependencies]
+texlive-core = "*"
+
+# Pipelines (Snakemake).
+[feature.pipeline.pypi-dependencies]
+snakemake = ">=8.0"
+
+# DataLad + git-annex (linux-only on conda-forge).
+[feature.datalad.target.linux-64.dependencies]
+datalad = "*"
+git-annex = "*"
+
+[environments]
+default = {{ features = [] }}
+render  = {{ features = ["render"] }}
+full    = {{ features = ["render", "pipeline", "datalad"] }}
+
+[tasks]
+# Project tasks go here. projio itself runs as a command:
+#   pixi run projio sync         # list what this project can build: projio tasks
+"""
+
+
+def _resolve_task_runner(root: Path) -> str:
+    """Return ``"make"`` for projects that already use make, else ``"cli"``.
+
+    An explicit ``code.task_runner: make|cli`` in config wins; otherwise a
+    project with a ``Makefile`` or ``.projio/projio.mk`` stays on make so it
+    keeps working, and every other project is CLI-first (no task file).
+    """
+    try:
+        cfg = load_effective_config(root)
+        tr = (cfg.get("code", {}) or {}).get("task_runner", "")
+        if tr in ("cli", "make"):
+            return tr
+    except Exception:
+        pass
+    if (root / "Makefile").exists() or (root / ".projio" / "projio.mk").exists():
+        return "make"
+    return "cli"
+
+
+def project_commands(root: Path) -> list[tuple[str, str]]:
+    """``(command, what it does)`` for the routine operations of this project.
+
+    A curated menu, not a mirror of ``projio --help``: a few core operations,
+    then one group per manuscript and master document that exists. Every entry
+    is a plain CLI command (`projio tasks` prints them).
+    """
+    cmds = [
+        ("projio sync", "synchronize project metadata, skills and indexes"),
+        ("projio status", "project, ecosystem and git status"),
+        ("projio site build", "build the documentation site"),
+        ("projio site serve", "serve the documentation site locally"),
+    ]
+    for name in _detect_manuscripts(root):
+        cmds += [
+            (f"notio manuscript build {name} --format pdf", f"manuscript '{name}' to PDF"),
+            (f"notio manuscript build {name} --format html", f"manuscript '{name}' to HTML"),
+            (f"notio manuscript validate {name}", f"validate manuscript '{name}'"),
+        ]
+    for name in _detect_masters(root):
+        cmds += [
+            (f"notio manuscript master-build {name} --format pdf", f"master document '{name}' to PDF"),
+            (f"notio manuscript master-build {name} --format html", f"master document '{name}' to HTML"),
+        ]
+    return cmds
+
+
+PACKAGE_PIXI_TOML = """\
+[workspace]
+name = "{name}"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+[dependencies]
+python = ">=3.11,<3.13"
+
+[pypi-dependencies]
+{dist} = {{ path = ".", editable = true }}
+
+# Dev feature — build/test tooling for this package. Run with `pixi run -e dev`.
+[feature.dev.pypi-dependencies]
+pytest = "*"
+build = "*"
+twine = "*"
+
+[feature.dev.tasks]
+test  = "python -m pytest tests -q"
+build = "python -m build"
+check = "python -m twine check dist/*"
+
+[environments]
+default = {{ features = [] }}
+dev     = {{ features = ["dev"] }}
+
+[tasks]
+# Project tasks go here. projio itself runs as a command:
+#   pixi run projio sync         # list what this project can build: projio tasks
+"""
+
+
+def _package_dist_name(root: Path) -> str | None:
+    """Return the distribution name from ``pyproject.toml`` (``[project].name``), or None."""
+    pyproject = root / "pyproject.toml"
+    if not pyproject.is_file():
+        return None
+    import re
+
+    m = re.search(r'(?m)^\s*name\s*=\s*"([^"]+)"', pyproject.read_text(encoding="utf-8"))
+    return m.group(1) if m else root.name
+
+
+def _ensure_pixi_scaffold(root: Path) -> None:
+    """Create a ``pixi.toml`` when absent (never overwrites an existing one).
+
+    A Python package (has ``pyproject.toml``) gets a package manifest that
+    editable-installs itself and carries a ``dev`` feature for test/build; any
+    other project gets the generic project manifest.
+    """
+    pixi = root / "pixi.toml"
+    if pixi.exists():
+        return
+    dist = _package_dist_name(root)
+    if dist:
+        content = PACKAGE_PIXI_TOML.format(name=root.name, dist=dist)
+        label = f"package: {dist}"
+    else:
+        content = MINIMAL_PIXI_TOML.format(name=root.name)
+        label = "project"
+    pixi.write_text(content, encoding="utf-8")
+    print(f"[OK] wrote pixi.toml ({label})")
 
 
 _PROJIO_INCLUDE = "-include .projio/projio.mk"
@@ -1128,18 +1294,24 @@ def _github_pages_workflow(root: Path, *, site_framework: str) -> str:
     )
 
 
-def _scaffold_base(root: Path, *, kind: str, force: bool, vscode: bool, github_pages: bool, gitlab_pages: bool) -> None:
+def _scaffold_base(root: Path, *, kind: str, force: bool, vscode: bool, github_pages: bool, gitlab_pages: bool, task_runner: str | None = None) -> None:
     proj_dir = root / ".projio"
     proj_dir.mkdir(parents=True, exist_ok=True)
     _ensure_packages_yml(root)
     site_framework = _detect_site_framework(root)
     _write_if_needed(proj_dir / "config.yml", _projio_config_for_kind(root, root.name, kind, site_framework=site_framework), root, force=force)
-    # projio.mk is projio-managed — always overwrite to pick up new targets
-    _write_if_needed(proj_dir / "projio.mk", _projio_mk(root), root, force=True)
     if site_framework == "mkdocs" and kind != "study":
         _write_if_needed(root / "mkdocs.yml", DEFAULT_MKDOCS.format(name=root.name), root, force=force)
-    _write_if_needed(root / "Makefile", _makefile_for_kind(kind), root, force=force)
-    _ensure_makefile_include(root / "Makefile", root)
+    # Task interface: CLI-first (default, Windows-ready), or legacy make for projects that use it.
+    task_runner = task_runner or _resolve_task_runner(root)
+    if task_runner == "make":
+        # Legacy: projio.mk is projio-managed — always overwrite to pick up targets
+        _write_if_needed(proj_dir / "projio.mk", _projio_mk(root), root, force=True)
+        _write_if_needed(root / "Makefile", _makefile_for_kind(kind), root, force=force)
+        _ensure_makefile_include(root / "Makefile", root)
+    else:
+        # cli (default): operate via the projio CLI; scaffold pixi.toml so project envs work.
+        _ensure_pixi_scaffold(root)
     _ensure_projio_gitignore(root, site_framework=site_framework)
     if vscode:
         _ensure_vscode_settings(root)
@@ -1200,16 +1372,24 @@ def scaffold(
     vscode: bool = False,
     github_pages: bool = False,
     gitlab_pages: bool = False,
+    task_runner: str | None = None,
 ) -> None:
-    """Scaffold project files inside *root*."""
+    """Scaffold project files inside *root*.
+
+    ``task_runner`` (``cli``/``make``) forces the task interface;
+    when ``None`` it is auto-resolved (``make`` for projects with an existing
+    Makefile, else ``cli``).
+    """
     if kind not in KIND_CHOICES:
         raise ValueError(f"Unknown project kind: {kind}")
+    if task_runner is not None and task_runner not in ("cli", "make"):
+        raise ValueError(f"Unknown task_runner: {task_runner}")
     if profile is not None and profile not in PROFILES:
         raise ValueError(
             f"Unknown profile: {profile}. Available: {', '.join(PROFILES)}"
         )
     root_path = Path(root).expanduser().resolve()
-    _scaffold_base(root_path, kind=kind, force=force, vscode=vscode, github_pages=github_pages, gitlab_pages=gitlab_pages)
+    _scaffold_base(root_path, kind=kind, force=force, vscode=vscode, github_pages=github_pages, gitlab_pages=gitlab_pages, task_runner=task_runner)
     if kind == "tool":
         _scaffold_tool(root_path, force=force)
     elif kind == "study":
@@ -1700,7 +1880,7 @@ Where it names a CLI command (marked "CLI"), run that command; those
 subsystems are CLI-first and their skills say how.
 
 At the start of a session, call `project_context()` to understand the workspace
-and `runtime_conventions()` to see available Makefile targets.
+and `runtime_conventions()` to see the project's commands and environments.
 """)
 
     # Tool routing table
@@ -1853,9 +2033,9 @@ and `runtime_conventions()` to see available Makefile targets.
 
     # Git & DataLad tools (always available)
     rows.append("| Check git status | `git_status()` | Run `git status` in Bash |")
-    rows.append("| Save dataset changes | `datalad_save(message)` | Run `make save` or `datalad save` |")
+    rows.append("| Save dataset changes | `datalad_save(message)` | Run `datalad save` in Bash |")
     rows.append("| Check dataset status | `datalad_status()` | Run `make status` or `datalad status` |")
-    rows.append("| Push to sibling | `datalad_push(sibling)` | Run `make push` or `datalad push` |")
+    rows.append("| Push to sibling | `datalad_push(sibling)` | Run `datalad push` in Bash |")
     rows.append("| Pull from sibling | `datalad_pull(sibling)` | Run `make pull` or `datalad update` |")
     rows.append("| List siblings | `datalad_siblings()` | Run `datalad siblings` manually |")
 
@@ -2002,13 +2182,15 @@ Agent-written notes get a template prompt pointing at the source — no LLM call
 ## Development
 
 ```bash
-make         # see available targets
-make save    # datalad save
-make push    # datalad push
+projio tasks              # this project's routine commands (sync, site, manuscripts)
+pixi task list            # the project's own tasks (pixi run <task>)
+datalad save -m "..."     # record changes
+datalad push --to <sibling>
 ```
 
 Agents should prefer the MCP tools `datalad_save()`, `datalad_push()`, `datalad_pull()`,
-and `datalad_status()` over running make/datalad commands directly.
+and `datalad_status()` over running datalad commands directly; for setting up
+siblings and credentials, follow the `projio-remotes` skill.
 """)
 
     return "\n".join(sections)
