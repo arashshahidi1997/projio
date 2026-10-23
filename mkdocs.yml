@@ -100,6 +100,7 @@ nav:
           - Contracts: specs/pipeio/contracts.md
           - CLI: specs/pipeio/cli.md
           - MCP Tools: specs/pipeio/mcp-tools.md
+      - Agent Interface Layers: specs/agent-interface-layers.md
       - Deliverables: specs/deliverables.md
       - Research Orchestration (Questio):
           - specs/research-orchestration/design.md
