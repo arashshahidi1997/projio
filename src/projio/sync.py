@@ -386,9 +386,18 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
         return {"action": "skipped", "reason": "no mkdocs.yml"}
 
     # Detect which subsystems are present
+    def _has_flows(reg: Path) -> bool:
+        if not reg.exists():
+            return False
+        try:
+            data = yaml.safe_load(reg.read_text(encoding="utf-8")) or {}
+        except Exception:
+            return True                      # unreadable: let pipeio decide
+        return bool(data.get("flows"))       # an empty registry has no pipeline docs to include
+
     has_pipeio = (
-        (root / ".projio" / "pipeio" / "registry.yml").exists()
-        or (root / ".pipeio" / "registry.yml").exists()
+        _has_flows(root / ".projio" / "pipeio" / "registry.yml")
+        or _has_flows(root / ".pipeio" / "registry.yml")
     )
     has_log = (root / "docs" / "log").is_dir()
     has_manuscript = (root / "docs" / "manuscript").is_dir()
@@ -472,43 +481,6 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
         )
         changed = True
 
-    # --- Ensure !include lines in nav ---
-    # Fixed subsystems: (label, include path, detection flag, insert-before hint)
-    includes: list[tuple[str, str, bool, str | None]] = [
-        ("Pipelines", "docs/pipelines/mkdocs.yml", has_pipeio, "Log"),
-        ("Plan", "docs/plan/mkdocs.yml", has_plan, "Log"),
-        ("Manuscript", "docs/manuscript/mkdocs.yml", has_manuscript, "Log"),
-    ]
-    # Master doc sections (inserted before Log)
-    for sec in master_sections:
-        label = sec.replace("-", " ").replace("_", " ").title()
-        includes.append((label, f"docs/{sec}/mkdocs.yml", True, "Log"))
-    # Log always last
-    includes.append(("Log", "docs/log/mkdocs.yml", has_log, None))
-
-    for label, include_path, present, insert_before in includes:
-        if not present:
-            continue
-        include_marker = f"!include ./{include_path}"
-        if include_marker in text:
-            continue
-
-        include_line = f"  - {label}: '!include ./{include_path}'"
-        nav_match = re.search(r"^nav:", text, re.MULTILINE)
-        if not nav_match:
-            continue
-
-        if insert_before:
-            anchor = re.search(rf"^  - {insert_before}:", text, re.MULTILINE)
-            if anchor:
-                text = text[:anchor.start()] + include_line + "\n" + text[anchor.start():]
-                changed = True
-                continue
-
-        # Fallback: append at end of nav
-        text = text.rstrip("\n") + "\n" + include_line + "\n"
-        changed = True
-
     # --- Generate sub-mkdocs.yml files ---
     generated: list[str] = []
     if not dry_run:
@@ -541,6 +513,50 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
                 generated.append("docs/pipelines/mkdocs.yml")
             except Exception:
                 pass
+
+    # --- Ensure !include lines in nav ---
+    # Fixed subsystems: (label, include path, detection flag, insert-before hint)
+    includes: list[tuple[str, str, bool, str | None]] = [
+        ("Pipelines", "docs/pipelines/mkdocs.yml", has_pipeio, "Log"),
+        ("Plan", "docs/plan/mkdocs.yml", has_plan, "Log"),
+        ("Manuscript", "docs/manuscript/mkdocs.yml", has_manuscript, "Log"),
+    ]
+    # Master doc sections (inserted before Log)
+    for sec in master_sections:
+        label = sec.replace("-", " ").replace("_", " ").title()
+        includes.append((label, f"docs/{sec}/mkdocs.yml", True, "Log"))
+    # Log always last
+    includes.append(("Log", "docs/log/mkdocs.yml", has_log, None))
+
+    for label, include_path, present, insert_before in includes:
+        include_line = f"  - {label}: '!include ./{include_path}'"
+        target_exists = (root / include_path).is_file()
+        if include_line + "\n" in text and not target_exists and not dry_run:
+            # an include projio wrote whose sub-site is not there: mkdocs --strict would fail on it
+            text = text.replace(include_line + "\n", "", 1)
+            changed = True
+            continue
+        if not present or (not target_exists and not dry_run):
+            continue
+        include_marker = f"!include ./{include_path}"
+        if include_marker in text:
+            continue
+
+        include_line = f"  - {label}: '!include ./{include_path}'"
+        nav_match = re.search(r"^nav:", text, re.MULTILINE)
+        if not nav_match:
+            continue
+
+        if insert_before:
+            anchor = re.search(rf"^  - {insert_before}:", text, re.MULTILINE)
+            if anchor:
+                text = text[:anchor.start()] + include_line + "\n" + text[anchor.start():]
+                changed = True
+                continue
+
+        # Fallback: append at end of nav
+        text = text.rstrip("\n") + "\n" + include_line + "\n"
+        changed = True
 
     if not changed and not generated:
         return {"action": "skipped", "reason": "already configured"}

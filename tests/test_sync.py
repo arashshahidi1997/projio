@@ -273,3 +273,19 @@ def test_validate_code_envs_pixi(tmp_path: Path) -> None:
     assert result["valid"] == ["analysis", "default"]
     assert result["missing"] == ["gone"]
     assert result["warnings"] == []
+
+
+def test_mkdocs_include_needs_its_sub_site(tmp_path):
+    """An empty pipeio registry adds no Pipelines include; a stale one projio wrote is removed."""
+    from projio.sync import _sync_mkdocs_monorepo
+    (tmp_path / ".projio" / "pipeio").mkdir(parents=True)
+    (tmp_path / ".projio" / "pipeio" / "registry.yml").write_text("flows: {}\n")
+    (tmp_path / "docs" / "manuscript").mkdir(parents=True)
+    (tmp_path / "mkdocs.yml").write_text(
+        "site_name: x\nplugins:\n  - search\n  - monorepo\n  - ezlinks\nnav:\n  - Home: index.md\n"
+        "  - Pipelines: '!include ./docs/pipelines/mkdocs.yml'\n")
+    _sync_mkdocs_monorepo(tmp_path)
+    text = (tmp_path / "mkdocs.yml").read_text()
+    assert "docs/pipelines/mkdocs.yml" not in text
+    manuscript_sub = (tmp_path / "docs" / "manuscript" / "mkdocs.yml").is_file()
+    assert ("docs/manuscript/mkdocs.yml" in text) == manuscript_sub   # only when notio wrote the sub-site
