@@ -263,7 +263,7 @@ def _parse_skill_md(skill_md: Path, root: Path | None) -> dict[str, Any] | None:
     if isinstance(meta, dict):
         short = meta.get("short-description", "")
     path = str(skill_md.relative_to(root)) if root and skill_md.is_relative_to(root) else str(skill_md)
-    return {"name": name, "description": short or desc, "path": path}
+    return {"name": name, "description": short or desc, "full_description": desc, "path": path}
 
 
 def _discover_skills(root: Path, layout: Layout | None = None) -> list[dict[str, Any]]:

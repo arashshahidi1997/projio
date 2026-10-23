@@ -1115,3 +1115,30 @@ def biblio_zotero_push(
         return json_dict({"error": f"pyzotero required: {exc}"})
     except Exception as exc:
         return json_dict({"error": str(exc)})
+
+
+# --- Agent-facing tools (docs/specs/agent-interface-layers.md) ---
+
+
+def paper_lookup(refs: list[str], detail: str = "summary") -> JsonDict:
+    """Papers by citekey, DOI or "Author Year Title", in this project or a pool (R2, R4)."""
+    if not _biblio_available():
+        return _unavailable("paper_lookup")
+    try:
+        from biblio.mcp import paper_lookup as _lookup
+        return json_dict(_lookup(refs, root=get_project_root(), detail=detail))
+    except Exception as exc:
+        return json_dict({"error": str(exc), "refs": refs})
+
+
+def biblio_job(action: str, kind: str = "", keys: list[str] | None = None, job_id: str = "",
+               force: bool = False, concurrency: int = 1, context: str = "wiki", stale: bool = False) -> JsonDict:
+    """Start, poll, list or stop a background biblio CLI job (R3)."""
+    if not _biblio_available():
+        return _unavailable("biblio_job")
+    try:
+        from biblio.mcp import job as _job
+        return json_dict(_job(action, root=get_project_root(), kind=kind, keys=keys or None, job_id=job_id,
+                              force=force, concurrency=concurrency, context=context, stale=stale))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})

@@ -14,10 +14,8 @@ metadata:
         tools:
           - rag_query
           - rag_query_multi
-          - citekey_resolve
-          - paper_context
-          - paper_absent_refs
-          - biblio_docling
+          - paper_lookup
+          - biblio_job
           - biblio_ingest
           - note_create
           - note_latest
@@ -65,7 +63,7 @@ Then refine with 1–2 follow-up queries targeting:
 
 For each relevant result:
 ```
-citekey_resolve(citekeys=[<key>])
+paper_lookup(refs=[<key>])
 ```
 
 Confirm the paper exists in the bibliography.
@@ -75,7 +73,7 @@ Confirm the paper exists in the bibliography.
 For each confirmed citekey:
 
 ```
-paper_context(citekey="<key>")
+paper_lookup(refs=["<key>"], detail="context")
 ```
 
 Extract:
@@ -86,7 +84,7 @@ Extract:
 
 Check for unresolved references worth ingesting:
 ```
-paper_absent_refs(citekey="<key>")
+biblio refs triage <key>        # CLI
 ```
 
 ### 5) Ingest missing key papers (if needed)

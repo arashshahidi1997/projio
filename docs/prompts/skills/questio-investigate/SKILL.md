@@ -19,7 +19,7 @@ metadata:
           - pipeio_target_paths
           - pipeio_nb_read
           - pipeio_mod_context
-          - paper_context
+          - paper_lookup
           - codio_discover
           - rag_query
           - note_create
@@ -116,7 +116,7 @@ problematic subject to establish contrast.
 Ground the investigation in what *should* have happened:
 
 ```
-paper_context(citekey="<relevant citation>")
+paper_lookup(refs=["<relevant citation>"], detail="context")
 ```
 
 - What values does the literature report for this metric?

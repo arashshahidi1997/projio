@@ -11,7 +11,7 @@ metadata:
     mcp:
       - server: projio
         tools:
-          - paper_context
+          - paper_lookup
           - codio_discover
           - codio_get
           - rag_query
@@ -53,7 +53,7 @@ Extract relevant citekeys from the question's `citations` field in
 `questions.yml`. For each key citation (up to 3-5 most relevant):
 
 ```
-paper_context(citekey="<key>")
+paper_lookup(refs=["<key>"], detail="context")
 ```
 
 Extract:
