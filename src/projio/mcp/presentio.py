@@ -781,7 +781,7 @@ def present_cite_check(name: str) -> JsonDict:
                 )
                 if not has_fulltext:
                     suggestions.append(
-                        f"Run biblio_docling on '{citekey}' to enable RAG over its fulltext"
+                        f"Run biblio_job('start', kind='docling', keys=['{citekey}']) to enable RAG over its fulltext"
                     )
             else:
                 missing.append({"citekey": citekey, "sections": sections})

@@ -15,7 +15,7 @@ metadata:
           - questio_gap
           - questio_docs_collect
           - pipeio_flow_status
-          - paper_context
+          - paper_lookup
           - codio_discover
           - rag_query
           - note_create
@@ -72,7 +72,7 @@ Which would you like to work on, or do you have a different priority?
 Once the user selects a milestone, apply the `questio-ground` logic:
 
 1. Extract citations from the parent question in `questions.yml`
-2. Call `paper_context()` for key papers (up to 3-5)
+2. Call `paper_lookup(refs, detail="context")` for key papers (up to 3-5)
 3. Call `codio_discover()` with milestone keywords
 4. Call `rag_query()` to find prior project knowledge
 

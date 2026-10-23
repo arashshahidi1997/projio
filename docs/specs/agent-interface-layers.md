@@ -1,6 +1,6 @@
 # Agent interface layers: CLI, skills, MCP
 
-**Status:** Proposed
+**Status:** Proposed; the biblio group is implemented (2026-10-23): `paper_lookup`, `biblio_job`, 34 tools deprecated for one release
 **Date:** 2026-10-23
 
 ## Motivation

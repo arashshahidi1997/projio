@@ -15,8 +15,7 @@ metadata:
           - rag_query
           - rag_query_multi
           - corpus_list
-          - citekey_resolve
-          - paper_context
+          - paper_lookup
 ---
 
 # RAG Query
@@ -74,8 +73,8 @@ rag_query_multi(queries=[
 
 If corpus is `papers` and a promising citekey appears:
 ```
-citekey_resolve(citekeys=[<key>])
-paper_context(citekey="<key>")
+paper_lookup(refs=[<key>])
+paper_lookup(refs=["<key>"], detail="context")
 ```
 
 ### 5) Format results
@@ -104,7 +103,7 @@ Key point: <paraphrased — never reproduce verbatim>
 Based on results, suggest:
 - For code: "read file X lines Y-Z"
 - For docs: "see spec at path X"
-- For papers: "get full context with paper_context(<citekey>)"
+- For papers: "get its sections with paper_lookup(refs=["<citekey>"], detail="context")"
 
 ## Guardrails
 

@@ -1,193 +1,132 @@
 ---
 name: biblio-batch-curate
 description: >
-  End-to-end bibliography curation: ingest DOIs, merge sources, fetch PDFs,
-  validate, run docling extraction, compile final bib, and sync indexes.
-  Handles async jobs (PDF fetch, docling) with polling. Use after bulk
-  paper discovery or when bibliography needs a full refresh.
+  End-to-end bibliography curation for a batch of papers: add them (DOIs or
+  Zotero), fetch open-access PDFs, extract references and full text for
+  exactly those papers as background jobs, compile the bibliography, and
+  sync indexes. Use after bulk paper discovery or when a batch needs a full
+  refresh.
 metadata:
-  short-description: Ingest → fetch → validate → extract → compile → index
+  short-description: Add → fetch → extract (named keys, background) → compile → index
   tags: [bibliography, batch, curation, production]
   tooling:
     mcp:
       - server: projio
         tools:
           - biblio_ingest
-          - biblio_merge
-          - biblio_pdf_fetch_oa
-          - biblio_pdf_fetch_oa_status
-          - biblio_pdf_validate
-          - biblio_docling_batch
-          - biblio_docling_status
-          - biblio_grobid
-          - biblio_grobid_check
-          - biblio_graph_expand
+          - biblio_job
+          - biblio_status
           - biblio_compile
-          - biblio_library_quality
+          - paper_lookup
           - indexio_sources_sync
+    cli: [biblio add zotero, biblio locate, biblio bibtex merge, biblio graph expand]
 ---
 
 # Bibliography Batch Curation
 
-Orchestrate the full bibliography pipeline from raw DOIs to indexed,
-searchable papers with compiled BibTeX for manuscript rendering.
+Take a batch of papers from references to extracted, indexed papers with a
+compiled bibliography for rendering. Every step after the first works on the
+batch's citekeys only: a project copy may be shared with other sessions, and
+a batch without keys would process their papers too.
 
 ## When to use
 
 - After bulk paper discovery (literature-discovery, graph expansion, author search)
-- When onboarding a new batch of papers from Zotero export
-- Periodic library refresh (new PDFs available, stale docling outputs)
-- When `ecosystem_status()` flags bibliography staleness
+- When onboarding a batch of papers from Zotero
+- Refreshing a set of papers (new PDFs available, stale docling outputs)
 
-Do NOT use for single-paper lookups — use `citekey_resolve` / `paper_context` directly.
+For a single paper use `paper_lookup([ref])`.
 
 ## Inputs
 
-- `DOIS` (optional): list of DOIs to ingest. If empty, skip step 1 and start from merge.
-- `CITEKEYS` (optional): specific citekeys to process. If empty, process all pending.
-- `TAGS` (optional): tags to apply to newly ingested papers.
-- `MODE` (optional): `full` (default) or `refresh` (skip ingest, re-fetch/re-extract only).
+- `REFS`: DOIs, Zotero refs, or citekeys already in the project.
+- `TAGS` (optional): tags for newly ingested papers.
 
 ## Workflow
 
-### 1) Ingest new papers (skip if MODE=refresh)
+### 1) What is already held
 
 ```
-biblio_ingest(dois=DOIS, tags=TAGS, status="unread")
+paper_lookup(refs=REFS)
 ```
 
-Record the returned citekeys — these feed subsequent steps.
+Each ref comes back with where it is held (project, a pool, nowhere) and its
+citekey. Papers already in the project with full text need nothing more; for
+a list of loose references (titles, author-year) the CLI gives one table:
+`biblio locate --from refs.txt --openalex`.
 
-If any DOIs fail to resolve, report them and continue with successful ones.
+### 2) Add the missing papers
 
-### 2) Merge source bibliographies
+- By DOI: `biblio_ingest(dois=[...], tags=TAGS, status="unread")`.
+- From Zotero (with PDFs, group libraries too), on the machine running Zotero:
+  `biblio add zotero REF... --local` (CLI).
 
-```
-biblio_merge()
-```
+Record the citekeys; they are `KEYS` from here on. New entries count for the
+batch tools at once (no merge needed for extraction).
 
-This consolidates `bib/srcbib/*.bib` into `.projio/biblio/merged.bib`.
-Check the returned stats: entry count, duplicates resolved, warnings.
-
-### 3) Fetch PDFs via open-access cascade
-
-For small batches (< 20 papers):
-```
-biblio_pdf_fetch_oa(citekeys=CITEKEYS)
-```
-
-For large batches (20+ papers), run in background:
-```
-biblio_pdf_fetch_oa(background=True, citekeys=CITEKEYS)
-```
-
-Poll until complete:
-```
-biblio_pdf_fetch_oa_status(job_id=<job_id>)
-```
-
-Report: how many PDFs fetched, from which sources (pool/OpenAlex/Unpaywall/EZProxy), how many missing.
-
-### 4) Validate fetched PDFs
+### 3) Open-access PDFs for papers without one
 
 ```
-biblio_pdf_validate()
+biblio_job(action="start", kind="oa_fetch", keys=KEYS)
+biblio_job(action="status", job_id=...)
 ```
 
-This detects HTML paywall pages saved as `.pdf` (magic bytes check).
-If invalid PDFs found:
-- Report the count and affected citekeys
-- Ask user: fix now (`biblio_pdf_validate(fix=True)` deletes fakes for re-fetch) or skip?
-- If fixed, re-run step 3 for affected citekeys only
+The fetch keeps only real PDFs (an HTML paywall page is rejected). Report
+fetched and missing; missing papers need a PDF from the user or Zotero.
 
-### 5) Run docling extraction
+### 4) References and full text
 
 ```
-biblio_docling_batch(concurrency=1)
+biblio_job(action="start", kind="grobid", keys=KEYS)
+biblio_job(action="start", kind="docling", keys=KEYS)
 ```
 
-This is always async — returns a `job_id`. Poll:
-```
-biblio_docling_status(job_id=<job_id>)
-```
+The docling start returns its plan first: what will be converted and what is
+skipped and why (`done`, `no PDF`, `not in the bibliography, no PDF`). Poll
+each job with `biblio_job(action="status", job_id=...)`; its `summary` lists
+failures per key. A GROBID failure for every key usually means the server is
+down (`biblio grobid check`, CLI); continue without it and say so.
 
-Keep concurrency at 1 on shared HPC. Report progress at each poll.
+### 5) Citation graph (optional, ask first)
 
-### 6) GROBID reference extraction (if available)
+`biblio graph expand` (CLI). Report new DOIs and ask whether to add them
+(back to step 2).
 
-First check availability:
-```
-biblio_grobid_check()
-```
+### 6) Compile the bibliography
 
-If GROBID is running:
-```
-biblio_grobid(citekeys=CITEKEYS)
-```
-
-If GROBID is not available, skip this step and note it in the report.
-
-### 7) Expand citation graph (optional)
-
-If the user wants to discover related papers:
-```
-biblio_graph_expand(citekeys=CITEKEYS, direction="both", depth=1)
-```
-
-Report new DOIs found. Ask user whether to ingest them (loops back to step 1).
-
-### 8) Compile final bibliography
+`biblio bibtex merge` (CLI), then:
 
 ```
 biblio_compile()
 ```
 
-This merges `merged.bib` + `modkey.bib` → `.projio/render/compiled.bib`.
-Report entry count in compiled output.
+Report the entry count of `.projio/render/compiled.bib`.
 
-### 9) Quality check
-
-```
-biblio_library_quality()
-```
-
-Report per-tier counts: noise, stubs, sparse entries.
-Flag any newly ingested papers that are stubs or missing DOI/authors.
-
-### 10) Sync indexes
+### 7) Status and indexes
 
 ```
+biblio_status(citekeys=KEYS)
 indexio_sources_sync(build=True)
 ```
 
-This registers new papers in the indexio config and rebuilds the search index.
-
 ## Decision gates
 
-The workflow has two explicit gates where the agent MUST pause and report:
-
-1. **After step 4 (PDF validation)**: if invalid PDFs found, get user decision before proceeding
-2. **After step 7 (graph expansion)**: if new DOIs discovered, get user decision on whether to ingest
-
-All other steps proceed automatically.
+1. After step 1: confirm the batch (what is held, what will be added).
+2. After step 5: whether to add newly found papers.
 
 ## Guardrails
 
-- NEVER skip the PDF validation step — paywall HTML masquerading as PDF will cause docling failures.
-- NEVER set `concurrency` > 2 for `biblio_docling_batch` on shared infrastructure.
-- NEVER run `biblio_compile` before `biblio_merge` — compiled.bib depends on merged.bib.
-- If `biblio_pdf_fetch_oa` returns 0 new PDFs, still proceed to docling (there may be pending unprocessed PDFs from prior runs).
-- Do NOT run git commands during this workflow.
+- Always pass `keys` to `biblio_job`; never start a batch for the whole
+  bibliography in a shared copy unless the user asks.
+- Docling concurrency stays at 1 (2 at most) on shared machines.
+- `biblio bibtex merge` before `biblio_compile`.
+- No git or DataLad commands during the workflow.
 
 ## Output format
 
-Report:
-1. Papers ingested (count, failed DOIs if any)
-2. PDFs fetched (count by source: pool/OA/Unpaywall/EZProxy, missing count)
-3. PDF validation (valid/invalid counts, action taken)
-4. Docling extraction (processed/skipped/failed counts)
-5. GROBID status (available/unavailable, refs extracted)
-6. Compiled bibliography entry count
-7. Quality summary (noise/stub/sparse counts)
-8. Index rebuild status
-9. Suggested next step
+1. Papers added (count, refs that failed)
+2. PDFs fetched / missing
+3. GROBID and docling: converted, skipped (with reasons), failed
+4. Compiled bibliography entry count
+5. Index rebuild status
+6. Suggested next step (e.g. claims digests: `biblio_job(action="start", kind="digest", keys=KEYS)`)

@@ -1692,11 +1692,12 @@ All project knowledge (papers, notes, code libraries, search indexes) is managed
 through MCP tools. **Always use MCP tools instead of direct file manipulation**
 for projio-managed resources.
 
-**Tool preference:** When an MCP tool exists for an operation, always prefer it
-over the Bash equivalent — even for simple commands like `git status` or
-`datalad status`. MCP tools return structured output and resolve environment
-variables (Python paths, conda envs) that differ from the MCP server's own env.
-Only fall back to Bash when no MCP tool covers the operation.
+**Tool preference:** Follow the routing table below. Where it names an MCP
+tool, prefer it over the Bash equivalent — even for simple commands like
+`git status` or `datalad status`: MCP tools return structured output and
+resolve environment variables that differ from the MCP server's own env.
+Where it names a CLI command (marked "CLI"), run that command; those
+subsystems are CLI-first and their skills say how.
 
 At the start of a session, call `project_context()` to understand the workspace
 and `runtime_conventions()` to see available Makefile targets.
@@ -1718,23 +1719,20 @@ and `runtime_conventions()` to see available Makefile targets.
         rows.append("| Sync all subsystem sources | `indexio_sources_sync(build=True)` | Run sync commands manually |")
 
     if has_biblio:
+        # docs/specs/agent-interface-layers.md: MCP for lookups and background jobs, the CLI for the rest
+        rows.append("| Look up papers (key, DOI or 'Author Year Title'; project or pools) | `paper_lookup(refs)` | Read .bib files or search pools by hand |")
+        rows.append("| A paper's sections, GROBID header, topics | `paper_lookup(refs, detail=\"context\")` | Read docling/GROBID outputs directly |")
+        rows.append("| Read exact wording from a paper | `biblio fulltext KEY --section S` / `--grep W` / `--lines A-B` (CLI) | Read the docling .md directly (artefacts, other line numbers) |")
+        rows.append("| Extract full text, references, OA PDFs, claims digests | `biblio_job(\"start\", kind=docling\\|grobid\\|oa_fetch\\|digest, keys=[...])`, then `biblio_job(\"status\", job_id=...)` | Run a batch without keys in a shared copy |")
         rows.append("| Ingest papers by DOI | `biblio_ingest(dois)` | Write BibTeX by hand |")
-        rows.append("| Look up a paper | `citekey_resolve(citekeys)` | Read .bib files directly |")
-        rows.append("| Get full paper context | `paper_context(citekey)` | Read docling/GROBID outputs directly |")
-        rows.append("| Find unresolved refs | `paper_absent_refs(citekey)` | Parse references.json manually |")
-        rows.append("| Check paper status | `library_get(citekey)` | Read library.yml directly |")
-        rows.append("| Update paper status | `biblio_library_set(citekeys)` | Edit library.yml directly |")
-        rows.append("| Normalize citekeys | `biblio_citekey_normalize(apply, enrich)` | Rename bib entries by hand |")
-        rows.append("| Merge bibliography | `biblio_merge()` | Run `biblio merge` in terminal |")
-        rows.append("| Fetch PDFs from BibTeX | `biblio_pdf_fetch(dry_run, force)` | Copy PDFs manually |")
-        rows.append("| Fetch PDFs via OA cascade | `biblio_pdf_fetch_oa(force, citekeys)` | Run `biblio bibtex fetch-pdfs-oa` |")
-        rows.append("| Extract full text | `biblio_docling(citekey)` | Run `biblio docling` in terminal |")
-        rows.append("| Batch extract full text | `biblio_docling_batch(force, background)` | Run docling loop manually |")
-        rows.append("| Check Docling job status | `biblio_docling_status(job_id)` | Poll job manually |")
-        rows.append("| Extract references | `biblio_grobid(citekey)` | Run `biblio grobid` in terminal |")
-        rows.append("| Check GROBID server | `biblio_grobid_check()` | Curl the GROBID API manually |")
-        rows.append("| Expand reference graph | `biblio_graph_expand(citekeys)` | Run `biblio graph expand` |")
-        rows.append("| Sync biblio sources to index | `biblio_rag_sync()` | Run `biblio rag sync` in terminal |")
+        rows.append("| Add papers from Zotero (groups too) | `biblio add zotero REF... --local` (CLI, on the Zotero machine) | Copy PDFs from Zotero storage by hand |")
+        rows.append("| Where is each paper of a list | `biblio locate --from list.txt [--openalex]` (CLI) | Search Zotero and pools one by one |")
+        rows.append("| A held paper's references | `biblio refs triage KEY` (CLI) | Parse references.json manually |")
+        rows.append("| Check quotes in any markdown file | `biblio quotes check FILE` (CLI) | Grep quotes by hand |")
+        rows.append("| Claims across papers | `biblio digest claims-table KEY... --grep W` (CLI) | Read digests one by one |")
+        rows.append("| Literature wiki | skills `wiki-ingest`, `wiki-synthesize`, `wiki-maintain`, `wiki-review`; `biblio wiki lint` (CLI) | Edit reviewed pages, or links by hand (`biblio wiki relink`) |")
+        rows.append("| Pipeline status per paper | `biblio_status(citekeys)` | Inspect derivative folders manually |")
+        rows.append("| Compile the bibliography for rendering | `biblio_compile()` | Concatenate .bib files |")
 
     if has_notio:
         rows.append("| Create a note/task/idea | `note_create(note_type)` | Create markdown files directly |")
@@ -1872,13 +1870,9 @@ and `runtime_conventions()` to see available Makefile targets.
             workflow_parts.append("1. **Search first** — check existing knowledge before creating new content")
         if has_biblio:
             workflow_parts.append(
-                "2. **Ingest pipeline** — after `biblio_ingest`, run `biblio_merge` → "
-                "`biblio_pdf_fetch_oa` → `biblio_docling_batch` → `biblio_grobid` → "
-                "`biblio_graph_expand` → `indexio_build`"
-                if has_indexio else
-                "2. **Ingest pipeline** — after `biblio_ingest`, run `biblio_merge` → "
-                "`biblio_pdf_fetch_oa` → `biblio_docling_batch` → `biblio_grobid` → "
-                "`biblio_graph_expand`"
+                "2. **Ingest pipeline** — add papers (`biblio_ingest(dois)`, or `biblio add zotero` on the "
+                "Zotero machine), then `biblio_job(\"start\", kind=\"grobid\", keys=[...])` and "
+                "`kind=\"docling\"` for those keys only; `biblio_job(\"status\", job_id=...)` until done"
             )
         if has_notio:
             workflow_parts.append("3. **Record decisions** — create notes to capture analysis and decisions")

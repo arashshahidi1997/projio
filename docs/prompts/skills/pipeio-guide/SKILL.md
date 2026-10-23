@@ -260,7 +260,6 @@ pipeio_nb_publish(flow, name)           # publish to docs (nbconvert or marimo e
 pipeio_nb_pipeline(flow, name)          # sync → publish → collect → nav
 pipeio_nb_validate(flow, name)          # structural validation (AST or marimo check)
 pipeio_nb_watch(flow, name)             # marimo edit --watch (marimo-only)
-pipeio_nb_snapshot(flow, name)          # execute marimo, return cell outputs (agent's "eyes")
 ```
 
 ## CLI Quick Reference
@@ -291,7 +290,7 @@ that flows into mod docs, notebooks, and scripts.
                    Record the analysis idea, success criteria, expected outputs
 
 2. LITERATURE      biblio: rag_query(corpus="bib", query="...")
-                   biblio: citekey_resolve(citekey) → biblio_docling(citekey, query)
+                   biblio: paper_lookup([citekey]) → biblio fulltext <citekey> --grep "<words>"  (CLI)
                    Find methods, parameter ranges, validation approaches
 
 3. CODE SEARCH     codio: codio_discover(query="...") → codio_get(name)
@@ -338,8 +337,8 @@ pipeio: nb_audit()                        → find stale/orphaned notebooks
 
 ```
 1. biblio: rag_query(corpus="bib", query="<method name>")
-2. biblio: citekey_resolve(citekey) → confirm paper exists
-3. biblio: biblio_docling(citekey, query="method algorithm") → extract method details
+2. biblio: paper_lookup([citekey]) → confirm paper exists
+3. biblio: biblio fulltext <citekey> --grep "method|algorithm"  (CLI) → extract method details
 4. Edit theory.md with [@citekey] pandoc citations
 5. Theory feeds into manuscript methods via manuscripto
 ```

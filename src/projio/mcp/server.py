@@ -65,33 +65,56 @@ def indexio_sources_sync_tool(build: bool = False, sources_filter: list[str] = [
 
 # --- Biblio tools ---
 
+@server.tool("paper_lookup")
+def paper_lookup_tool(refs: list[str], detail: str = "summary"):
+    """Papers by citekey, DOI or "Author Year Title", in this project or any configured pool.
+    Per ref: bib record, library entry, and where its full text, PDF, GROBID output, figures and
+    digests are; for papers outside the project, the best holding and a doi.org link.
+    detail="context" adds the full text's sections (id, title, line, words), the GROBID header and
+    OpenAlex topics. For the text itself use the CLI: `biblio fulltext KEY --section S | --grep W`."""
+    return biblio.paper_lookup(refs, detail=detail)
+
+
+@server.tool("biblio_job")
+def biblio_job_tool(action: str, kind: str = "", keys: list[str] = [], job_id: str = "", force: bool = False,
+                    concurrency: int = 1, context: str = "wiki", stale: bool = False):
+    """Background biblio jobs. action: start | status | list | kill.
+    start: kind = docling | grobid | oa_fetch | digest; keys limits it to those papers (always pass them in a
+    shared copy; digest needs them). Runs the same CLI command a person would (e.g. `biblio docling batch
+    --keys ...`) and returns job_id; docling returns its plan first (pending, skipped with reasons).
+    status: job_id -> status, exit code, progress ("[n/total]"), the command's summary lines.
+    digest options: context (wiki|talk), stale (redo digests made with an older prompt)."""
+    return biblio.biblio_job(action, kind=kind, keys=keys or None, job_id=job_id, force=force,
+                             concurrency=concurrency, context=context, stale=stale)
+
+
 @server.tool("citekey_resolve")
 def citekey_resolve_tool(citekeys: list[str]):
-    """Resolve citekeys into title/authors/year/doi/abstract/tags/status."""
+    """Deprecated: use paper_lookup(refs); this tool goes in the next release. Resolve citekeys into title/authors/year/doi/abstract/tags/status."""
     return biblio.citekey_resolve(citekeys)
 
 
 @server.tool("paper_context")
 def paper_context_tool(citekey: str):
-    """Full structured context for a paper including docling excerpt and local refs."""
+    """Deprecated: use paper_lookup(refs, detail="context"); this tool goes in the next release. Full structured context for a paper including docling excerpt and local refs."""
     return biblio.paper_context(citekey)
 
 
 @server.tool("paper_absent_refs")
 def paper_absent_refs_tool(citekey: str):
-    """References in the paper not matched locally (GROBID unresolved refs)."""
+    """Deprecated: use `biblio refs triage KEY` (CLI); this tool goes in the next release. References in the paper not matched locally (GROBID unresolved refs)."""
     return biblio.paper_absent_refs(citekey)
 
 
 @server.tool("library_get")
 def library_get_tool(citekey: str):
-    """Status/tags/priority from the library ledger for a citekey."""
+    """Deprecated: use paper_lookup(refs); this tool goes in the next release. Status/tags/priority from the library ledger for a citekey."""
     return biblio.library_get(citekey)
 
 
 @server.tool("biblio_citekey_normalize")
 def biblio_citekey_normalize_tool(apply: bool = False, enrich: bool = False):
-    """Preview or apply citekey normalization to canonical author_year_Title.
+    """Deprecated: use `biblio citekey normalize` (CLI); this tool goes in the next release. Preview or apply citekey normalization to canonical author_year_Title.
     Entries with incomplete metadata (author/year/title) go to the `skipped` bucket
     and are never renamed to anon_nd_Record — enrich first, then re-run.
     MCP defaults: apply=False (preview), enrich=False (offline). Set enrich=True
@@ -110,7 +133,7 @@ def biblio_ingest_tool(dois: list[str], tags: list[str] = [], status: str = "unr
 
 @server.tool("biblio_library_set")
 def biblio_library_set_tool(citekeys: list[str], status: str = "", tags: list[str] = [], priority: str = ""):
-    """Bulk-update library ledger entries (status/tags/priority) for multiple citekeys."""
+    """Deprecated: use `biblio library set` (CLI); this tool goes in the next release. Bulk-update library ledger entries (status/tags/priority) for multiple citekeys."""
     return biblio.biblio_library_set(
         citekeys=citekeys, status=status or None, tags=tags or None, priority=priority or None,
     )
@@ -118,14 +141,14 @@ def biblio_library_set_tool(citekeys: list[str], status: str = "", tags: list[st
 
 @server.tool("biblio_merge")
 def biblio_merge_tool(dry_run: bool = False):
-    """Merge source .bib files into .projio/biblio/merged.bib (intermediate).
+    """Deprecated: use `biblio bibtex merge` (CLI); this tool goes in the next release. Merge source .bib files into .projio/biblio/merged.bib (intermediate).
     Run biblio_compile() after this to produce the final compiled.bib."""
     return biblio.biblio_merge(dry_run=dry_run)
 
 
 @server.tool("biblio_openalex_resolve")
 def biblio_openalex_resolve_tool(limit: int | None = None, force: bool = False):
-    """Resolve bibliography entries against OpenAlex API. Creates resolved.jsonl
+    """Deprecated: use `biblio openalex resolve` (CLI); this tool goes in the next release. Resolve bibliography entries against OpenAlex API. Creates resolved.jsonl
     needed by biblio_enrich, biblio_pdf_fetch_oa, biblio_graph_expand, and biblio_enrich_topic_tags.
     Pipeline: biblio_ingest → biblio_merge → biblio_openalex_resolve → downstream tools."""
     return biblio.biblio_openalex_resolve(limit=limit, force=force)
@@ -133,7 +156,7 @@ def biblio_openalex_resolve_tool(limit: int | None = None, force: bool = False):
 
 @server.tool("biblio_crossref_resolve")
 def biblio_crossref_resolve_tool(dois: list[str]):
-    """Resolve DOIs via Crossref API. Fallback when OpenAlex misses preprints or niche journals.
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Resolve DOIs via Crossref API. Fallback when OpenAlex misses preprints or niche journals.
     Returns per-DOI metadata (title, authors, year, journal, type)."""
     return biblio.biblio_crossref_resolve(dois=dois)
 
@@ -151,14 +174,14 @@ def biblio_compile_tool(
 
 @server.tool("biblio_pdf_fetch")
 def biblio_pdf_fetch_tool(dry_run: bool = False, force: bool = False):
-    """Copy/symlink PDFs from Zotero file fields in bib/srcbib/*.bib into bib/articles/.
+    """Deprecated: use `biblio bibtex fetch-pdfs` (CLI); this tool goes in the next release. Copy/symlink PDFs from Zotero file fields in bib/srcbib/*.bib into bib/articles/.
     Tracks MD5 hashes to skip unchanged files. Use dry_run to preview."""
     return biblio.biblio_pdf_fetch(dry_run=dry_run, force=force)
 
 
 @server.tool("biblio_pdf_fetch_oa")
 def biblio_pdf_fetch_oa_tool(force: bool = False, citekeys: list[str] = [], background: bool = False):
-    """Download PDFs via open-access cascade (pool → OpenAlex → Unpaywall → EZProxy).
+    """Deprecated: use biblio_job("start", kind="oa_fetch", keys=...); this tool goes in the next release. Download PDFs via open-access cascade (pool → OpenAlex → Unpaywall → EZProxy).
     Configure cascade order and credentials in bib/config/biblio.yml under pdf_fetch:.
     Pass citekeys to fetch specific papers, or leave empty for all.
     Set background=True for large libraries — returns job_id for polling via biblio_pdf_fetch_oa_status."""
@@ -167,27 +190,27 @@ def biblio_pdf_fetch_oa_tool(force: bool = False, citekeys: list[str] = [], back
 
 @server.tool("biblio_pdf_fetch_oa_status")
 def biblio_pdf_fetch_oa_status_tool(job_id: str):
-    """Check progress of a background biblio_pdf_fetch_oa job.
+    """Deprecated: use biblio_job("status", job_id=...); this tool goes in the next release. Check progress of a background biblio_pdf_fetch_oa job.
     Returns status, progress (done/total/eta_s), and per-source counts when complete."""
     return biblio.biblio_pdf_fetch_oa_status(job_id=job_id)
 
 
 @server.tool("biblio_docling")
 def biblio_docling_tool(citekey: str, force: bool = False, background: bool = False):
-    """Run Docling on a paper's PDF to extract full text as markdown.
+    """Deprecated: use biblio_job("start", kind="docling", keys=[KEY]); this tool goes in the next release. Run Docling on a paper's PDF to extract full text as markdown.
     Set background=True to return immediately with a job_id for polling via biblio_docling_status."""
     return biblio.biblio_docling(citekey=citekey, force=force, background=background)
 
 
 @server.tool("biblio_docling_status")
 def biblio_docling_status_tool(job_id: str):
-    """Check the status of a background biblio_docling job. Returns status, result, or error."""
+    """Deprecated: use biblio_job("status", job_id=...); this tool goes in the next release. Check the status of a background biblio_docling job. Returns status, result, or error."""
     return biblio.biblio_docling_status(job_id=job_id)
 
 
 @server.tool("biblio_docling_batch")
 def biblio_docling_batch_tool(concurrency: int = 1, force: bool = False, filter_glob: str = ""):
-    """Run Docling on all pending papers (PDFs without docling output) in background.
+    """Deprecated: use biblio_job("start", kind="docling", keys=...); this tool goes in the next release. Run Docling on all pending papers (PDFs without docling output) in background.
     Returns a job_id — poll with biblio_docling_status(job_id). Keep concurrency low on shared HPC."""
     return biblio.biblio_docling_batch(
         concurrency=concurrency, force=force,
@@ -197,32 +220,32 @@ def biblio_docling_batch_tool(concurrency: int = 1, force: bool = False, filter_
 
 @server.tool("biblio_grobid")
 def biblio_grobid_tool(citekey: str, force: bool = False):
-    """Run GROBID on a paper's PDF to extract structured header and references."""
+    """Deprecated: use biblio_job("start", kind="grobid", keys=...); this tool goes in the next release. Run GROBID on a paper's PDF to extract structured header and references."""
     return biblio.biblio_grobid(citekey=citekey, force=force)
 
 
 @server.tool("biblio_grobid_check")
 def biblio_grobid_check_tool():
-    """Check whether the GROBID server is reachable."""
+    """Deprecated: use `biblio grobid check` (CLI); this tool goes in the next release. Check whether the GROBID server is reachable."""
     return biblio.biblio_grobid_check()
 
 
 @server.tool("biblio_rag_sync")
 def biblio_rag_sync_tool(force_init: bool = False):
-    """Register biblio docling sources into the indexio config. Run indexio_build after."""
+    """Deprecated: use `biblio rag sync` (CLI); this tool goes in the next release. Register biblio docling sources into the indexio config. Run indexio_build after."""
     return biblio.biblio_rag_sync(force_init=force_init)
 
 
 @server.tool("biblio_pdf_validate")
 def biblio_pdf_validate_tool(fix: bool = False):
-    """Scan bib/articles/ for fake PDFs (HTML paywall pages saved as .pdf).
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Scan bib/articles/ for fake PDFs (HTML paywall pages saved as .pdf).
     Returns list of invalid files. Set fix=True to delete them for re-fetch."""
     return biblio.biblio_pdf_validate(fix=fix)
 
 
 @server.tool("biblio_library_quality")
 def biblio_library_quality_tool():
-    """Scan bibliography for low-quality entries: noise (garbage), stubs (too few fields),
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Scan bibliography for low-quality entries: noise (garbage), stubs (too few fields),
     sparse (missing DOI/authors). Returns per-tier counts and issue lists."""
     return biblio.biblio_library_quality()
 
@@ -241,7 +264,7 @@ def biblio_graph_expand_tool(
     merge: bool = True,
     force: bool = False,
 ):
-    """Expand the OpenAlex reference graph from resolved seed records.
+    """Deprecated: use `biblio graph expand` (CLI); this tool goes in the next release. Expand the OpenAlex reference graph from resolved seed records.
     Discovers references/citing works for seed papers and writes graph_candidates.json."""
     return biblio.biblio_graph_expand(
         citekeys=citekeys or None,
@@ -261,7 +284,7 @@ def biblio_graph_promote_tool(
     tags: list[str] = [],
     dry_run: bool = False,
 ):
-    """Promote graph expansion candidates into the bibliography.
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Promote graph expansion candidates into the bibliography.
     Filters graph_candidates.json by citations/year/keyword, deduplicates, and ingests.
     Use dry_run=True to preview. Requires prior biblio_graph_expand."""
     return biblio.biblio_graph_promote(
@@ -281,7 +304,7 @@ def biblio_discover_authors_tool(
     author_id: str = "",
     orcid: str = "",
 ):
-    """Search for authors by name, OpenAlex ID, or ORCID.
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Search for authors by name, OpenAlex ID, or ORCID.
     Name search returns ranked candidates with affiliation and h-index.
     Example: query="György Buzsáki" or query="Anton Sirota"."""
     return biblio.biblio_discover_authors(
@@ -294,7 +317,7 @@ def biblio_discover_institutions_tool(
     query: str = "",
     institution_id: str = "",
 ):
-    """Search for institutions by name or fetch by OpenAlex ID.
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Search for institutions by name or fetch by OpenAlex ID.
     Returns candidates with country, type, and publication metrics.
     Example: query="LMU Munich" or query="NYU"."""
     return biblio.biblio_discover_institutions(
@@ -308,7 +331,7 @@ def biblio_institution_works_tool(
     since_year: int | None = None,
     min_citations: int | None = None,
 ):
-    """Fetch all works affiliated with an institution.
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Fetch all works affiliated with an institution.
     Flags papers already in the local library. Use biblio_discover_institutions to find the ID first."""
     return biblio.biblio_institution_works(
         institution_id=institution_id,
@@ -322,7 +345,7 @@ def biblio_institution_authors_tool(
     institution_id: str,
     min_works: int | None = None,
 ):
-    """Fetch authors affiliated with an institution (last known).
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Fetch authors affiliated with an institution (last known).
     Returns authors ranked by publication count with h-index. Use min_works to filter to active researchers."""
     return biblio.biblio_institution_authors(
         institution_id=institution_id,
@@ -338,7 +361,7 @@ def biblio_author_papers_tool(
     since_year: int | None = None,
     min_citations: int | None = None,
 ):
-    """Fetch works by an author with optional position filtering.
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Fetch works by an author with optional position filtering.
     Use position="last" for PI/lab papers, "first" for first-author papers.
     Provide author_id (from biblio_discover_authors) or orcid."""
     return biblio.biblio_author_papers(
@@ -356,7 +379,7 @@ def biblio_pool_promote_tool(
     target: str = "",
     dry_run: bool = False,
 ):
-    """Promote project-local papers into a shared pool.
+    """Deprecated: use `biblio pool promote` (CLI); this tool goes in the next release. Promote project-local papers into a shared pool.
     Copies PDFs, derivatives (docling, grobid, openalex), and BibTeX entries to the pool.
     Replaces local PDFs with symlinks. Use dry_run=True to preview."""
     return biblio.biblio_pool_promote(
@@ -372,7 +395,7 @@ def biblio_zotero_pull_tool(
     tags: list[str] | None = None,
     dry_run: bool = False,
 ):
-    """Pull items and PDFs from Zotero into the biblio workspace.
+    """Deprecated: use `biblio zotero pull` (CLI); this tool goes in the next release. Pull items and PDFs from Zotero into the biblio workspace.
     Incremental sync using Zotero's version tracking. Writes BibTeX to
     bib/srcbib/zotero.bib and PDFs to bib/articles/. Requires zotero
     section in biblio.yml with library_id."""
@@ -385,7 +408,7 @@ def biblio_zotero_pull_tool(
 
 @server.tool("biblio_zotero_status")
 def biblio_zotero_status_tool():
-    """Show Zotero sync state — last sync time, item counts, library info.
+    """Deprecated: use `biblio zotero status` (CLI); this tool goes in the next release. Show Zotero sync state — last sync time, item counts, library info.
     Requires zotero section in biblio.yml."""
     return biblio.biblio_zotero_status()
 
@@ -399,7 +422,7 @@ def biblio_zotero_push_tool(
     force: bool = False,
     dry_run: bool = False,
 ):
-    """Push biblio enrichments back to Zotero — tags, notes, DOI/OpenAlex IDs.
+    """Deprecated: use `biblio zotero push` (CLI); this tool goes in the next release. Push biblio enrichments back to Zotero — tags, notes, DOI/OpenAlex IDs.
     Tags use biblio: namespace prefix. Uses optimistic concurrency.
     Requires zotero section in biblio.yml and prior zotero pull."""
     return biblio.biblio_zotero_push(
@@ -414,7 +437,7 @@ def biblio_zotero_push_tool(
 
 @server.tool("biblio_enrich")
 def biblio_enrich_tool(citekeys: list[str] | None = None, force: bool = False):
-    """Persist OpenAlex topics, keywords, type, and retraction status per citekey.
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Persist OpenAlex topics, keywords, type, and retraction status per citekey.
     Reads resolved.jsonl and writes per-citekey YAML to bib/derivatives/openalex/.
     Run after openalex_resolve. Also builds a cross-paper _topic_index.yml."""
     return biblio.biblio_enrich(citekeys=citekeys, force=force)
@@ -422,7 +445,7 @@ def biblio_enrich_tool(citekeys: list[str] | None = None, force: bool = False):
 
 @server.tool("biblio_enrich_topic_tags")
 def biblio_enrich_topic_tags_tool(citekeys: list[str] | None = None, dry_run: bool = False):
-    """Populate library.yml tags from OpenAlex enrichment data.
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Populate library.yml tags from OpenAlex enrichment data.
     Maps topics/keywords to oa:-prefixed tags (union merge, never removes existing).
     Run after biblio_enrich."""
     return biblio.biblio_enrich_topic_tags(citekeys=citekeys, dry_run=dry_run)
@@ -430,7 +453,7 @@ def biblio_enrich_topic_tags_tool(citekeys: list[str] | None = None, dry_run: bo
 
 @server.tool("biblio_extract")
 def biblio_extract_tool(citekey: str, force: bool = False, model: str = "sonnet"):
-    """Extract structured relevance data from a paper against plan/questions.yml.
+    """Deprecated: no CLI form yet; it stays until one exists, then goes. Extract structured relevance data from a paper against plan/questions.yml.
     Uses LLM to produce per-hypothesis relevance, methods, findings at bib/derivatives/claude/{citekey}/extract.yml.
     Requires docling output. Use questio_prior_art to aggregate extractions."""
     return biblio.biblio_extract(citekey=citekey, force=force, model=model)

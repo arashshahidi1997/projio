@@ -27,9 +27,8 @@ metadata:
           - present_seed_from_paper
           - rag_query
           - rag_query_multi
-          - citekey_resolve
-          - paper_context
-          - biblio_docling
+          - paper_lookup
+          - biblio_job
           - biblio_ingest
           - figio_figure_list
           - figio_build
@@ -77,7 +76,7 @@ rag_query_multi(queries=[TOPIC, "<specific method>", "<open question>"], corpus=
 Extract candidate citekeys. Resolve them to confirm they are ingested:
 
 ```
-citekey_resolve(citekeys=[...])
+paper_lookup(refs=[...])
 ```
 
 For any not in the library:
@@ -164,7 +163,7 @@ present_cite_check(name=DECK_NAME)
 ```
 
 Fix any `missing` citekeys via `biblio_ingest`. The tool reports which
-cited papers lack docling fulltext — run `biblio_docling` on those so
+cited papers lack docling fulltext — run `biblio_job(action="start", kind="docling", keys=[...])` for those so
 RAG can surface quotes during later iteration.
 
 ### 7) Validate and build
@@ -195,7 +194,7 @@ keeps the deck discoverable after the talk.
   whole point of presentio is iteration — batch drafting defeats the
   workflow.
 - **Never invent citekeys.** Every `@key` must resolve via
-  `citekey_resolve`. If missing, `biblio_ingest` it first.
+  `paper_lookup`. If missing, `biblio_ingest` it first.
 - **Do not run `present_seed_from_paper`** as the primary entry point
   for a literature deck — that tool is a single-paper LLM seed, not
   a multi-paper narrative builder. Use it only to bootstrap one

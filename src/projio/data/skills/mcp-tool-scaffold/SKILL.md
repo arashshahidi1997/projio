@@ -33,13 +33,24 @@ Do NOT use for modifying existing tool signatures — that is a refactor, not a 
 
 ## Inputs
 
-- `TOOL_NAME` (required): the MCP tool name (e.g. `biblio_pool_promote`)
+- `TOOL_NAME` (required): the MCP tool name (e.g. `biblio_job`)
 - `PACKAGE` (required): which subsystem package (biblio, codio, notio, pipeio, indexio, figio)
 - `SPEC` (optional): path to design spec describing the tool's behavior
 - `DESCRIPTION` (required): one-line tool description for the MCP decorator
 - `PARAMS` (required): parameter names, types, defaults, and descriptions
 
 ## Workflow
+
+### 0) Does it need an MCP tool?
+
+Read `docs/specs/agent-interface-layers.md`. The capability goes into the
+package and its CLI first. It gets an MCP tool only for a stated reason:
+R1 no shell on the client, R2 another project, R3 a long-running job or
+session (return a handle), R4 a structured record the agent would otherwise
+parse, R5 a narrow action safe to auto-approve. Prefer extending a
+task-shaped tool (`biblio_job`, `paper_lookup`) over adding an operation-shaped
+one. If no reason applies, stop here: add the CLI command and name it in the
+relevant skill instead. Write the reason into the tool's docstring.
 
 ### 1) Read context
 
@@ -167,7 +178,7 @@ Use this as a final verification before reporting done:
 - NEVER add a tool to server.py without the routing table row — agents won't discover it.
 - NEVER skip the CLAUDE.md update — it's the persistent documentation.
 - The `_generate_claude_md()` routing table is code-generated into every project's CLAUDE.md on `projio sync`. If you miss it, no project will know about the tool.
-- Follow existing naming conventions: tool names are `{package}_{action}` (e.g. `biblio_merge`, `pipeio_mod_create`).
+- Follow existing naming conventions: tool names are `{package}_{action}` (e.g. `biblio_job`, `pipeio_mod_create`).
 - If the tool has a `background` parameter returning a `job_id`, also scaffold the corresponding `{tool_name}_status` tool for polling.
 
 ## Output format

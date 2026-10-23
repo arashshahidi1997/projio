@@ -28,42 +28,35 @@ The projio MCP server exposes tools across eight categories. Optional tools requ
 
 ## Bibliography tools (via biblio)
 
-### Read
+biblio is CLI-first: wiki, digests, quote checks, full-text reading, Zotero
+and reference triage are `biblio` commands, used through biblio's skills.
+MCP covers what a shell serves badly
+([agent interface layers](../specs/agent-interface-layers.md)): lookups that
+reach the pools, and background jobs.
 
-| Tool | Description |
+| Tool | Reason | Description |
+|------|--------|-------------|
+| `paper_lookup(refs[], detail="summary")` | R2, R4 | Papers by citekey, DOI or "Author Year Title", in the project or a pool: bib record, library entry, where the full text, PDF, GROBID output, figures and digests are; a doi.org link for papers not held. `detail="context"` adds sections (id, title, line, words), GROBID header, OpenAlex topics |
+| `biblio_job(action, kind="", keys=[], job_id="", force=false, concurrency=1, context="wiki", stale=false)` | R3 | `start` (kind `docling`, `grobid`, `oa_fetch`, `digest`), `status`, `list`, `kill`. Runs the same CLI command a person would, limited to `keys`; docling returns its plan (pending, skipped with reasons) first; status gives progress and the command's summary lines |
+| `biblio_status(citekeys=[])` | R4 | Per-paper pipeline completeness |
+| `biblio_ingest(dois[], tags=[], status="unread", collection="")` | R5 | Add papers by DOI |
+| `biblio_compile(sources=[], output="")` | R5 | Compile `.projio/render/compiled.bib` from the render sources |
+
+For reading a paper's text: `biblio fulltext KEY [--section S | --grep W | --lines A-B]` (CLI).
+
+### Deprecated
+
+These still work in this release and go in the next. Each description says
+what replaces it.
+
+| Tool | Use instead |
 |------|-------------|
-| `citekey_resolve(citekeys[])` | Resolve BibTeX citekeys to metadata |
-| `paper_context(citekey)` | Full paper context with docling excerpt |
-| `paper_absent_refs(citekey)` | Unresolved GROBID references |
-| `library_get(citekey)` | Library ledger status and tags |
-| `biblio_docling_status(job_id)` | Poll a background biblio_docling job by job_id |
-| `biblio_graph_expand(citekeys[], depth=1, direction="both", filter_status=[])` | Expand citation graph around seed citekeys |
-
-### Write
-
-| Tool | Description |
-|------|-------------|
-| `biblio_ingest(dois[], tags=[], status="unread", collection="")` | Ingest papers by DOI via OpenAlex, generate citekeys, write BibTeX |
-| `biblio_library_set(citekeys[], status="", tags=[], priority="")` | Bulk-update library ledger entries |
-| `biblio_merge(dry_run=false)` | Merge source .bib files into bib/main.bib |
-| `biblio_docling(citekey, force=false, background=false)` | Extract full text from a paper's PDF via Docling |
-| `biblio_grobid(citekey, force=false)` | Extract header and references from a paper's PDF via GROBID |
-| `biblio_grobid_check()` | Check whether the GROBID server is reachable |
-| `biblio_rag_sync(force_init=false)` | Sync bibliography sources into the search index |
-
-`biblio_ingest` resolves DOIs through the OpenAlex API, generates BibTeX citekeys, appends entries to the import bib file, and optionally sets library metadata and adds papers to a collection. Returns the list of generated citekeys.
-
-`biblio_library_set` updates status (`unread`, `reading`, `processed`, `archived`), tags, and priority (`low`, `normal`, `high`) for multiple citekeys in a single call.
-
-`biblio_merge` folds all `.bib` files from `bib/srcbib/` into the main `bib/main.bib`. Use `dry_run=true` to preview without writing. Run this after `biblio_ingest` to make new entries available to downstream tools.
-
-`biblio_docling` runs the Docling pipeline on a single paper's PDF, producing markdown and JSON extracts. Cached — skips if outputs exist unless `force=true`. Set `background=true` to return a `job_id` for polling via `biblio_docling_status` (useful for large PDFs).
-
-`biblio_grobid` submits a paper's PDF to the GROBID server, extracting structured header metadata and parsed references. Use `biblio_grobid_check` first to verify the server is alive.
-
-`biblio_graph_expand` walks the citation graph starting from seed citekeys. `direction` is `"forward"` (papers they cite), `"backward"` (papers that cite them), or `"both"`. `filter_status` restricts traversal to library entries with those statuses.
-
-`biblio_rag_sync` writes biblio-managed sources (docling extracts, notes) into the indexio source config so they appear in semantic search. Call `indexio_build` afterwards to re-embed.
+| `citekey_resolve`, `paper_context`, `library_get` | `paper_lookup` |
+| `biblio_docling`, `biblio_docling_batch`, `biblio_docling_status`, `biblio_grobid`, `biblio_pdf_fetch_oa`, `biblio_pdf_fetch_oa_status` | `biblio_job` |
+| `paper_absent_refs` | `biblio refs triage KEY` |
+| `biblio_merge` | `biblio bibtex merge` |
+| `biblio_citekey_normalize`, `biblio_library_set`, `biblio_openalex_resolve`, `biblio_pdf_fetch`, `biblio_grobid_check`, `biblio_graph_expand`, `biblio_rag_sync`, `biblio_pool_promote`, `biblio_zotero_pull`, `biblio_zotero_push`, `biblio_zotero_status` | the `biblio` command of the same name (`biblio citekey normalize`, `biblio library set`, ...) |
+| `biblio_crossref_resolve`, `biblio_pdf_validate`, `biblio_library_quality`, `biblio_graph_promote`, `biblio_extract`, `biblio_enrich`, `biblio_enrich_topic_tags`, `biblio_discover_authors`, `biblio_discover_institutions`, `biblio_institution_works`, `biblio_institution_authors`, `biblio_author_papers` | no CLI form yet; kept until one exists |
 
 ## Notes tools (via notio)
 
@@ -132,7 +125,7 @@ Presentio treats presentation decks as first-class projio artifacts, parallel to
 | `present_overview(name)` | Rich dashboard: per-section stats, missing/stale citations and figures, slide count estimate |
 | `present_section_context(name, section)` | One-call context for drafting a slide section — body, citations, figures, RAG hits, related notes |
 | `present_validate(name)` | Structural checks (section files exist, figure ids resolve, citekeys against bib, renderer availability) |
-| `present_cite_check(name)` | Cross-check cited keys against the inherited bibliography; report docling fulltext availability; suggest `biblio_ingest` / `biblio_docling` follow-ups |
+| `present_cite_check(name)` | Cross-check cited keys against the inherited bibliography; report docling fulltext availability; suggest `biblio_ingest` / `biblio_job` (docling) follow-ups |
 | `present_diff(name)` | Compare current sections against the last `assembled.md` — per-section word/citation/figure drift plus a full unified diff |
 
 ### Write

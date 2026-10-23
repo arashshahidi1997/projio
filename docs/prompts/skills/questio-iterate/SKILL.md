@@ -20,7 +20,7 @@ metadata:
           - pipeio_nb_read
           - pipeio_target_paths
           - pipeio_log_parse
-          - paper_context
+          - paper_lookup
           - codio_discover
           - rag_query
           - note_create
@@ -53,7 +53,7 @@ Determine:
 - What **milestone** are we working toward?
 - What does **success** look like? Use criteria from:
   - Prior grounding brief (if `questio-ground` was run)
-  - Literature values (from `paper_context`)
+  - Literature values (from `paper_lookup`)
   - Human-stated criteria (from the current conversation)
 - What **flow** will be executed?
 
@@ -65,7 +65,7 @@ If no success criteria exist, ask the user or recommend running
 If this is the first iteration (no prior grounding brief in context):
 
 ```
-paper_context(citekey="<relevant citations>")
+paper_lookup(refs=["<relevant citations>"], detail="context")
 codio_discover(query="<analysis keywords>")
 rag_query(query="<milestone description>")
 ```
