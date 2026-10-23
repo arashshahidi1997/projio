@@ -3,6 +3,7 @@
 Task-oriented guides that help you solve a specific problem.
 
 - [Initialize a workspace](init.md) — scaffold `.projio/` files for a new project
+- [Run tasks: the CLI and pixi](task-running.md) — projio and notio commands, pixi `[tasks]` for the project's own, `projio tasks` for the menu; works on Windows
 - [Set up a dev environment](dev-environment.md) — pixi for the workspace, uv tool for editable global CLIs, self-hosted Excalidraw for diagrams
 - [Configure the MCP server](mcp.md) — connect projio to Claude Desktop or Claude Code
 - [Manage DataLad siblings](siblings.md) — create GitHub, GitLab, and RIA siblings

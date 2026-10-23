@@ -30,14 +30,14 @@
 ### 1. Install input datasets
 
 ```bash
-conda run -n labpy datalad install -d . -s <source_url> data/<dataset_name>
+datalad install -d . -s <source_url> data/<dataset_name>
 ```
 
 ### 2. Clone shared code libraries
 
 ```bash
-conda run -n labpy datalad install -d . -s <lab_gitlab>/cogpy code/lib/cogpy
-conda run -n labpy datalad install -d . -s <lab_gitlab>/labpy code/lib/labpy
+datalad install -d . -s <lab_gitlab>/cogpy code/lib/cogpy
+datalad install -d . -s <lab_gitlab>/labpy code/lib/labpy
 ```
 
 ### 3. Set up the Python environment
@@ -118,12 +118,14 @@ has access to all projio tools via MCP. Common workflows:
 
 ## Conda environments
 
-This project uses three conda environments:
+This project uses two conda environments:
 
 | Environment | Purpose |
 |-------------|---------|
 | `cogpy`  | Data analysis, Snakemake, notebooks |
 | `projio` | Projio tools, MkDocs, MCP server |
-| `labpy`  | DataLad and git-annex operations |
 
 The generated `.projio/projio.mk` maps these to make variables automatically.
+
+DataLad and git-annex are not in a conda env: install them once with
+`pixi global install datalad` (this brings git-annex and the RIA remotes).

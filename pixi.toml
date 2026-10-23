@@ -4,7 +4,7 @@ version = "0.1.2"
 description = "Project knowledge orchestrator and MCP server for research repositories"
 authors = ["Arash Shahidi <A.Shahidi@campus.lmu.de>"]
 channels = ["conda-forge"]
-platforms = ["linux-64", "osx-64", "osx-arm64"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 
 # System binaries shelled out to by the ecosystem.
 # Python deps are kept on PyPI to match pyproject.toml as the single source of truth.

@@ -83,11 +83,19 @@ def test_apply_config_overlay_layout(tmp_path: Path) -> None:
 
 
 def test_scaffold_generic_creates_base_files(tmp_path: Path) -> None:
+    # Default (cli-first): no Makefile; a pixi.toml is scaffolded so `pixi run
+    # projio ...` works. Windows-ready out of the box.
     scaffold(tmp_path, kind="generic")
     assert (tmp_path / ".projio" / "config.yml").exists()
+    assert (tmp_path / "docs" / "index.md").exists()
+    assert (tmp_path / "pixi.toml").exists()
+    assert not (tmp_path / "Makefile").exists()
+
+
+def test_scaffold_make_mode_creates_makefile(tmp_path: Path) -> None:
+    scaffold(tmp_path, kind="generic", task_runner="make")
     assert (tmp_path / ".projio" / "projio.mk").exists()
     assert (tmp_path / "Makefile").exists()
-    assert (tmp_path / "docs" / "index.md").exists()
 
 
 def test_scaffold_generic_config_has_layout(tmp_path: Path) -> None:

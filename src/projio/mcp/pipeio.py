@@ -48,89 +48,44 @@ def _resolve_default_env_name() -> str | None:
 # Runner helpers: conda / pixi
 # ---------------------------------------------------------------------------
 
+# These four are thin delegators to ``projio.runners`` (the single home for
+# runner resolution).  They keep the no-arg / project-root-implicit signatures
+# that this module and ``projio.mcp.report`` already import and call.
 def _resolve_runner() -> str:
-    """Detect the package manager runner: ``"pixi"`` or ``"conda"``.
+    """Detect the package manager runner for the current project root."""
+    from projio.runners import resolve_runner
 
-    Checks (in order):
-    1. Explicit ``code.runner`` in project config (``"pixi"`` or ``"conda"``).
-    2. Auto-detect ``pixi.toml`` in project root.
-    3. Default to ``"conda"``.
-    """
-    try:
-        from projio.config import load_effective_config
-        root = get_project_root()
-        cfg = load_effective_config(root)
-        code = cfg.get("code", {}) or {}
-        runner = code.get("runner")
-        if runner in ("pixi", "conda"):
-            return runner
-    except Exception:
-        pass
-
-    # Auto-detect: pixi.toml in project root
-    from pathlib import Path
     try:
         root = get_project_root()
-        if (Path(root) / "pixi.toml").is_file():
-            return "pixi"
     except Exception:
-        pass
-
-    return "conda"
+        root = None
+    return resolve_runner(root)
 
 
 def _conda_run_cmd(env_name: str, cmd_name: str) -> list[str]:
-    """Build a ``conda run -n <env> <cmd>`` token list.
+    """Build a ``conda run -n <env> <cmd>`` token list (see projio.runners)."""
+    from projio.runners import conda_run_cmd
 
-    Finds the conda binary by checking common Anaconda installation paths.
-    Returns bare ``[cmd_name]`` if conda cannot be found.
-    """
-    from pathlib import Path
-
-    import shutil
-
-    conda_bin = shutil.which("conda")
-    if conda_bin:
-        return [conda_bin, "run", "-n", env_name, cmd_name]
-
-    # Fallback: check relative to sys.prefix (works inside a conda env)
-    import sys
-    for rel in ("condabin/conda", "bin/conda"):
-        candidate = Path(sys.prefix).parent.parent / rel
-        if candidate.is_file():
-            return [str(candidate), "run", "-n", env_name, cmd_name]
-
-    return [cmd_name]
+    return conda_run_cmd(env_name, cmd_name)
 
 
 def _pixi_run_cmd(cmd_name: str, env_name: str = "") -> list[str]:
-    """Build a ``pixi run [-e <env>] <cmd>`` token list.
+    """Build a ``pixi run [-e <env>] <cmd>`` token list (see projio.runners)."""
+    from projio.runners import pixi_run_cmd
 
-    Args:
-        cmd_name: Command to run inside the pixi environment.
-        env_name: Pixi environment/feature name (omit for default env).
-
-    Returns bare ``[cmd_name]`` if pixi cannot be found.
-    """
-    import shutil
-
-    pixi_bin = shutil.which("pixi")
-    if not pixi_bin:
-        return [cmd_name]
-
-    tokens = [pixi_bin, "run"]
-    if env_name:
-        tokens.extend(["-e", env_name])
-    tokens.append(cmd_name)
-    return tokens
+    return pixi_run_cmd(cmd_name, env_name)
 
 
 def _run_cmd(env_name: str, cmd_name: str) -> list[str]:
-    """Build a runner command dispatching to conda or pixi."""
-    runner = _resolve_runner()
-    if runner == "pixi":
-        return _pixi_run_cmd(cmd_name, env_name)
-    return _conda_run_cmd(env_name, cmd_name)
+    """Build a runner command dispatching to conda or pixi (see projio.runners).
+
+    Dispatches via this module's ``_resolve_runner`` so callers/tests that
+    monkeypatch it are honored (``projio.runners.run_cmd`` re-resolves the
+    runner from the project root and is used by non-mocked callers).
+    """
+    from projio.runners import runner_cmd
+
+    return runner_cmd(_resolve_runner(), env_name, cmd_name)
 
 
 def _resolve_python_cmd() -> list[str]:
@@ -179,8 +134,8 @@ def _resolve_snakemake_cmd(use_env: str = "") -> list[str]:
     2. ``SNAKEMAKE`` Makefile variable
     2.5. Project config ``code.envs.default`` (avoids picking up the MCP
          server's own conda env from PATH)
-    3. ``snakemake`` on PATH (with conda wrapping if in a conda env)
-    4. Runner-specific fallback (conda: ``cogpy``; pixi: default env)
+    3. Pixi runner: ``pixi run snakemake`` (project default env)
+    4. ``snakemake`` on PATH (with conda wrapping if in a conda env)
     5. Bare ``["snakemake"]``
 
     Args:
@@ -223,7 +178,7 @@ def _resolve_snakemake_cmd(use_env: str = "") -> list[str]:
     if runner == "pixi":
         return _pixi_run_cmd("snakemake")
 
-    # 4. On PATH (conda projects only)
+    # 4. On PATH (non-pixi projects)
     binary = shutil.which("snakemake")
     if binary:
         wrapped = _conda_wrap(binary)
@@ -231,12 +186,7 @@ def _resolve_snakemake_cmd(use_env: str = "") -> list[str]:
             return wrapped
         return [binary]
 
-    # 5. Conda known fallback
-    cmd = _conda_run_cmd("cogpy", "snakemake")
-    if cmd:
-        return cmd
-
-    # 6. Bare fallback
+    # 5. Bare fallback
     return ["snakemake"]
 
 
@@ -1515,7 +1465,7 @@ def pipeio_nb_snapshot(
         timeout: Execution timeout in seconds (default 120).
         python_bin: Python binary where marimo + compute libraries are installed.
             Use when the notebook needs a different env than the MCP server,
-            e.g. ``"conda run -n cogpy python"`` or ``"pixi run python"``.
+            e.g. ``"pixi run python"`` or ``"pixi run -e compute python"``.
             Empty = auto-resolve from project config (``code.runner`` /
             ``code.envs.default``).
     """

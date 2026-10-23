@@ -7,6 +7,7 @@ canonical list of ``McpServerDef`` built from project config.
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -47,19 +48,24 @@ def generate_server_defs(
             env={"PROJIO_ROOT": str(root)},
         ),
     ]
-    # Add worklog if installed
-    try:
-        import worklog.mcp_server  # noqa: F401
+    # Add worklog if installed.  Prefer its own console script on PATH (e.g. a
+    # separate ``uv tool install``), so it need not share projio's env.
+    worklog_mcp = shutil.which("worklog-mcp")
+    if worklog_mcp:
+        servers.append(McpServerDef(name="worklog", command=worklog_mcp))
+    else:
+        try:
+            import worklog.mcp_server  # noqa: F401
 
-        servers.append(
-            McpServerDef(
-                name="worklog",
-                command=python,
-                args=["-m", "worklog.mcp_server"],
+            servers.append(
+                McpServerDef(
+                    name="worklog",
+                    command=python,
+                    args=["-m", "worklog.mcp_server"],
+                )
             )
-        )
-    except ImportError:
-        pass
+        except ImportError:
+            pass
     return servers
 
 

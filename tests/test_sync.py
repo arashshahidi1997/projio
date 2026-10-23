@@ -257,3 +257,19 @@ def test_sync_quarto_config_dry_run_would_create(tmp_path: Path) -> None:
     result = _sync_quarto_config(tmp_path, dry_run=True)
     assert result["action"] == "would_create"
     assert not (tmp_path / ".projio" / "render" / "quarto.yml").exists()
+
+
+def test_validate_code_envs_pixi(tmp_path: Path) -> None:
+    from projio.sync import _validate_code_envs
+
+    (tmp_path / ".projio").mkdir()
+    (tmp_path / ".projio" / "config.yml").write_text(
+        "code:\n  envs:\n    default: analysis\n    docs: default\n    datalad: gone\n"
+    )
+    (tmp_path / "pixi.toml").write_text(
+        "[workspace]\nname = 't'\n[environments]\nanalysis = { features = [] }\n"
+    )
+    result = _validate_code_envs(tmp_path)
+    assert result["valid"] == ["analysis", "default"]
+    assert result["missing"] == ["gone"]
+    assert result["warnings"] == []

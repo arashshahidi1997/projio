@@ -227,22 +227,21 @@ class TestResolveSnakemakeCmd:
         assert "rag" not in result
 
     def test_falls_back_to_bare_snakemake(self, monkeypatch) -> None:
-        monkeypatch.setattr(shutil, "which", lambda x: None)
-        with mock.patch(
-            "projio.mcp.pipeio._resolve_runner",
-            return_value="conda",
-        ), mock.patch(
-            "projio.mcp.pipeio.resolve_makefile_vars",
-            return_value={},
-        ), mock.patch(
-            "projio.mcp.pipeio._resolve_default_env_name",
-            return_value=None,
-        ), mock.patch(
-            "projio.mcp.pipeio._conda_run_cmd",
-            return_value=["snakemake"],
-        ):
-            result = _resolve_snakemake_cmd()
-        assert result == ["snakemake"]
+        """No hardcoded conda env fallback: unresolved → bare snakemake."""
+        monkeypatch.setattr(shutil, "which", lambda x: "/usr/bin/conda" if x == "conda" else None)
+        for runner in ("conda", "none"):
+            with mock.patch(
+                "projio.mcp.pipeio._resolve_runner",
+                return_value=runner,
+            ), mock.patch(
+                "projio.mcp.pipeio.resolve_makefile_vars",
+                return_value={},
+            ), mock.patch(
+                "projio.mcp.pipeio._resolve_default_env_name",
+                return_value=None,
+            ):
+                result = _resolve_snakemake_cmd()
+            assert result == ["snakemake"]
 
     def test_pixi_fallback(self, monkeypatch) -> None:
         """Step 4: pixi runner falls back to bare pixi run snakemake."""
@@ -358,11 +357,24 @@ class TestResolveRunner:
              mock.patch("projio.mcp.pipeio.get_project_root", return_value=str(tmp_path)):
             assert _resolve_runner() == "pixi"
 
-    def test_defaults_to_conda(self, tmp_path) -> None:
+    def test_defaults_to_none(self, tmp_path) -> None:
         cfg: dict = {"code": {}}
         with mock.patch("projio.config.load_effective_config", return_value=cfg), \
              mock.patch("projio.mcp.pipeio.get_project_root", return_value=str(tmp_path)):
+            assert _resolve_runner() == "none"
+
+    def test_legacy_conda_prefix_implies_conda(self, tmp_path) -> None:
+        cfg = {"code": {"conda_prefix": "/opt/conda", "envs": {"default": "myenv"}}}
+        with mock.patch("projio.config.load_effective_config", return_value=cfg), \
+             mock.patch("projio.mcp.pipeio.get_project_root", return_value=str(tmp_path)):
             assert _resolve_runner() == "conda"
+
+    def test_pixi_toml_beats_conda_prefix(self, tmp_path) -> None:
+        (tmp_path / "pixi.toml").write_text("[workspace]\nname = 'test'\n")
+        cfg = {"code": {"conda_prefix": "/opt/conda"}}
+        with mock.patch("projio.config.load_effective_config", return_value=cfg), \
+             mock.patch("projio.mcp.pipeio.get_project_root", return_value=str(tmp_path)):
+            assert _resolve_runner() == "pixi"
 
 
 # ---------------------------------------------------------------------------
@@ -388,6 +400,23 @@ class TestRunCmd:
              mock.patch("shutil.which", return_value="/usr/bin/pixi"):
             result = _run_cmd("", "snakemake")
         assert result == ["/usr/bin/pixi", "run", "snakemake"]
+
+    def test_none_runner_is_bare(self) -> None:
+        with mock.patch("projio.mcp.pipeio._resolve_runner", return_value="none"):
+            result = _run_cmd("", "snakemake")
+        assert result == ["snakemake"]
+
+    def test_none_runner_named_env_uses_pixi(self) -> None:
+        with mock.patch("projio.mcp.pipeio._resolve_runner", return_value="none"), \
+             mock.patch("shutil.which", return_value="/usr/bin/pixi"):
+            result = _run_cmd("compute", "snakemake")
+        assert result == ["/usr/bin/pixi", "run", "-e", "compute", "snakemake"]
+
+    def test_conda_empty_env_is_bare(self) -> None:
+        with mock.patch("projio.mcp.pipeio._resolve_runner", return_value="conda"), \
+             mock.patch("shutil.which", return_value="/usr/bin/conda"):
+            result = _run_cmd("", "pandoc")
+        assert result == ["pandoc"]
 
 
 # ---------------------------------------------------------------------------

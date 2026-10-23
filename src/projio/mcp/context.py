@@ -653,7 +653,7 @@ def project_context() -> JsonDict:
 
 
 def runtime_conventions() -> JsonDict:
-    """Parse Makefile variables and targets from the project root, return as dict."""
+    """The project's commands: projio/notio routine commands, pixi tasks and envs, and (legacy) Makefile vars."""
     root = get_project_root()
     makefile = root / "Makefile"
     exists = makefile.exists()
@@ -677,6 +677,32 @@ def runtime_conventions() -> JsonDict:
         "vars": vars_,
         "commands": commands,
     }
+    # CLI-first projects (docs/how-to/task-running.md): the routine projio/notio
+    # commands, the runner, and the pixi tasks and environments.
+    try:
+        from projio.init import _resolve_task_runner, project_commands
+        from projio.runners import resolve_runner
+        payload["task_runner"] = _resolve_task_runner(root)
+        payload["runner"] = resolve_runner(root)
+        payload["project_commands"] = [{"command": c, "does": d} for c, d in project_commands(root)]
+    except Exception:
+        pass
+    manifest = root / "pixi.toml"
+    if manifest.is_file():
+        try:
+            import tomllib
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+            tasks = dict(data.get("tasks", {}) or {})
+            for feat, body in (data.get("feature", {}) or {}).items():
+                for name, task in ((body or {}).get("tasks", {}) or {}).items():
+                    tasks.setdefault(name, task)
+            payload["pixi"] = {
+                "tasks": {k: (v if isinstance(v, str) else (v or {}).get("cmd", "")) for k, v in tasks.items()},
+                "environments": ["default", *((data.get("environments", {}) or {}).keys() - {"default"})],
+                "run": "pixi run [-e <env>] <task or command>",
+            }
+        except Exception:
+            pass
     return json_dict(payload)
 
 

@@ -320,7 +320,7 @@ _INTROSPECT_SNIPPET = textwrap.dedent("""\
 
 
 def _resolve_conda() -> str:
-    """Return the conda binary path from projio config or fall back to 'conda'."""
+    """Return the conda binary path from projio config or fall back to 'conda' (legacy)."""
     try:
         from projio.init import load_projio_config
         root = get_project_root()
@@ -330,15 +330,33 @@ def _resolve_conda() -> str:
         return "conda"
 
 
-def _func_doc_subprocess(env: str, package: str, module: str, function: str | None) -> JsonDict:
-    """Run introspection in a different conda env via subprocess."""
-    conda = _resolve_conda()
-    cmd = [conda, "run", "-n", env, "python", "-c",
-           _INTROSPECT_SNIPPET, package, module, function or ""]
+def _env_python_cmd(env: str) -> tuple[list[str], str | None]:
+    """Return ``(python command tokens, cwd)`` for *env* via the project's runner.
+
+    pixi (and the ``none`` runner) → ``pixi run -e <env> python``, run from the
+    project root so pixi finds the manifest; legacy conda → ``conda run -n <env>
+    python`` (honoring ``runtime.conda``).
+    """
+    from projio.runners import resolve_runner, runner_cmd
+
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        root: str | None = str(get_project_root())
+    except Exception:
+        root = None
+    runner = resolve_runner(root)
+    if runner == "conda":
+        return [_resolve_conda(), "run", "-n", env, "python"], root
+    return runner_cmd(runner, env, "python"), root
+
+
+def _func_doc_subprocess(env: str, package: str, module: str, function: str | None) -> JsonDict:
+    """Run introspection in a different project env via subprocess."""
+    python_cmd, cwd = _env_python_cmd(env)
+    cmd = [*python_cmd, "-c", _INTROSPECT_SNIPPET, package, module, function or ""]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30, cwd=cwd)
     except FileNotFoundError:
-        return json_dict({"error": f"conda not found at {conda}"})
+        return json_dict({"error": f"{python_cmd[0]} not found (needed to run env '{env}')"})
     except subprocess.TimeoutExpired:
         return json_dict({"error": f"Introspection in env '{env}' timed out"})
     if proc.returncode != 0:
@@ -405,8 +423,10 @@ def codio_func_doc(
         package: Top-level package name (e.g. "numpy").
         module: Module path within the package (e.g. "linalg").
         function: Specific function name. Omit to browse the whole module.
-        env: Conda environment name. If given, runs introspection in that env
-             via ``conda run``. If omitted, uses the current (server) env.
+        env: Project environment name. If given, runs introspection in that
+             env via the project's runner (``pixi run -e <env>``; legacy
+             conda projects: ``conda run -n <env>``). If omitted, uses the
+             current (server) env.
     """
     if env:
         return _func_doc_subprocess(env, package, module, function)

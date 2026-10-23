@@ -81,8 +81,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Explicit Python path. Omit to use current interpreter.",
     )
     p_config_set_python.add_argument(
-        "--env", dest="conda_env", default=None,
-        help="Resolve a conda environment name to its Python path.",
+        "--env", dest="env", default=None,
+        help="Resolve a project environment name (pixi env; conda for legacy projects) to its Python path.",
     )
 
     p_site = sub.add_parser("site", help="Doc-site operations (MkDocs, Sphinx, React frontend via Vite).")
@@ -270,6 +270,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Install projio-managed git hooks (post-commit for index rebuild).",
     )
 
+    p_tasks = sub.add_parser("tasks", help="The routine commands of this project (sync, site, each manuscript).")
+    p_tasks.add_argument("-C", "--root", default=".", help="Project root (default: .).")
+
     p_mcp = sub.add_parser("mcp", help="Start the FastMCP server (stdio).")
     p_mcp.add_argument("-C", "--root", default=".", help="Project root (default: .).")
 
@@ -294,18 +297,18 @@ Use 'projio config init-user' to scaffold the user config.
 
 Environment resolution (code.envs)
 ----------------------------------
-Controls which conda env runs each tool. Set in .projio/config.yml:
+Controls which env runs each tool. Names are pixi environments (pixi.toml);
+legacy conda projects add code.conda_prefix and use conda env names.
+Set in .projio/config.yml:
 
   code:
-    conda_prefix: /path/to/anaconda3       # conda installation root
     envs:
-      default: myenv        # PYTHON — project code, snakemake, etc.
-      projio: projio        # PROJIO, NOTIO — projio CLI + MCP server
-      docs: projio          # MKDOCS — site builds (falls back to projio)
-      datalad: labpy        # DATALAD, PANDOC — datalad + pandoc binary
+      default: compute      # PYTHON, SNAKEMAKE — `pixi run -e compute ...`
+      docs: docs            # MKDOCS — site builds
+      datalad: datalad      # DATALAD, PANDOC
 
-Fallback: projio <-> docs (both need projio + mkdocs installed).
-If neither is set, PROJIO/MKDOCS use the default env (likely wrong).
+PROJIO/NOTIO default to bare `projio`/`notio` on PATH (uv tool install).
+Without a docs env, MKDOCS uses the Python running projio if it has mkdocs.
 
 Legacy alternative (in user config):
 
@@ -313,6 +316,16 @@ Legacy alternative (in user config):
     projio_python: /path/to/env/bin/python
     docs_python: /path/to/env/bin/python     # falls back to projio_python
     datalad_bin: /path/to/env/bin/datalad
+
+Task interface (code.task_runner)
+---------------------------------
+  cli:   (default) no task file; run projio and notio as commands
+         (`projio sync`, `notio manuscript build NAME`) and keep project tasks
+         in pixi.toml [tasks]. `projio tasks` lists this project's routine
+         commands. A minimal pixi.toml is scaffolded when absent.
+  make:  legacy: projio keeps .projio/projio.mk, included by the project's
+         Makefile (Unix/macOS). Chosen for projects that already have one;
+         delete the Makefile and .projio/projio.mk to move to cli.
 
 Site config
 -----------
@@ -401,7 +414,7 @@ def main(argv: Iterable[str] | None = None) -> None:
             config_mod.set_python(
                 args.root,
                 python_path=args.python_path,
-                conda_env=args.conda_env,
+                env=args.env,
             )
         return
 
@@ -569,6 +582,16 @@ def main(argv: Iterable[str] | None = None) -> None:
             index=args.index,
             install_hooks=args.install_hooks,
         )
+        return
+
+    if args.command == "tasks":
+        from pathlib import Path
+        from .init import project_commands
+        cmds = project_commands(Path(args.root).expanduser().resolve())
+        width = max(len(c) for c, _ in cmds)
+        for cmd, what in cmds:
+            print(f"{cmd:<{width}}  # {what}")
+        print("\nProject tasks: `pixi task list`. Everything else: `projio --help`, `notio --help`.")
         return
 
     if args.command == "mcp":
