@@ -259,7 +259,11 @@ def _sync_quarto_config(root: Path, *, dry_run: bool = False) -> dict[str, str]:
 
 
 def _sync_render_config(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
-    """If .projio/render.yml exists, generate pandoc-defaults.yaml."""
+    """If .projio/render.yml exists, generate the pandoc defaults file(s).
+
+    With render profiles this is one ``pandoc-defaults-<name>.yaml`` per
+    profile plus the plain ``pandoc-defaults.yaml``; ``outputs`` lists them all.
+    """
     render_yml = root / ".projio" / "render.yml"
     if not render_yml.is_file():
         return {"action": "skipped", "reason": "no .projio/render.yml"}
@@ -267,11 +271,13 @@ def _sync_render_config(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
     from projio.render import load_render_config, write_pandoc_defaults
 
     config = load_render_config(root)
-    output = root / ".projio" / "render" / "pandoc-defaults.yaml"
+    render_dir = root / ".projio" / "render"
     if dry_run:
-        return {"action": "would_generate", "output": str(output.relative_to(root))}
-    out_path = write_pandoc_defaults(config, root, output=output)
-    return {"action": "generated", "output": str(out_path.relative_to(root))}
+        paths = [render_dir / f"pandoc-defaults-{name}.yaml" for name in config.profiles or {}]
+        paths.append(render_dir / "pandoc-defaults.yaml")
+        return {"action": "would_generate", "outputs": [str(p.relative_to(root)) for p in paths]}
+    written = write_pandoc_defaults(config, root, output=render_dir / "pandoc-defaults.yaml")
+    return {"action": "generated", "outputs": [str(p.relative_to(root)) for p in written]}
 
 
 def _pixi_env_names(root: Path) -> set[str] | None:
@@ -1067,11 +1073,15 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
         render_cfg = load_render_config(root_path)
     except Exception:
         render_cfg = RenderConfig()
-    render_action = _sync_render_config(root_path, dry_run=dry_run)
+    # A broken render.yml must not abort the remaining sync steps.
+    try:
+        render_action = _sync_render_config(root_path, dry_run=dry_run)
+    except Exception as exc:
+        render_action = {"action": "error", "reason": f"{type(exc).__name__}: {exc}"}
     if render_action["action"] in ("generated", "would_generate"):
-        print(f"{prefix}[+] pandoc-defaults.yaml → {render_action.get('output', '')}")
-    elif render_action["action"] == "skipped":
-        pass  # silent if no render.yml
+        print(f"{prefix}[+] pandoc defaults → {', '.join(render_action['outputs'])}")
+    elif render_action["action"] == "error":
+        print(f"[!] render config: {render_action['reason']}")
 
     # 5b. Scaffold .projio/render/quarto.yml (report_build reads min_version)
     quarto_action = _sync_quarto_config(root_path, dry_run=dry_run)

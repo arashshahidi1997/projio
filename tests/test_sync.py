@@ -12,6 +12,8 @@ from projio.sync import (
     _sync_lua_filter,
     _sync_project_utils_config,
     _sync_quarto_config,
+    _sync_render_config,
+    sync_workspace,
 )
 
 
@@ -289,3 +291,72 @@ def test_mkdocs_include_needs_its_sub_site(tmp_path):
     assert "docs/pipelines/mkdocs.yml" not in text
     manuscript_sub = (tmp_path / "docs" / "manuscript" / "mkdocs.yml").is_file()
     assert ("docs/manuscript/mkdocs.yml" in text) == manuscript_sub   # only when notio wrote the sub-site
+
+
+# ---------------------------------------------------------------------------
+# _sync_render_config — render profiles compile to several defaults files
+# ---------------------------------------------------------------------------
+
+_MULTI_PROFILE_RENDER = """\
+pdf_engine: lualatex
+default_profile: note
+profiles:
+  note:
+    citeproc: false
+  report:
+    toc: true
+  manuscript:
+    citeproc: true
+"""
+
+
+def _write_render_yml(root: Path, text: str) -> None:
+    path = root / ".projio" / "render.yml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def test_sync_render_config_multi_profile(tmp_path: Path) -> None:
+    _write_render_yml(tmp_path, _MULTI_PROFILE_RENDER)
+    result = _sync_render_config(tmp_path)
+    assert result["action"] == "generated"
+    assert sorted(result["outputs"]) == [
+        ".projio/render/pandoc-defaults-manuscript.yaml",
+        ".projio/render/pandoc-defaults-note.yaml",
+        ".projio/render/pandoc-defaults-report.yaml",
+        ".projio/render/pandoc-defaults.yaml",
+    ]
+    for rel in result["outputs"]:
+        assert (tmp_path / rel).is_file()
+
+
+def test_sync_render_config_multi_profile_dry_run(tmp_path: Path) -> None:
+    _write_render_yml(tmp_path, _MULTI_PROFILE_RENDER)
+    result = _sync_render_config(tmp_path, dry_run=True)
+    assert result["action"] == "would_generate"
+    assert len(result["outputs"]) == 4
+    assert not (tmp_path / ".projio" / "render").exists()
+
+
+def test_sync_render_config_single_profile(tmp_path: Path) -> None:
+    _write_render_yml(tmp_path, "pdf_engine: lualatex\n")
+    result = _sync_render_config(tmp_path)
+    assert result["outputs"] == [".projio/render/pandoc-defaults.yaml"]
+
+
+def test_sync_workspace_continues_past_render_step(tmp_path: Path) -> None:
+    """Regression: the render step used to raise on a list and abort sync."""
+    _minimal_project(tmp_path)
+    _write_render_yml(tmp_path, _MULTI_PROFILE_RENDER)
+    result = sync_workspace(tmp_path)
+    assert result["render"]["action"] == "generated"
+    # a step that runs after the render step
+    assert (tmp_path / ".projio" / "render" / "quarto.yml").is_file()
+
+
+def test_sync_workspace_survives_broken_render_yml(tmp_path: Path) -> None:
+    _minimal_project(tmp_path)
+    _write_render_yml(tmp_path, "profiles: [not, a, mapping]\n")
+    result = sync_workspace(tmp_path)
+    assert result["render"]["action"] in ("error", "generated")
+    assert (tmp_path / ".projio" / "render" / "quarto.yml").is_file()
