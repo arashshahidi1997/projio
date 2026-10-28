@@ -919,6 +919,17 @@ def questio_prior_art(question_id: str = "") -> JsonDict:
     })
 
 
+def questio_enabled(root: Path) -> bool:
+    """False when the project config says ``questio: {enabled: false}``; on by default."""
+    try:
+        from projio.config import load_effective_config
+        cfg = load_effective_config(root)
+    except Exception:
+        return True
+    section = cfg.get("questio")
+    return not (isinstance(section, dict) and section.get("enabled") is False)
+
+
 def deliverables_docs_collect(root: Path | None = None) -> JsonDict:
     """Generate the ``docs/deliverables/`` index pages and sub-``mkdocs.yml``.
 
@@ -944,8 +955,16 @@ def questio_docs_collect(include_deliverables: bool = True) -> JsonDict:
 
     If ``docs/deliverables/`` exists, also generates deliverables index pages
     (``include_deliverables=False`` leaves them to ``projio sync``'s own step).
+    With ``questio: {enabled: false}`` in the project config nothing is
+    written under ``docs/plan/``; the deliverables indexes are still made.
     """
     root = get_project_root()
+    if not questio_enabled(root):
+        result: dict[str, Any] = {"questio": "disabled (config)", "generated": 0, "files": [], "deliverables": 0}
+        if include_deliverables:
+            d = deliverables_docs_collect(root)
+            result.update(generated=d["generated"], files=d["files"], deliverables=d["deliverables"])
+        return json_dict(result)
     loaded = _load_plan_yaml(root)
     if isinstance(loaded, str):
         return json_dict({"error": loaded})

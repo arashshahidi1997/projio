@@ -80,7 +80,10 @@ skills:
 ```
 
 `projio sync` then removes their generated copies from `.claude/skills/`,
-and `agent_instructions()` stops listing them. Only generated copies are
+and `agent_instructions()` stops listing them. Disabling a subsystem's
+skills does not stop sync from generating its pages: to stop questio's
+`docs/plan/` pages too, also set `questio: {enabled: false}` (see the
+configuration reference). Only generated copies are
 removed: a project skill's source in `.projio/skills/` and folders you wrote
 directly in `.claude/skills/` are never touched. `projio sync --check`
 reports a disabled skill whose copy is still there. `skill_read(name)`

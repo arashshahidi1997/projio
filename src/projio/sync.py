@@ -408,7 +408,8 @@ def _sync_mkdocs_monorepo(root: Path, *, dry_run: bool = False) -> dict[str, Any
     )
     has_log = (root / "docs" / "log").is_dir()
     has_manuscript = (root / "docs" / "manuscript").is_dir()
-    has_plan = (
+    from projio.mcp.questio import questio_enabled
+    has_plan = questio_enabled(root) and (
         (root / "plan" / "questions.yml").exists()
         or (root / "plan" / "milestones.yml").exists()
     )
@@ -780,10 +781,15 @@ def _with_project_root(root: Path, func):
 
 
 def _sync_questio_docs(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
-    """Regenerate questio plan docs if plan/questions.yml exists.
+    """Regenerate questio plan docs if plan/questions.yml exists and questio is not turned off.
 
-    The deliverables indexes are a separate step (``_sync_deliverables_index``).
+    ``questio: {enabled: false}`` in the project config skips the step. The
+    deliverables indexes are a separate step (``_sync_deliverables_index``).
     """
+    from projio.mcp.questio import questio_enabled
+
+    if not questio_enabled(root):
+        return {"action": "disabled", "reason": "questio.enabled is false"}
     questions_path = root / "plan" / "questions.yml"
     if not questions_path.exists():
         return {"action": "skipped", "reason": "no plan/questions.yml"}
@@ -807,13 +813,13 @@ def _sync_deliverables_index(root: Path, *, dry_run: bool = False) -> dict[str, 
     so a project that never had them does not get new folders. A page without
     the generated marker is never overwritten.
     """
-    from projio.mcp.questio import deliverables_docs_collect, deliverables_index_generated
+    from projio.mcp.questio import deliverables_docs_collect, deliverables_index_generated, questio_enabled
 
     d = root / "docs" / "deliverables"
     if not d.is_dir():
         return {"action": "skipped", "reason": "no docs/deliverables/"}
     uses_generated = (d / "index.md").is_file() and deliverables_index_generated(d / "index.md")
-    had_questio = (root / "plan" / "questions.yml").exists()
+    had_questio = questio_enabled(root) and (root / "plan" / "questions.yml").exists()
     if not (uses_generated or had_questio):
         return {"action": "skipped", "reason": "docs/deliverables/ has no generated index"}
     if dry_run:
@@ -1260,7 +1266,7 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
     9. Sync VS Code settings (PandocCiter + watcher excludes) via managed block
     10. Sync agent MCP configs (codex, copilot)
     11. Write .claude/skills/<name>/ (native Claude Code skills) from discovered skills
-    12. Regenerate questio plan docs if plan/questions.yml exists
+    12. Regenerate questio plan docs if plan/questions.yml exists (unless questio.enabled is false)
     12b. Regenerate docs/deliverables/ indexes, independent of questio
     13. Incrementally rebuild stale indexio sources (if --index or config)
     14. Install git hooks (if --install-hooks)
@@ -1431,6 +1437,8 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
         print(f"{prefix}[+] questio: would regenerate plan docs")
     elif questio_action["action"] == "generated":
         print(f"[+] questio: regenerated {questio_action.get('files', 0)} plan docs")
+    elif questio_action["action"] == "disabled":
+        print("[-] questio: disabled (config)")
     elif questio_action["action"] == "error":
         print(f"[!] questio: {questio_action.get('reason', '')}")
 

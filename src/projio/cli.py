@@ -585,6 +585,9 @@ def main(argv: Iterable[str] | None = None) -> None:
             result = questio_docs_collect()
             if "error" in result:
                 print(f"[ERROR] {result['error']}")
+            elif result.get("questio"):
+                print(f"[-] questio: {result['questio']}; nothing written under docs/plan/")
+                print(f"Generated {result['generated']} deliverables index files")
             else:
                 print(f"Generated {result['generated']} files in docs/plan/")
                 for f in result.get("files", []):
