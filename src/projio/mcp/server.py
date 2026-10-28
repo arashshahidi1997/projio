@@ -1945,7 +1945,9 @@ def git_status_tool():
 
 
 def main() -> None:
-    """Run the MCP server over stdio."""
+    """Run the MCP server over stdio, with the tool set ``PROJIO_MCP_TOOLS`` selects (default: all)."""
+    from .toolset import apply_tool_filter
+    apply_tool_filter(server)
     server.run()
 
 

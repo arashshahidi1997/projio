@@ -87,7 +87,52 @@ Add to your project's `.mcp.json` (or use `projio mcp-config` to generate it):
 }
 ```
 
-## Context tools (always available)
+## A second server with fewer tools
+
+A project often adds a second projio server pointing at another project,
+say a shared lab project for its code library and bibliography. Both are
+the same `projio.mcp.server`, so every tool name loads twice. Set
+`PROJIO_MCP_TOOLS` on the second entry to keep only what it is for:
+
+```json
+{
+  "mcpServers": {
+    "projio": {
+      "command": "projio-python",
+      "args": ["-m", "projio.mcp.server"],
+      "env": { "PROJIO_ROOT": "/path/to/your/project" }
+    },
+    "lab": {
+      "command": "projio-python",
+      "args": ["-m", "projio.mcp.server"],
+      "env": {
+        "PROJIO_ROOT": "/path/to/lab/project",
+        "PROJIO_MCP_TOOLS": "codio,biblio,rag"
+      }
+    }
+  }
+}
+```
+
+The value lists subsystems and tool-name globs, separated by commas or
+spaces; a `-` prefix removes (`biblio,-biblio_zotero_*`), and a list of
+removals only starts from every tool. Unset or empty keeps every tool.
+The server prints the kept count, and any entry that matches nothing, to
+stderr at startup.
+
+| Subsystem | Tools |
+|---|---|
+| `rag` | `rag_query`, `rag_query_multi`, `corpus_list` |
+| `indexio` | `indexio_*` |
+| `biblio` | `biblio_*`, `paper_*`, `citekey_resolve`, `library_get` |
+| `codio` | `codio_*` |
+| `notio` | `note_*`, `notio_*` |
+| `manuscript` | `manuscript_*`, `master_*` |
+| `present`, `report`, `pipeio`, `figio`, `questio`, `site` | `<name>_*` |
+| `datalad` | `datalad_*`, `git_status` |
+| `context` | `project_context`, `runtime_conventions`, `agent_instructions`, `module_context`, `skill_read`, `projio_init`, `ecosystem_status`, `permissions_sync` |
+
+## Context tools (available unless `PROJIO_MCP_TOOLS` leaves them out)
 
 - `project_context` — project config, README excerpt, key paths
 - `runtime_conventions` — parsed Makefile variables and targets
