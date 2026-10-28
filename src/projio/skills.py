@@ -134,6 +134,24 @@ def skill_new(
     print(f"     Edit the SKILL.md to define your workflow.")
 
 
+def disabled_skills(root: str | Path) -> list[str]:
+    """Names or globs in ``skills.disabled`` of the effective config (e.g. ``[questio-*, rag-query]``)."""
+    try:
+        from .config import load_effective_config
+        cfg = load_effective_config(root)
+    except Exception:
+        return []
+    value = (cfg.get("skills") or {}).get("disabled") or []
+    if isinstance(value, str):
+        value = [value]
+    return [str(v) for v in value]
+
+
+def is_disabled(name: str, patterns: list[str]) -> bool:
+    from fnmatch import fnmatchcase
+    return any(fnmatchcase(name, p) for p in patterns)
+
+
 def skill_list(root: str | Path) -> None:
     """List available skills (project + ecosystem)."""
     import os
@@ -156,9 +174,12 @@ def skill_list(root: str | Path) -> None:
         print("No skills found.")
         return
 
+    disabled = disabled_skills(root_path)
     print(f"{'Name':<25} {'Source':<10} {'Description'}")
     for s in skills:
         source = s.get("source", "project")
+        if is_disabled(s["name"], disabled):
+            source = "disabled"
         desc = s.get("description", "")
         if len(desc) > 60:
             desc = desc[:57] + "..."

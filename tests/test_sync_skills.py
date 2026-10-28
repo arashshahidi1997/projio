@@ -172,3 +172,39 @@ def test_run_check_exit_code_includes_lint(tmp_path, monkeypatch):
     _project(tmp_path, monkeypatch, "conda run -n e x\n", config="code:\n  runner: pixi\n")
     sync_mod._sync_claude_skills(tmp_path)
     assert sync_mod.run_check(tmp_path) == 1
+
+
+def test_disabled_skills_lose_their_copy_and_keep_their_source(tmp_path, monkeypatch):
+    src = tmp_path / ".projio" / "skills"
+    q = _skill(src, "questio-next", "Plan. Use for planning.")
+    keep = _skill(src, "flow", "Flows. Use for flows.")
+    monkeypatch.setattr("projio.mcp.context._discover_skills", lambda root: [
+        {"name": "questio-next", "path": str(q), "source": "project"},
+        {"name": "flow", "path": str(keep), "source": "project"}])
+    own = tmp_path / ".claude" / "skills" / "questio-mine"      # the project's own, not generated
+    own.mkdir(parents=True)
+    (own / "SKILL.md").write_text("---\nname: questio-mine\ndescription: mine\n---\n")
+    (tmp_path / ".projio" / "config.yml").write_text("")
+    sync_mod._sync_claude_skills(tmp_path)
+    assert (tmp_path / ".claude/skills/questio-next/SKILL.md").is_file()
+
+    (tmp_path / ".projio" / "config.yml").write_text("skills:\n  disabled: ['questio-*']\n")
+    assert [(d["skill"], d["status"]) for d in sync_mod.check_skills(tmp_path)["drift"]] == \
+        [("questio-next", "disabled")]
+    res = sync_mod._sync_claude_skills(tmp_path)
+    assert res["removed"] == ["questio-next"]
+    assert not (tmp_path / ".claude/skills/questio-next").exists()
+    assert q.is_file() and (own / "SKILL.md").is_file()            # sources and own folders untouched
+    assert (tmp_path / ".claude/skills/flow/SKILL.md").is_file()
+    assert sync_mod.check_skills(tmp_path)["drift"] == []
+
+
+def test_agent_instructions_hides_disabled_skills(tmp_path, monkeypatch):
+    from projio.mcp import context
+    monkeypatch.setenv("PROJIO_ROOT", str(tmp_path))
+    (tmp_path / ".projio").mkdir()
+    (tmp_path / ".projio" / "config.yml").write_text("skills:\n  disabled: [rag-query]\n")
+    monkeypatch.setattr(context, "_discover_skills", lambda root, layout=None: [
+        {"name": "rag-query", "path": "x"}, {"name": "flow", "path": "y"}])
+    names = [s["name"] for s in context.agent_instructions().get("skills", [])]
+    assert names == ["flow"]

@@ -745,6 +745,9 @@ def agent_instructions() -> JsonDict:
     # Discover project skills
     layout = load_layout(root)
     skills = _discover_skills(root, layout)
+    from projio.skills import disabled_skills, is_disabled
+    disabled = disabled_skills(root)
+    skills = [s for s in skills if not is_disabled(s["name"], disabled)]
     if skills:
         payload["skills"] = skills
 

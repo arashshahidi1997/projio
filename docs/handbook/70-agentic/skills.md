@@ -62,15 +62,29 @@ next `projio sync` restores it and keeps the edited text as
 A folder in `.claude/skills/` without the `.projio-skill` stamp is a skill
 you wrote directly for Claude Code; projio leaves it alone.
 
-!!! note "Proposed rename (not applied)"
-    To remove the "projio's skills" reading, the default project folder
-    could become `.projio/project-skills/`. Migration would be cheap,
-    because the location is already the `layout.skills` setting: change the
-    `Layout.skills` default, keep reading `.projio/skills/` when it exists
-    and the new folder does not, and have `projio sync` print a one-line
-    hint to `git mv` it. Projects that set `layout.skills` are unaffected.
-    This is a proposal for decision, tracked in issue
-    `20261028-105833-463321`.
+!!! note "Rename to `.projio/project-skills/`: not adopted"
+    Renaming the folder was considered (issue `20261028-105833-463321`) and
+    not adopted: the GENERATED header, the read-only copies and `projio sync
+    --check` remove the confusion that caused wrong edits, and a rename
+    would churn every project for little gain.
+
+## Turning skills off for a project
+
+Every projio project gets the ecosystem and package skills. To leave out
+ones the project does not use, list them (names or globs) in
+`.projio/config.yml`:
+
+```yaml
+skills:
+  disabled: [questio-*, rag-query]
+```
+
+`projio sync` then removes their generated copies from `.claude/skills/`,
+and `agent_instructions()` stops listing them. Only generated copies are
+removed: a project skill's source in `.projio/skills/` and folders you wrote
+directly in `.claude/skills/` are never touched. `projio sync --check`
+reports a disabled skill whose copy is still there. `skill_read(name)`
+still loads a disabled skill when asked by name.
 
 ## The SKILL.md format
 

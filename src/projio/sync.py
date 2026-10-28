@@ -856,8 +856,14 @@ def _rmtree(path: Path) -> None:
 
 
 def _skill_plan(root: Path) -> tuple[Path, list[dict[str, Any]], set[str]]:
-    """Discovered skills paired with their synced copy: ``(skills_dir, entries, managed)``."""
+    """Discovered skills paired with their synced copy: ``(skills_dir, entries, managed)``.
+
+    Skills matching ``skills.disabled`` in the project config are left out, so
+    their generated copies are removed; their sources are never touched.
+    """
     import os
+
+    from .skills import disabled_skills, is_disabled
 
     old_root = os.environ.get("PROJIO_ROOT")
     os.environ["PROJIO_ROOT"] = str(root)
@@ -873,7 +879,10 @@ def _skill_plan(root: Path) -> tuple[Path, list[dict[str, Any]], set[str]]:
     skills_dir = root / ".claude" / "skills"
     managed = {d.name for d in skills_dir.iterdir() if (d / _SKILL_STAMP).is_file()} if skills_dir.is_dir() else set()
     entries = []
+    disabled = disabled_skills(root)
     for skill in skills:
+        if is_disabled(skill["name"], disabled):
+            continue
         src_md = Path(skill["path"])
         src_md = src_md if src_md.is_absolute() else root / src_md
         if not src_md.is_file():
@@ -975,9 +984,12 @@ def check_skills(root: str | Path) -> dict[str, Any]:
     Each problem is ``{"skill", "status", "detail"}``; status is one of
     ``missing`` (no copy yet), ``stale`` (the source changed since the last
     sync, per the stamp's sha), ``outdated`` (written by an older projio sync),
-    ``edited`` (the copy differs from what its source renders to) or
-    ``orphaned`` (a copy whose skill no longer exists).
+    ``edited`` (the copy differs from what its source renders to),
+    ``disabled`` (a copy of a skill in ``skills.disabled``) or ``orphaned``
+    (a copy whose skill no longer exists).
     """
+    from .skills import disabled_skills, is_disabled
+
     import json
 
     root = Path(root).expanduser().resolve()
@@ -1004,8 +1016,13 @@ def check_skills(root: str | Path) -> dict[str, Any]:
         elif _read_copy(dest) != _render_skill(root, src, e["files"]):
             drift.append({"skill": name, "status": "edited",
                           "detail": f"the copy was edited by hand; move the edits to {src}"})
+    disabled = disabled_skills(root)
     for name in sorted(managed - desired):
-        drift.append({"skill": name, "status": "orphaned", "detail": "no source skill of that name any more"})
+        if is_disabled(name, disabled):
+            drift.append({"skill": name, "status": "disabled",
+                          "detail": "listed in skills.disabled but its synced copy is still there"})
+        else:
+            drift.append({"skill": name, "status": "orphaned", "detail": "no source skill of that name any more"})
     return {"drift": drift}
 
 
