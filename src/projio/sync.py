@@ -764,19 +764,64 @@ def _sync_agent_configs(root: Path, *, dry_run: bool = False) -> dict[str, dict[
     return results
 
 
+def _with_project_root(root: Path, func):
+    """Call *func* with ``PROJIO_ROOT`` pointing at *root* (the MCP helpers read it)."""
+    import os
+
+    old = os.environ.get("PROJIO_ROOT")
+    os.environ["PROJIO_ROOT"] = str(root)
+    try:
+        return func()
+    finally:
+        if old is None:
+            os.environ.pop("PROJIO_ROOT", None)
+        else:
+            os.environ["PROJIO_ROOT"] = old
+
+
 def _sync_questio_docs(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
-    """Regenerate questio plan docs if plan/questions.yml exists."""
+    """Regenerate questio plan docs if plan/questions.yml exists.
+
+    The deliverables indexes are a separate step (``_sync_deliverables_index``).
+    """
     questions_path = root / "plan" / "questions.yml"
     if not questions_path.exists():
         return {"action": "skipped", "reason": "no plan/questions.yml"}
     if dry_run:
         return {"action": "would_generate"}
     try:
-        import os
-        os.environ.setdefault("PROJIO_ROOT", str(root))
         from projio.mcp.questio import questio_docs_collect
-        result = questio_docs_collect()
+        result = _with_project_root(root, lambda: questio_docs_collect(include_deliverables=False))
+        if "error" in result:
+            return {"action": "error", "reason": result["error"]}
         return {"action": "generated", "files": result.get("generated", 0)}
+    except Exception as exc:
+        return {"action": "error", "reason": str(exc)}
+
+
+def _sync_deliverables_index(root: Path, *, dry_run: bool = False) -> dict[str, Any]:
+    """Regenerate the docs/deliverables/ index pages, independent of questio.
+
+    Runs where the project already has generated deliverables indexes, or where
+    questio's plan exists (which generated them before this was its own step),
+    so a project that never had them does not get new folders. A page without
+    the generated marker is never overwritten.
+    """
+    from projio.mcp.questio import deliverables_docs_collect, deliverables_index_generated
+
+    d = root / "docs" / "deliverables"
+    if not d.is_dir():
+        return {"action": "skipped", "reason": "no docs/deliverables/"}
+    uses_generated = (d / "index.md").is_file() and deliverables_index_generated(d / "index.md")
+    had_questio = (root / "plan" / "questions.yml").exists()
+    if not (uses_generated or had_questio):
+        return {"action": "skipped", "reason": "docs/deliverables/ has no generated index"}
+    if dry_run:
+        return {"action": "would_generate"}
+    try:
+        result = deliverables_docs_collect(root)
+        return {"action": "generated", "files": result["generated"], "deliverables": result["deliverables"],
+                "kept": result["kept"]}
     except Exception as exc:
         return {"action": "error", "reason": str(exc)}
 
@@ -1216,6 +1261,7 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
     10. Sync agent MCP configs (codex, copilot)
     11. Write .claude/skills/<name>/ (native Claude Code skills) from discovered skills
     12. Regenerate questio plan docs if plan/questions.yml exists
+    12b. Regenerate docs/deliverables/ indexes, independent of questio
     13. Incrementally rebuild stale indexio sources (if --index or config)
     14. Install git hooks (if --install-hooks)
 
@@ -1381,11 +1427,23 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
 
     # 12. Regenerate questio plan docs if questions.yml exists
     questio_action = _sync_questio_docs(root_path, dry_run=dry_run)
-    if questio_action["action"] in ("generated", "would_generate"):
-        count = questio_action.get("files", 0)
-        print(f"{prefix}[+] questio: regenerated {count} plan docs")
-    elif questio_action["action"] == "skipped":
-        pass  # silent if no questions.yml
+    if questio_action["action"] == "would_generate":
+        print(f"{prefix}[+] questio: would regenerate plan docs")
+    elif questio_action["action"] == "generated":
+        print(f"[+] questio: regenerated {questio_action.get('files', 0)} plan docs")
+    elif questio_action["action"] == "error":
+        print(f"[!] questio: {questio_action.get('reason', '')}")
+
+    # 12b. Regenerate docs/deliverables/ indexes (independent of questio)
+    deliverables_action = _sync_deliverables_index(root_path, dry_run=dry_run)
+    if deliverables_action["action"] == "would_generate":
+        print(f"{prefix}[+] deliverables: would regenerate index pages")
+    elif deliverables_action["action"] == "generated":
+        print(f"[+] deliverables: regenerated {deliverables_action.get('files', 0)} index pages")
+        for path in deliverables_action.get("kept", []):
+            print(f"[=] deliverables: kept hand-written {Path(path).relative_to(root_path)}")
+    elif deliverables_action["action"] == "error":
+        print(f"[!] deliverables: {deliverables_action.get('reason', '')}")
 
     # 13. Incrementally rebuild stale indexio sources
     try:
@@ -1442,6 +1500,7 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
         "agents": agent_actions,
         "claude_skills": cmd_action,
         "questio": questio_action,
+        "deliverables": deliverables_action,
         "index": index_action,
         "hooks": hooks_action,
     }
