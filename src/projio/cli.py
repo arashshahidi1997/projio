@@ -196,7 +196,7 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Show what would change without writing.",
     )
 
-    p_skill = sub.add_parser("skill", help="Manage project skills.")
+    p_skill = sub.add_parser("skill", aliases=["skills"], help="Manage project skills.")
     p_skill.add_argument("-C", "--root", default=".", help="Project root (default: .).")
     skill_sub = p_skill.add_subparsers(dest="skill_command", required=True)
 
@@ -211,6 +211,15 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     p_skill_list = skill_sub.add_parser("list", help="List available skills.")
+    p_skill_usage = skill_sub.add_parser(
+        "usage", help="How often each skill is used, from this project's Claude Code transcripts (read-only).",
+    )
+    p_skill_usage.add_argument("-C", "--root", default=argparse.SUPPRESS, help="Project root (default: .).")
+    p_skill_usage.add_argument("--since", default=None, help="Window start: 30d, 6w, 12h or an ISO date.")
+    p_skill_usage.add_argument("--unused", action="store_true", help="List only known skills with 0 uses in the window.")
+    p_skill_usage.add_argument("--json", action="store_true", help="Print the report as JSON.")
+    p_skill_usage.add_argument("--transcripts", default=None,
+                               help="Transcript folder (default: ~/.claude/projects/<project slug>/).")
 
     p_manuscript = sub.add_parser("manuscript", help="Manuscript management.")
     p_manuscript.add_argument("-C", "--root", default=".", help="Project root (default: .).")
@@ -520,7 +529,11 @@ def main(argv: Iterable[str] | None = None) -> None:
                 pass  # sync_claude_permissions already prints status
         return
 
-    if args.command == "skill":
+    if args.command in ("skill", "skills"):
+        if args.skill_command == "usage":
+            from .skill_usage import print_usage
+            raise SystemExit(print_usage(args.root, since=args.since, unused=args.unused,
+                                         as_json=args.json, transcripts=args.transcripts))
         from .skills import skill_new, skill_list
         if args.skill_command == "new":
             skill_new(args.root, args.name, from_ecosystem=args.from_ecosystem)

@@ -255,9 +255,14 @@ Manages project skills in `.projio/skills/`.
 ```bash
 projio skill -C . list               # list available skills
 projio skill -C . new my-analysis    # scaffold a new skill
+projio skills usage                  # how often each skill is used (read-only)
+projio skills usage --since 30d      # only the last 30 days
+projio skills usage --unused         # known skills with 0 uses in the window
 ```
 
-Skills are markdown prompts that agents can load via `skill_read()`. The `new` subcommand creates `.projio/skills/<name>/SKILL.md` with a template.
+`projio skills` is an alias of `projio skill`. Skills are markdown prompts that agents can load via `skill_read()`. The `new` subcommand creates `.projio/skills/<name>/SKILL.md` with a template.
+
+`usage` reads this project's Claude Code transcripts (`~/.claude/projects/<slug>/*.jsonl` and their `subagents/`, or `--transcripts DIR`) and, per skill, counts `Skill` tool calls, user slash commands (`/name`), distinct sessions, and the last-used date. A forked or resumed session repeats earlier records with their ids and starts with the same first prompt, so events are counted once by id and files with the same first prompt count as one session. Slash commands that are not skills (`/clear`, `/model`) are left out. The status column says whether a skill is `synced` by projio, `disabled` (`skills.disabled`), the project's `own` folder in `.claude/skills/`, or `other` (a user or plugin skill). `--json` prints the report as JSON. Use it to choose `skills.disabled`.
 
 ### `projio sync`
 

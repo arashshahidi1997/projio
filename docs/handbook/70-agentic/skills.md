@@ -86,6 +86,10 @@ directly in `.claude/skills/` are never touched. `projio sync --check`
 reports a disabled skill whose copy is still there. `skill_read(name)`
 still loads a disabled skill when asked by name.
 
+To see which skills a project actually uses before choosing, run
+`projio skills usage` (counts from the project's Claude Code transcripts;
+`--since 60d`, `--unused`).
+
 ## The SKILL.md format
 
 `pixecog/.projio/skills/pixecog-flow-setup/SKILL.md` is the canonical

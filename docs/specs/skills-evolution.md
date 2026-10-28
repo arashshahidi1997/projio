@@ -1,6 +1,10 @@
 # Skills: planning layer, overlays, usage signal (design note)
 
-Status: **proposal, awaiting decision.** Nothing here is implemented.
+Status: **decided 2026-10-28.** Item 3: per-project disabling implemented
+(`skills.disabled`); the state-doc model is not upstreamed yet. Item 4:
+**deferred** until a second real overlay case exists (pixecog has one,
+`pixecog-flow-setup` on `pipeio-flow-create`). Item 5: implemented as
+`projio skills usage`. The `.projio/skills/` rename: not adopted.
 Source: issue `20261028-105833-463321`, items 3 to 5, filed from pixecog's
 workspace refactor (pixecog decisions WR-D9, WR-D12). Items 1 and 2 of the
 same issue (synced-copy header, read-only copies, `projio sync --check`,
@@ -23,7 +27,7 @@ mislead the agent.
 **Options.**
 
 - **A. Per-project skill selection.** A `skills:` block in
-  `.projio/config.yml` with `disable: [questio-*]` (globs), honored by
+  `.projio/config.yml` with `disabled: [questio-*]` (globs), honored by
   `_discover_skills`, `agent_instructions()` and `projio sync`. Generic,
   small, and useful beyond planning (a project without pipelines can drop the
   pipeio skills).
@@ -37,6 +41,9 @@ mislead the agent.
   `projio`/notio helper to create a thread and allocate IDs. questio shrinks
   to a hypothesis registry that threads can reference.
 
+**Decision.** A is implemented as `skills.disabled` (names or globs) in
+`.projio/config.yml`; C is not started.
+
 **Recommendation.** A now, C after pixecog has run WR-D12 for a few weeks.
 A is a few lines in discovery and fixes the immediate cost for every
 project. C should be generalized from a model that has held up in use,
@@ -45,6 +52,9 @@ convention ("disable questio-*, enable the thread skills"), so B is not
 needed.
 
 ## 4. Overlays: `extends:` instead of forked skills
+
+**Decision: deferred.** Wait for a second real case before designing the
+mechanism; the analysis below stays as the starting point.
 
 **Problem.** Projects copy a generic skill to add project specifics
 (`px-session-wrap` vs `session-wrap`), or chain aliases (`px-gallery` is an
@@ -107,14 +117,9 @@ can call it per project for a cross-project view. It answers the question
 with data that already exists and adds nothing to the agent's runtime path.
 Revisit B only if the transcript format changes under it.
 
-## Decisions needed
+## Open questions
 
-1. Item 3: per-project `skills.disable` now, and upstream the thread
-   state-doc model later? Which project leads the generic version?
-2. Item 4: `extends:` composition at sync time, append-only, with
-   `replaces:` to hide the base?
-3. Item 5: transcript-based `projio skills usage`, and the retirement
-   threshold (sessions unused)?
-4. From item 1: rename the default project skills folder from
-   `.projio/skills/` to `.projio/project-skills/` (proposal in the
-   [handbook skills page](../handbook/70-agentic/skills.md))?
+1. Item 3: when, and from which project, to generalize the thread
+   state-doc model.
+2. Item 4: revisit `extends:` when a second project skill layers on a
+   generic one.
