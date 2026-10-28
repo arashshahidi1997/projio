@@ -258,7 +258,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p_sync.add_argument("--dry-run", action="store_true", help="Show what would change without writing.")
     p_sync.add_argument(
         "--check", action="store_true",
-        help="Report synced skill copies that drifted from their source; write nothing, exit 1 on findings.",
+        help="Report synced skill copies that drifted from their source, and skill text that contradicts the project config (env manager, retired names); write nothing, exit 1 on findings.",
     )
     p_sync_index = p_sync.add_mutually_exclusive_group()
     p_sync_index.add_argument(

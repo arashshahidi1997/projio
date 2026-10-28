@@ -36,8 +36,9 @@ edits the `.py` file and reads cell outputs via `pipeio_nb_snapshot`.
 
 ## Prerequisites
 
-Marimo must be installed in the project's compute env (e.g. `cogpy`).
-The agent env (`rag`) needs marimo for `nb_validate` only (static analysis).
+Marimo must be installed in the project's compute environment. The
+environment that runs the projio MCP server needs marimo only for
+`nb_validate` (static analysis).
 
 ## Workflow
 
@@ -65,16 +66,21 @@ Tell the user:
 > Please launch marimo in your compute environment:
 >
 > ```
-> conda run -n <env> marimo edit <path-to-notebook.py> --watch
+> <run prefix> marimo edit <path-to-notebook.py> --watch
 > ```
 >
 > Once the browser opens, let me know and I'll start editing.
 
+Fill in `<run prefix>` from `runtime_conventions()`, never from memory:
+`runner` names the project's env manager, `pixi.run` gives the exact form
+for a pixi project, and the env name is `code.envs.default` in
+`project_context()`. With runner `none`, drop the prefix.
+
 The `--watch` flag makes marimo auto-reload when the agent edits the file.
 The human sees changes live without manual refresh.
 
-**Important:** Marimo must run from the env where project compute libraries
-are installed (e.g. `cogpy`), not from `rag`.
+**Important:** Marimo must run from the env where the project's compute
+libraries are installed, not from the env that runs the MCP server.
 
 ### 3) Edit-snapshot-iterate loop
 

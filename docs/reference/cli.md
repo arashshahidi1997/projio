@@ -277,6 +277,16 @@ Without `--index` or `--no-index`, the index step reads `automation.index.on_syn
 
 `--check` compares every `.claude/skills/<name>/` copy with its source and reports it as `missing` (not synced yet), `stale` (the source changed since the last sync), `outdated` (written by an older projio), `edited` (the copy was changed by hand) or `orphaned` (its source skill is gone). A plain `projio sync` fixes all five; a hand-edited copy is restored and the edited `SKILL.md` is kept as `.claude/skills/<name>.edited.md`.
 
+`--check` also lints skill text against the project config: a line that tells the agent to use an env manager other than the configured runner (`conda run` or `conda activate` in a pixi or bare project, `pixi run` in a conda one) and a line naming a retired helper (`notebook_bootstrap`, `utility-promote`, plus the project's own list) are reported with file and line. Add retired names in `.projio/config.yml`:
+
+```yaml
+skills:
+  lint:
+    retired: [old_helper, old-skill-name]
+```
+
+Put `projio-lint: ignore` on a line (for example in an HTML comment) to keep a deliberate mention.
+
 The `--install-hooks` flag writes a `.git/hooks/post-commit` hook that runs `projio sync --index` in the background after each commit. It will not overwrite an existing non-projio hook.
 
 ### `projio list`

@@ -141,7 +141,7 @@ Explore notebooks are never published. Demo notebooks are published to the proje
 ### notebook.yml
 
 ```yaml
-kernel: cogpy
+kernel: <jupyter-kernel>                # a kernel of the project compute env
 default_format: ""                     # flow-level default ("percent" | "marimo")
 entries:
   # Percent-format (jupytext) — traditional Jupyter workflow

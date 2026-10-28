@@ -112,3 +112,63 @@ def test_copies_from_an_older_sync_are_rewritten(tmp_path, monkeypatch):
     assert [d["status"] for d in sync_mod.check_skills(tmp_path)["drift"]] == ["outdated"]
     assert sync_mod._sync_claude_skills(tmp_path)["written"] == ["alpha"]
     assert sync_mod.check_skills(tmp_path)["drift"] == []
+
+
+def _project(tmp_path, monkeypatch, body: str, config: str = ""):
+    src = tmp_path / ".projio" / "skills"
+    d = src / "flow"
+    d.mkdir(parents=True)
+    (d / "SKILL.md").write_text(f"---\nname: flow\ndescription: x\n---\n\n{body}")
+    (tmp_path / ".projio" / "config.yml").write_text(config)
+    monkeypatch.setattr("projio.mcp.context._discover_skills",
+                        lambda root: [{"name": "flow", "path": ".projio/skills/flow/SKILL.md", "source": "project"}])
+
+
+def test_lint_flags_conda_in_a_pixi_project(tmp_path, monkeypatch):
+    _project(tmp_path, monkeypatch, "Run `conda run -n cogpy snakemake`.\nOr `pixi run snakemake`.\n")
+    (tmp_path / "pixi.toml").write_text("[workspace]\nname = 'x'\n")
+    res = sync_mod.lint_skills(tmp_path)
+    assert res["runner"] == "pixi"
+    assert [(f["line"], f["rule"]) for f in res["findings"]] == [(6, "env-manager")]
+    assert res["findings"][0]["path"] == ".projio/skills/flow/SKILL.md"
+
+
+def test_lint_flags_pixi_in_a_conda_project_and_honours_ignore(tmp_path, monkeypatch):
+    _project(tmp_path, monkeypatch,
+             "pixi run marimo edit nb.py\nconda run -n env x\npixi run y <!-- projio-lint: ignore -->\n",
+             config="code:\n  runner: conda\n")
+    res = sync_mod.lint_skills(tmp_path)
+    assert res["runner"] == "conda" and [f["line"] for f in res["findings"]] == [6]
+
+
+def test_lint_flags_retired_names_and_project_extras(tmp_path, monkeypatch):
+    _project(tmp_path, monkeypatch, "Import notebook_bootstrap.\nUse old_helper.\nFine.\n",
+             config="code:\n  runner: none\nskills:\n  lint:\n    retired: [old_helper]\n")
+    found = sync_mod.lint_skills(tmp_path)["findings"]
+    assert [(f["line"], f["rule"]) for f in found] == [(6, "retired"), (7, "retired")]
+
+
+def test_lint_reads_the_projects_own_claude_skills(tmp_path, monkeypatch):
+    _project(tmp_path, monkeypatch, "clean\n", config="code:\n  runner: pixi\n")
+    own = tmp_path / ".claude" / "skills" / "mine"
+    own.mkdir(parents=True)
+    (own / "SKILL.md").write_text("---\nname: mine\ndescription: y\n---\nconda activate base\n")
+    found = sync_mod.lint_skills(tmp_path)["findings"]
+    assert [(f["skill"], f["line"]) for f in found] == [("mine", 5)]
+
+
+def test_shipped_skills_do_not_restate_an_env_manager():
+    """projio's own skills read the runner from runtime_conventions(); they name none."""
+    bundled = Path(sync_mod.__file__).parent / "data" / "skills"
+    hits = [f"{p.parent.name}:{n}" for p in sorted(bundled.glob("*/SKILL.md"))
+            for n, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1)
+            if sync_mod._LINT_IGNORE not in line
+            and any(rx.search(line) for rx in sync_mod._RUNNER_COMMANDS.values())
+            or any(t in line for t in sync_mod._RETIRED_TERMS)]
+    assert hits == []
+
+
+def test_run_check_exit_code_includes_lint(tmp_path, monkeypatch):
+    _project(tmp_path, monkeypatch, "conda run -n e x\n", config="code:\n  runner: pixi\n")
+    sync_mod._sync_claude_skills(tmp_path)
+    assert sync_mod.run_check(tmp_path) == 1

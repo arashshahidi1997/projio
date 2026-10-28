@@ -356,7 +356,8 @@ pipeio_run(flow=FLOW_NAME, dryrun=True)
 This validates that Snakemake can resolve all rules, inputs, and outputs
 without actually running anything.
 
-**Use `pipeio_run`** — never run `snakemake` or `conda run` manually.
+**Use `pipeio_run`**: never run `snakemake` by hand. `pipeio_run` resolves the
+runner (pixi, conda or bare) and env from the project config.
 
 ### Validate
 
@@ -372,7 +373,7 @@ Check that the registry is consistent and I/O contracts across flows resolve.
 - **Never overwrite scaffolded files** (Makefile, notebook.yml, publish.yml)
 - **Never remove `configfile: "config.yml"`** from the Snakefile
 - **Always call `pipeio_registry_scan`** after `pipeio_flow_new`
-- **Always use `pipeio_run`** for execution — never manual conda/snakemake
+- **Always use `pipeio_run`** for execution — never run snakemake by hand
 - **Datalad subdataset is optional** — add it only when the project versions
   derivatives with datalad and the outputs are stable (see Step 6); a plain
   directory is the default

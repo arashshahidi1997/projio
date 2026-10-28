@@ -77,21 +77,21 @@ another session's file, say so loudly in the handoff.
 
 ## 2. Verify (capture the state the handoff will quote)
 
-Run only the gates relevant to what changed. Use the project's own runner (check
-`project_context()` / `runtime_conventions()` for the env; often `pixi run …` or
-`conda run -n <env> …`):
+Run only the gates relevant to what changed. Use the project's own runner:
+`runtime_conventions()` returns it (`runner`, and `pixi.run` / `project_commands`
+for the exact form); do not assume an env manager:
 
 - **Python edits** (`code/utils`, `code/lib`, pipeline scripts) → run the test
   suite or the targeted module, plus a fast `python -m py_compile <edited files>`
   syntax gate.
 - **Config / Snakefile edits** → `yaml.safe_load` the config, and where cheap a
-  `pipeio_run(flow=…, dryrun=True)` (never invoke `snakemake` / `conda run`
-  manually).
+  `pipeio_run(flow=…, dryrun=True)` (never invoke `snakemake` by hand; `pipeio_run`
+  resolves the runner from the project config).
 - **Algorithm / detector edits** → a quick equivalence or smoke check on
   synthetic or one real input, with actual numbers to quote (not "ran without
   error").
-- **Docs / mkdocs / bib / notebooks touched** → build the site (`site_build()` or
-  `make build`) so it is healthy; never leave or push a broken site.
+- **Docs / mkdocs / bib / notebooks touched** → build the site (`site_build()`, or the site command `runtime_conventions()`
+  lists) so it is healthy; never leave or push a broken site.
 
 Record pass counts, dry-run OK, and key numbers. Note any long background runs
 still in flight (the poll command and how to check).

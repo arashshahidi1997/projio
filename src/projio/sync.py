@@ -1009,6 +1009,72 @@ def check_skills(root: str | Path) -> dict[str, Any]:
     return {"drift": drift}
 
 
+# Env-manager commands a skill may tell the agent to run, by runner (projio.runners.resolve_runner).
+_RUNNER_COMMANDS = {
+    "conda": re.compile(r"\b(?:conda|mamba|micromamba)\s+(?:run|activate)\b"),
+    "pixi": re.compile(r"\bpixi\s+(?:run|shell)\b"),
+}
+# Which of those contradict each configured runner. Under "none" (bare commands) a
+# named env still routes through pixi, so only conda is wrong there.
+_RUNNER_CONTRADICTS = {"pixi": ["conda"], "none": ["conda"], "conda": ["pixi"]}
+# Names that skills used to point at and that no longer exist anywhere in the ecosystem.
+_RETIRED_TERMS = ("notebook_bootstrap", "utility-promote")
+_LINT_IGNORE = "projio-lint: ignore"
+
+
+def lint_skills(root: str | Path) -> dict[str, Any]:
+    """Flag skill text that contradicts the project's configuration.
+
+    Reads the source of every discovered skill plus the project's own folders in
+    ``.claude/skills/``, and reports a line when it tells the agent to use an env
+    manager other than the configured runner (``conda run`` in a pixi project,
+    and so on), or names a retired helper (``_RETIRED_TERMS`` plus the project's
+    ``skills.lint.retired`` list in ``.projio/config.yml``). A line carrying
+    ``projio-lint: ignore`` (say in an HTML comment) is skipped.
+    """
+    from .runners import resolve_runner
+
+    root = Path(root).expanduser().resolve()
+    runner = resolve_runner(root)
+    try:
+        from .config import load_effective_config
+        cfg = load_effective_config(root)
+    except Exception:
+        cfg = {}
+    extra = ((cfg.get("skills") or {}).get("lint") or {}).get("retired") or []
+    retired = [*_RETIRED_TERMS, *(str(t) for t in extra)]
+    wrong = {m: _RUNNER_COMMANDS[m] for m in _RUNNER_CONTRADICTS.get(runner, [])}
+
+    skills_dir, entries, managed = _skill_plan(root)
+    sources = [(e["name"], e["src_md"]) for e in entries]
+    if skills_dir.is_dir():
+        sources += [(d.name, d / "SKILL.md") for d in sorted(skills_dir.iterdir())
+                    if d.is_dir() and d.name not in managed and (d / "SKILL.md").is_file()]
+    findings: list[dict[str, Any]] = []
+    for name, path in sources:
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            continue
+        try:
+            shown = path.relative_to(root).as_posix()
+        except ValueError:
+            shown = str(path)
+        for no, line in enumerate(lines, 1):
+            if _LINT_IGNORE in line:
+                continue
+            for manager, pattern in wrong.items():
+                m = pattern.search(line)
+                if m:
+                    findings.append({"skill": name, "path": shown, "line": no, "rule": "env-manager",
+                                     "detail": f"`{m.group(0)}` but this project's runner is {runner}"})
+            for term in retired:
+                if term in line:
+                    findings.append({"skill": name, "path": shown, "line": no, "rule": "retired",
+                                     "detail": f"`{term}` no longer exists"})
+    return {"runner": runner, "findings": findings}
+
+
 def run_check(root: str | Path) -> int:
     """``projio sync --check``: report what is out of line, change nothing. Returns the exit code."""
     root = Path(root).expanduser().resolve()
@@ -1017,9 +1083,17 @@ def run_check(root: str | Path) -> int:
         print(f"[!] .claude/skills/{d['skill']}: {d['status']}: {d['detail']}")
     if drift:
         print(f"{len(drift)} synced skill copies out of line; `projio sync` rewrites them from their sources.")
-        return 1
-    print("[=] .claude/skills/: every synced copy matches its source")
-    return 0
+    else:
+        print("[=] .claude/skills/: every synced copy matches its source")
+    lint = lint_skills(root)
+    for f in lint["findings"]:
+        print(f"[!] {f['path']}:{f['line']}: {f['rule']}: {f['detail']}")
+    if lint["findings"]:
+        print(f"{len(lint['findings'])} skill lines contradict the project config; edit the skill sources "
+              f"(read commands from runtime_conventions() instead of naming an env manager).")
+    else:
+        print(f"[=] skills: no text contradicts the project config (runner: {lint['runner']})")
+    return 1 if drift or lint["findings"] else 0
 
 
 _PROJIO_HOOK_MARKER = "# projio-managed"

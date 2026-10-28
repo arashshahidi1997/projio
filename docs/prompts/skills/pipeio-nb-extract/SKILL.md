@@ -21,7 +21,7 @@ metadata:
 # Pipeio Notebook Extract
 
 Use this skill to extract findings from an executed notebook and write a
-curated report that lives in the flow's `docs/reports/` directory.
+curated report that lives next to the figures `pipeio_nb_extract` extracts.
 
 > **Name note:** this skill (and the underlying `pipeio_nb_extract` tool)
 > was renamed from `pipeio-report` / `pipeio_nb_report` to disambiguate
@@ -64,7 +64,9 @@ pipeio_nb_extract(flow="<flow>", name="<notebook>")
 
 This extracts:
 - **markdown_cells**: narrative text from the notebook
-- **figures**: extracted PNGs saved to `{flow}/docs/reports/{name}/`
+- **figures**: extracted PNGs, saved to the directory returned as
+  `figures_dir` (relative to the project root). Take paths from the tool
+  result; do not assume a layout.
 - **text_outputs**: printed metrics and tables
 - **execution_metadata**: kernel, timestamp, cell count
 
@@ -83,7 +85,8 @@ pipeio_nb_extract(flow="<flow>", name="<notebook>", tags_only=True)
 
 ### 3) Check for existing report
 
-Read `{flow}/docs/reports/{name}.md` if it exists.
+The report file is `<figures_dir>.md`: the `figures_dir` from step 2 with
+`.md` appended, so it sits beside its figure folder. Read it if it exists.
 
 - If it exists, ask the user: "A report already exists. Update it with
   new results, or start fresh?"
@@ -93,7 +96,7 @@ Read `{flow}/docs/reports/{name}.md` if it exists.
 
 ### 4) Write the report
 
-Create `{flow}/docs/reports/{name}.md` with this structure:
+Create `<figures_dir>.md` with this structure:
 
 ```markdown
 ---
@@ -185,7 +188,7 @@ that render in Jupyter but cannot be extracted as static images. The
 - **Cross-reference mod docs.** If the notebook tests a mod's output,
   link to the mod's theory.md or spec.md.
 - **Use relative paths** for figure references: `{name}/output_3_0.png`
-  (relative to the report file's location in `docs/reports/`).
+  (relative to the report file, which sits beside the `{name}/` figure folder).
 
 ### 5) Optionally capture a result note
 
@@ -199,7 +202,7 @@ cross-references the flow report:
 
 ```yaml
 refs:
-  - source: "code/pipelines/<flow>/docs/reports/<name>.md"
+  - source: "<figures_dir>.md"
     type: flow-report
 ```
 
@@ -211,9 +214,8 @@ This bridges flow-local reports with the project-wide result log.
 - Never run this skill on a notebook that hasn't been executed.
 - Always include figure captions (alt text) -- never bare `![](path.png)`.
 - Reports are git-tracked source files, not build artifacts.
-- Report figures live in `{flow}/docs/reports/{name}/`, not in any
+- Report figures live in the `figures_dir` the tool returns, not in any
   shared assets directory.
-- The report file lives at `{flow}/docs/reports/{name}.md`, matching
-  the notebook name.
+- The report file lives at `<figures_dir>.md`, matching the notebook name.
 - Do not include code cells in the report unless the user explicitly asks.
 - Do not include all figures -- curate the most informative subset.
