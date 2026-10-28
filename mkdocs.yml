@@ -102,6 +102,7 @@ nav:
           - CLI: specs/pipeio/cli.md
           - MCP Tools: specs/pipeio/mcp-tools.md
       - Agent Interface Layers: specs/agent-interface-layers.md
+      - Skills Evolution (proposal): specs/skills-evolution.md
       - Deliverables: specs/deliverables.md
       - Research Orchestration (Questio):
           - specs/research-orchestration/design.md
