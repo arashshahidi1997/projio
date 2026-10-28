@@ -256,6 +256,10 @@ def _build_parser() -> argparse.ArgumentParser:
     p_sync = sub.add_parser("sync", help="Sync workspace: auto-discover code/lib libraries, register in codio.")
     p_sync.add_argument("-C", "--root", default=".", help="Project root (default: .).")
     p_sync.add_argument("--dry-run", action="store_true", help="Show what would change without writing.")
+    p_sync.add_argument(
+        "--check", action="store_true",
+        help="Report synced skill copies that drifted from their source; write nothing, exit 1 on findings.",
+    )
     p_sync_index = p_sync.add_mutually_exclusive_group()
     p_sync_index.add_argument(
         "--index", action="store_true", default=None, dest="index",
@@ -575,6 +579,9 @@ def main(argv: Iterable[str] | None = None) -> None:
         return
 
     if args.command == "sync":
+        if args.check:
+            from .sync import run_check
+            raise SystemExit(run_check(args.root))
         from .sync import sync_workspace
         sync_workspace(
             args.root,

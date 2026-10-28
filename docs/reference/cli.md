@@ -92,6 +92,7 @@ projio skill -C . new my-analysis
 # sync
 projio sync -C .
 projio sync -C . --dry-run
+projio sync -C . --check            # report synced skill copies that drifted; writes nothing
 projio sync -C . --index            # force incremental index rebuild
 projio sync -C . --no-index         # skip index even if configured
 projio sync -C . --install-hooks    # install post-commit git hook
@@ -267,11 +268,14 @@ Runs all workspace sync operations: code library discovery, filter/CSL sync, pan
 | Flag | Description |
 |------|-------------|
 | `--dry-run` | Show what would change without writing |
+| `--check` | Report synced skill copies that drifted from their source; write nothing, exit 1 on findings |
 | `--index` | Force incremental index rebuild (even without `automation.index.on_sync`) |
 | `--no-index` | Skip index rebuild (even if `automation.index.on_sync` is set) |
 | `--install-hooks` | Install projio-managed git hooks (post-commit for index rebuild) |
 
 Without `--index` or `--no-index`, the index step reads `automation.index.on_sync` from `.projio/config.yml` (default: `false`).
+
+`--check` compares every `.claude/skills/<name>/` copy with its source and reports it as `missing` (not synced yet), `stale` (the source changed since the last sync), `outdated` (written by an older projio), `edited` (the copy was changed by hand) or `orphaned` (its source skill is gone). A plain `projio sync` fixes all five; a hand-edited copy is restored and the edited `SKILL.md` is kept as `.claude/skills/<name>.edited.md`.
 
 The `--install-hooks` flag writes a `.git/hooks/post-commit` hook that runs `projio sync --index` in the background after each commit. It will not overwrite an existing non-projio hook.
 
