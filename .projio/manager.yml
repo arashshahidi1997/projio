@@ -1,0 +1,29 @@
+# Adapter keys for the project-manager skill (read by its helpers incoming.py, round.py, procs.py).
+# The prose half of the adapter is the project skill named in adapter_skill.
+prefix: "projio-"                 # session titles start with it; the standing manager is "projio-manager"
+adapter_skill: projio-manager
+incoming:
+  dirs: [docs/log/issue, docs/log/idea]
+  title_prefix: "[from "
+  body_markers: ["### Source context:"]   # most notes from other projects carry only this line
+  open_statuses: [open, partial, scheduled]
+  cited_by:
+    globs: []
+    git_log: true                 # issue work is cited by `docs(issue): resolve|progress on <timestamp>` commits
+handoffs:
+  dir: docs/log/handoff
+units:
+  - {name: core, paths: [src/projio, tests, pyproject.toml, pixi.toml, CHANGELOG.md, CLAUDE.md]}
+  - {name: skills, paths: [src/projio/data/skills, docs/prompts/skills, .projio/skills]}
+  - {name: docs, paths: [docs, mkdocs.yml]}
+  - {name: notes, paths: [docs/log]}
+  - {name: deliverables, paths: [docs/deliverables]}
+  - {name: biblio, paths: [packages/biblio]}
+  - {name: notio, paths: [packages/notio]}
+  - {name: indexio, paths: [packages/indexio]}
+  - {name: codio, paths: [packages/codio, .projio/codio]}
+  - {name: pipeio, paths: [packages/pipeio]}
+  - {name: figio, paths: [packages/figio]}
+  - {name: projio-config, paths: [.projio, .claude, .mcp.json]}
+procs:
+  protect: [gitlab-runner, vscode-server, grobid, "^SCREEN", "^tmux"]
