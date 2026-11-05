@@ -1,0 +1,8 @@
+# Note types beyond notio's defaults (idea, issue, task, meeting, result), which stay as they are.
+# Session handoffs, written by session-wrap and the manager (series: manager), in docs/log/handoff/.
+[types.handoff]
+mode = "event"
+template = "handoff.md"
+filename = "handoff-{owner}-{timestamp}.md"
+toc_keys = ["title", "status", "branch"]
+toc_groupby = "series"
