@@ -58,6 +58,7 @@ projio = [
     "data/filters/*.lua",
     "data/csl/*.csl",
     "data/skills/*/SKILL.md",
+    "data/skills/*/*.py",
     "data/profiles/*/profile.yml",
     "data/profiles/*/*.tmpl",
 ]
