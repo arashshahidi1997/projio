@@ -42,3 +42,6 @@ docs/pipelines/mkdocs.yml
 site/
 # <<< projio <<<
 .gitnexus
+
+# manager board and other untracked scratch files
+.scratch/
