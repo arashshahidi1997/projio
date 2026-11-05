@@ -103,9 +103,13 @@ still in flight (the poll command and how to check).
 - One commit per coherent change (e.g. one per flow or feature), with clear
   conventional-commit subjects. End every commit body with:
   `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
-- Commit on the current branch. **Do not push** unless the user asks. If you do
-  push and docs changed, build the site first (CI often copies the built site
-  from the working tree).
+- **Commit by explicit path too:** `git commit -m "…" -- <your paths>`, never a
+  bare `git commit` of the whole index (sessions share the checkout's index, so a
+  peer's staged file would be swept in). Afterwards check `git show --stat HEAD`.
+- Commit on the current branch. **Do not push** unless the user asks. When a
+  manager session runs (step 6), pushing is its job: say "committed, push left
+  to the manager". If you do push and docs changed, build the site first (CI
+  often copies the built site from the working tree).
 - Datalad projects: persist derivative data via `datalad_save` inside the
   subdataset only if asked; the parent commit should reference code/docs, not
   regenerated outputs.
@@ -153,7 +157,23 @@ If this project maintains cross-session memory files (Claude Code memory under
 `MEMORY.md` index line current. Memory is for durable facts and behaviors;
 research findings belong in notio result/idea notes, not memory.
 
-## 6. Report
+## 6. Tell the manager (if one runs)
+
+If `.projio/manager.yml` sets a `prefix` and `ListAgents` shows a session named
+`<prefix>manager`, send it three lines with
+`SendMessage(to="<prefix>manager", message=…)`:
+
+1. unit · item → done / partial
+2. blockers, items left for the manager (lessons, cross-project notes, tool
+   issues), decisions for the user, in plain words
+3. the handoff id
+
+Across machines, names do not resolve: use the session id the manager gave in
+your kickoff prompt. No manager running, or nothing to say: skip. It is a
+report, not a request for approval (the `project-manager` skill has the
+protocol).
+
+## 7. Report
 
 State: the commits made, the handoff note path (from `note_create`), that memory
 was updated, and any background runs left polling. **End by surfacing the minimal
