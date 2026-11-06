@@ -12,6 +12,8 @@ incoming:
     git_log: true                 # issue work is cited by `docs(issue): resolve|progress on <timestamp>` commits
 handoffs:
   dir: docs/log/handoff
+board:
+  path: .scratch/projio-manager-board.md   # the manager board (gitignored); `round.py board` rewrites it
 units:
   - {name: core, paths: [src/projio, tests, pyproject.toml, pixi.toml, CHANGELOG.md, CLAUDE.md]}
   - {name: skills, paths: [src/projio/data/skills, docs/prompts/skills, .projio/skills]}

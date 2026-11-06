@@ -25,6 +25,13 @@ specific to projio. Machine keys are in `.projio/manager.yml`.
   (`note_resolve(note_id=…)`). Wrap: `session-wrap`, which ends with the
   three-line report to `projio-manager` when it runs.
 
+## Board
+
+`.scratch/projio-manager-board.md` (the default; `.scratch/` is gitignored).
+Refresh with `round.py board`, open it with
+`show_pane(pane="file", path=".scratch/projio-manager-board.md")`. Other
+managers in Sync: pix-manager (gamma2), lit-manager and worklog-manager (laptop).
+
 ## Units of work and where their state lives
 
 | Unit | State lives in |

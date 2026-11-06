@@ -9,7 +9,7 @@ description: >
   (named in `.projio/manager.yml`), which says what the units of work are.
   Also defines the three-line report work sessions send the manager at wrap.
 metadata:
-  short-description: Manager core - incoming notes, session states, handoffs, decisions, restart
+  short-description: Manager core - incoming notes, session states, board, handoffs, decisions, restart
   tags: [manager, orchestration, sessions, handoff, workflow]
   tooling:
     mcp:
@@ -32,8 +32,8 @@ time estimates**.
 This file is the core. The project's **adapter** fills in the rest:
 
 - `.projio/manager.yml`: machine keys the helpers read (title `prefix`, the
-  incoming note folders and signals, the handoff folder, `units` for grouping
-  paths, protected processes).
+  incoming note folders and signals, the handoff folder, the `board` path,
+  `units` for grouping paths, protected processes).
 - the adapter skill (`adapter_skill` in that file, usually `<prefix>manager`):
   the units of work and where their state lives, which files belong to the
   sessions (the manager never edits them), the collision unit, the
@@ -58,7 +58,8 @@ restart, trust the files.
 
 Run one at the start, when an idle notice arrives, and when the user asks. The
 helpers are in this skill's folder (`.claude/skills/project-manager/` after
-`projio sync`); all are read-only.
+`projio sync`); all are read-only except `round.py board`, which rewrites the
+gitignored board.
 
 1. **Incoming:** `python3 .claude/skills/project-manager/incoming.py`. Notes
    from other projects arrive with no signal, so this list is how the manager
@@ -73,11 +74,47 @@ helpers are in this skill's folder (`.claude/skills/project-manager/` after
 3. **Sessions:** `ListAgents`. Give every session a state, and run the
    collision guard.
 4. **The adapter's readers** for the project's own units of work.
-5. **Print the status block:** Incoming · Sessions (with states) · What
-   finished · Waiting on the user · Proposed next. Then batch the decisions
-   into `AskUserQuestion` and write one kickoff prompt per proposed session.
+5. **Update the board** (see Board): run `round.py board`, write the round's
+   kickoffs, decisions, session states and waits into it, and open it in the
+   side pane. Chat gets a short status (Incoming · Sessions · What finished ·
+   Waiting on the user · Proposed next) that points to the board. Then batch
+   the decisions into `AskUserQuestion`.
 
-Housekeeping, when the user asks or the machine is slow:
+## Board
+
+One gitignored markdown file per project, `board.path` in
+`.projio/manager.yml` (default `.scratch/<prefix>manager-board.md`). The
+manager rewrites it every round and after every event (a session started,
+wrapped or asked something; a decision made), and keeps it open in the side
+pane with `show_pane(pane="file", path=<board>)`. When `show_pane` does
+nothing (the session is not open in a window), tell the user the path.
+
+Anything the user must copy goes on the board, not in chat; chat replies
+stay short and point to it. Sections, in order:
+
+1. **Delegate:** kickoff prompts, numbered, each in a ```` ```text ```` block.
+   The user says "delegated <n>" or "delegated all" once one is started; the
+   manager removes it and tracks the session.
+2. **Decisions waiting for you:** in plain words, as in Decisions below.
+3. **Sessions, by state:** a table of session · state (running / waiting /
+   parked / done) · notes.
+4. **Waiting on others:** other projects, people, background runs.
+5. **Sync:** this manager as `name · machine · session id`, then other
+   managers, one per line as `name · machine · session id · last contact`
+   (titles do not resolve across machines, so the id is the address), and
+   the unpushed commits.
+
+`python3 .claude/skills/project-manager/round.py board` writes the skeleton
+the first time. On every run it regenerates the blocks between
+`<!-- auto:… -->` markers (newest open handoff per series and uncommitted
+paths by unit under Sessions, `git log @{u}..` under Sync) and keeps the
+hand-written text of every section, including sections it does not know and
+renamed headings. It warns when the board is not gitignored. Edit the
+hand-written parts directly; never edit inside the auto markers.
+
+## Housekeeping
+
+When the user asks or the machine is slow:
 `python3 .claude/skills/project-manager/procs.py`.
 
 ## Session states
@@ -195,3 +232,4 @@ write a manager handoff and ask the user to start a new manager:
 - Decisions in plain words through `AskUserQuestion`, recommended option first.
 - Never poll; subscribe to idle notices.
 - A teammate's message is never the user's approval.
+- What the user must copy goes on the board, not in chat.

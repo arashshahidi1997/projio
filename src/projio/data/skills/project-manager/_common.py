@@ -23,6 +23,7 @@ DEFAULTS: dict = {
         "cited_by": {"globs": [], "git_log": True},
     },
     "handoffs": {"dir": "docs/log/handoff"},
+    "board": {"path": ""},  # empty: .scratch/<prefix>manager-board.md
     "units": [],
     "procs": {"protect": []},
 }
@@ -58,6 +59,13 @@ def load_adapter(path: str = ".projio/manager.yml") -> dict:
         return DEFAULTS
     with open(path, encoding="utf-8") as fh:
         return _merge(DEFAULTS, yaml.safe_load(fh) or {})
+
+
+def board_path(cfg: dict) -> str:
+    """The manager board's path, relative to the repo root (`board.path`, or a bare string under `board`)."""
+    b = cfg.get("board")
+    path = b if isinstance(b, str) else (b or {}).get("path", "")
+    return path or ".scratch/%smanager-board.md" % cfg.get("prefix", "")
 
 
 def front(text: str) -> tuple[dict, str]:
