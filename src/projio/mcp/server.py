@@ -499,9 +499,13 @@ def note_create_tool(
     title: str = "",
     date: str = "",
     body: str = "",
-    frontmatter: str = "",
+    frontmatter: str | dict = "",
 ):
-    """Create a new note of the given type, optionally fully populated in one call."""
+    """Create a new note of the given type, optionally fully populated in one call.
+
+    frontmatter: fields to set, as a mapping, a JSON object string or YAML.
+    Returns {path, id, type}.
+    """
     return notio.note_create(
         note_type=note_type, owner=owner, title=title, date=date,
         body=body, frontmatter=frontmatter,
@@ -509,8 +513,8 @@ def note_create_tool(
 
 
 @server.tool("note_update")
-def note_update_tool(path: str, fields: str):
-    """Update frontmatter fields of an existing note. Pass fields as JSON string."""
+def note_update_tool(path: str, fields: str | dict):
+    """Update frontmatter fields of an existing note. Pass fields as a mapping, JSON object string or YAML."""
     return notio.note_update(path=path, fields=fields)
 
 

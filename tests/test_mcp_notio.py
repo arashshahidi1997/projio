@@ -248,3 +248,61 @@ class TestNotioExceptionHandling:
         with self._mock_notio():
             result = note_update("notes/test.md", "not json")
         assert "error" in result
+
+
+# ---------------------------------------------------------------------------
+# Frontmatter parsing (regression: YAML frontmatter gave "Expecting value")
+# ---------------------------------------------------------------------------
+
+
+class TestNoteCreateFrontmatter:
+    def _create(self, frontmatter):
+        with mock.patch.multiple(
+            "projio.mcp.notio",
+            _notio_available=mock.MagicMock(return_value=True),
+            get_project_root=mock.MagicMock(return_value=Path("/fake/root")),
+        ), mock.patch(
+            "notio.config.load_config", create=True, return_value=mock.MagicMock(),
+        ), mock.patch(
+            "notio.core.create_note", create=True,
+            return_value=Path("/fake/root/docs/log/result/result-arash-20261106-120000-123456.md"),
+        ) as m:
+            result = note_create(note_type="result", title="t", frontmatter=frontmatter)
+        return result, m
+
+    @pytest.mark.parametrize("frontmatter", [
+        '{"series": "spindle", "refs": ["a", "b"]}',
+        "series: spindle\nrefs: [a, b]",
+        {"series": "spindle", "refs": ["a", "b"]},
+    ])
+    def test_accepts_json_yaml_and_dict(self, frontmatter) -> None:
+        result, m = self._create(frontmatter)
+        assert "error" not in result
+        assert m.call_args.kwargs["extra_frontmatter"] == {"series": "spindle", "refs": ["a", "b"]}
+
+    def test_returns_path_and_id(self) -> None:
+        result, _ = self._create("")
+        assert result["path"] == "docs/log/result/result-arash-20261106-120000-123456.md"
+        assert result["id"] == "20261106-120000-123456"
+
+    @pytest.mark.parametrize("frontmatter", ["just a sentence", "[a, b]", "key: [unclosed"])
+    def test_non_mapping_gives_clear_error(self, frontmatter) -> None:
+        result, m = self._create(frontmatter)
+        assert "frontmatter" in result["error"]
+        assert "Expecting value" not in result["error"]
+        m.assert_not_called()
+
+
+def test_note_create_writes_note_with_yaml_frontmatter(tmp_path) -> None:
+    """End to end against a real notio config: the note lands on disk."""
+    pytest.importorskip("notio")
+    from notio.config import load_config
+    from notio.core import init_workspace
+
+    init_workspace(load_config(tmp_path))
+    with mock.patch("projio.mcp.notio.get_project_root", return_value=tmp_path):
+        result = note_create(note_type="idea", title="yaml fm", frontmatter="series: spindle\ntags: [idea, x]")
+    assert "error" not in result, result
+    text = (tmp_path / result["path"]).read_text()
+    assert "series: spindle" in text
+    assert result["id"] in result["path"]

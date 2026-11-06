@@ -1,6 +1,8 @@
 """MCP tools: note CRUD, search, and type introspection."""
 from __future__ import annotations
 
+from pathlib import Path
+
 from .common import JsonDict, get_project_root, json_dict
 
 
@@ -14,6 +16,40 @@ def _notio_available() -> bool:
 
 def _unavailable(tool: str) -> JsonDict:
     return {"error": f"{tool} requires the notio package. Install with: pip install notio"}
+
+
+def _parse_fields(value: str | dict | None, param: str) -> dict | None:
+    """Parse a frontmatter-fields argument given as a dict, a JSON object or YAML.
+
+    Notes store YAML frontmatter, so agents often pass YAML; a bare
+    ``json.loads`` turned that into "Expecting value: line 1 column 1".
+    Returns ``None`` for an empty value; raises ``ValueError`` naming *param*
+    when the value is not a mapping.
+    """
+    if value is None or isinstance(value, dict):
+        return value or None
+    if not isinstance(value, str):
+        raise ValueError(f"{param} must be a mapping, got {type(value).__name__}")
+    if not value.strip():
+        return None
+    import json
+    import yaml
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        try:
+            parsed = yaml.safe_load(value)
+        except yaml.YAMLError as exc:
+            raise ValueError(
+                f"{param} is neither a JSON object nor YAML mapping: {exc}"
+            ) from None
+    if not isinstance(parsed, dict):
+        raise ValueError(
+            f"{param} must be a mapping of fields, e.g. "
+            f'\'{{"tags": ["result"], "series": "x"}}\' or "series: x", '
+            f"got {type(parsed).__name__}: {value[:80]!r}"
+        )
+    return parsed
 
 
 def note_list(note_type: str = "", limit: int = 20) -> JsonDict:
@@ -105,7 +141,7 @@ def note_create(
     title: str = "",
     date: str = "",
     body: str = "",
-    frontmatter: str = "",
+    frontmatter: str | dict = "",
 ) -> JsonDict:
     """Create a new note of the given type, optionally fully populated in one call.
 
@@ -119,19 +155,22 @@ def note_create(
         date: Date override (YYYY-MM-DD).
         body: Markdown body to use instead of the template body.  Everything
             below the frontmatter closing ``---`` is replaced with this text.
-        frontmatter: JSON string of frontmatter fields to set/override,
-            e.g. '{"tags": ["result"], "series": "preprocess", "confidence": "confirmed"}'.
+        frontmatter: Frontmatter fields to set/override, as a mapping, a JSON
+            object string, e.g. '{"tags": ["result"], "series": "preprocess"}',
+            or a YAML string, e.g. "series: preprocess\ntags: [result]".
     """
     if not _notio_available():
         return _unavailable("note_create")
+    try:
+        extra_fm = _parse_fields(frontmatter, "frontmatter")
+    except ValueError as exc:
+        return {"error": str(exc)}
     root = get_project_root()
     try:
-        import json as _json
+        import re
         from notio.config import load_config  # type: ignore[import]
         from notio.core import create_note  # type: ignore[import]
         config = load_config(root)
-
-        extra_fm: dict | None = _json.loads(frontmatter) if frontmatter else None
 
         path = create_note(
             config,
@@ -142,25 +181,36 @@ def note_create(
             body=body or None,
             extra_frontmatter=extra_fm,
         )
-        return json_dict({"path": str(path.relative_to(root)), "type": note_type})
+        path = Path(root) / path
+        match = re.search(r"\d{8}-\d{6}-\d{6}", path.stem)
+        return json_dict({
+            "path": str(path.relative_to(root)),
+            "id": match.group(0) if match else path.stem,
+            "type": note_type,
+        })
     except Exception as exc:
         return json_dict({"error": str(exc)})
 
 
-def note_update(path: str, fields: str) -> JsonDict:
+def note_update(path: str, fields: str | dict) -> JsonDict:
     """Update frontmatter fields of an existing note.
 
     Args:
         path: Relative path to the note file.
-        fields: JSON string of fields to update, e.g. '{"status": "done"}'.
+        fields: Fields to update, as a mapping, a JSON object string
+            ('{"status": "done"}') or a YAML string ("status: done").
     """
     if not _notio_available():
         return _unavailable("note_update")
+    try:
+        parsed_fields = _parse_fields(fields, "fields")
+    except ValueError as exc:
+        return {"error": str(exc)}
+    if not parsed_fields:
+        return {"error": "fields is empty: pass at least one field to update"}
     root = get_project_root()
     try:
-        import json
         from notio.query import update_note_frontmatter  # type: ignore[import]
-        parsed_fields = json.loads(fields)
         meta = update_note_frontmatter(root, path, parsed_fields)
         return json_dict({"path": path, "updated_fields": list(parsed_fields.keys()), "frontmatter": meta})
     except Exception as exc:
