@@ -192,7 +192,8 @@ def biblio_merge(dry_run: bool = False) -> JsonDict:
     try:
         cfg = _load_biblio_cfg()
         from biblio.bibtex import merge_srcbib
-        n_sources, n_entries, quality_warnings = merge_srcbib(cfg.bibtex_merge, dry_run=dry_run)
+        merge_result = merge_srcbib(cfg.bibtex_merge, dry_run=dry_run)
+        n_sources, n_entries, quality_warnings = merge_result
         result = {
             "n_sources": n_sources,
             "n_entries": n_entries,
@@ -204,6 +205,11 @@ def biblio_merge(dry_run: bool = False) -> JsonDict:
             result["low_quality_entries"] = quality_warnings[:10]
             if len(quality_warnings) > 10:
                 result["low_quality_log"] = str(cfg.bibtex_merge.duplicates_log.parent / "low_quality_entries.txt")
+        doi_duplicates = getattr(merge_result, "doi_duplicates", None)
+        if doi_duplicates:
+            result["doi_duplicates"] = len(doi_duplicates)
+            result["doi_duplicate_groups"] = doi_duplicates[:10]
+            result["doi_duplicates_log"] = str(cfg.bibtex_merge.duplicates_log.parent / "duplicate_dois.txt")
         return json_dict(result)
     except Exception as exc:
         return json_dict({"error": str(exc)})
@@ -363,15 +369,16 @@ def biblio_pdf_fetch_oa(
             })
 
         cfg = _load_biblio_cfg()
-        from biblio.pdf_fetch_oa import fetch_pdfs_oa, ALL_STATUSES
+        from biblio.pdf_fetch_oa import fetch_pdfs_oa
         ck_filter = set(citekeys) if citekeys else None
         results = fetch_pdfs_oa(cfg, force=force, citekey_filter=ck_filter)
-        counts = {s: sum(1 for r in results if r.status == s) for s in ALL_STATUSES}
-        result = {
-            "total": len(results),
-            **counts,
-            "cascade_sources": list(cfg.pdf_fetch_cascade.sources),
-        }
+        try:
+            from biblio.pdf_fetch_oa import summarize_results
+            result = summarize_results(results)
+        except ImportError:  # biblio < 0.3.6
+            from biblio.pdf_fetch_oa import ALL_STATUSES
+            result = {"total": len(results), **{s: sum(1 for r in results if r.status == s) for s in ALL_STATUSES}}
+        result["cascade_sources"] = list(cfg.pdf_fetch_cascade.sources)
         errors = [{"citekey": r.citekey, "error": r.error} for r in results if r.error]
         if errors:
             result["errors"] = errors
