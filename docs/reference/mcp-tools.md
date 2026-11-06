@@ -75,11 +75,11 @@ what replaces it.
 
 | Tool | Description |
 |------|-------------|
-| `note_create(note_type, owner="", title="", date="")` | Create a new note from template |
-| `note_update(path, fields)` | Update note frontmatter fields (JSON string) |
+| `note_create(note_type, owner="", title="", date="", body="", frontmatter="")` | Create a new note from template, optionally with body and frontmatter |
+| `note_update(path, fields)` | Update note frontmatter fields |
 | `notio_reindex(note_type="")` | Rebuild the note index.md for one or all note types |
 
-`note_create` renders the configured template for the given note type, creates the file, and returns the path. `note_update` parses `fields` as JSON and merges key-value pairs into the note's YAML frontmatter.
+`note_create` renders the configured template for the given note type, creates the file, and returns its `path` and `id`. `frontmatter` (note_create) and `fields` (note_update) take a mapping, a JSON object string (`'{"series": "x"}'`) or YAML (`"series: x\ntags: [result]"`); anything that is not a mapping returns an error naming the parameter. `note_update` merges the fields into the note's YAML frontmatter.
 
 `note_resolve` looks up a note by a short timestamp fragment (e.g. `"20260315-142301"`) or a capture ID. Returns the full path for use with `note_read`.
 

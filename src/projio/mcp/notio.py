@@ -18,6 +18,18 @@ def _unavailable(tool: str) -> JsonDict:
     return {"error": f"{tool} requires the notio package. Install with: pip install notio"}
 
 
+def _iso_dates(value):
+    """YAML reads 2026-11-06 as a date; keep it the string JSON would give."""
+    import datetime
+    if isinstance(value, (datetime.date, datetime.datetime)):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {k: _iso_dates(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_iso_dates(v) for v in value]
+    return value
+
+
 def _parse_fields(value: str | dict | None, param: str) -> dict | None:
     """Parse a frontmatter-fields argument given as a dict, a JSON object or YAML.
 
@@ -38,7 +50,7 @@ def _parse_fields(value: str | dict | None, param: str) -> dict | None:
         parsed = json.loads(value)
     except json.JSONDecodeError:
         try:
-            parsed = yaml.safe_load(value)
+            parsed = _iso_dates(yaml.safe_load(value))
         except yaml.YAMLError as exc:
             raise ValueError(
                 f"{param} is neither a JSON object nor YAML mapping: {exc}"

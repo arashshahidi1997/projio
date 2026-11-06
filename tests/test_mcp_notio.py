@@ -280,6 +280,10 @@ class TestNoteCreateFrontmatter:
         assert "error" not in result
         assert m.call_args.kwargs["extra_frontmatter"] == {"series": "spindle", "refs": ["a", "b"]}
 
+    def test_yaml_dates_stay_strings(self) -> None:
+        _, m = self._create("updated: 2026-11-06\nseries: x")
+        assert m.call_args.kwargs["extra_frontmatter"] == {"updated": "2026-11-06", "series": "x"}
+
     def test_returns_path_and_id(self) -> None:
         result, _ = self._create("")
         assert result["path"] == "docs/log/result/result-arash-20261106-120000-123456.md"
