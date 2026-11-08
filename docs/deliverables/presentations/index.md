@@ -6,3 +6,4 @@
 |------|-------|-------|----------|
 | 2026-04-19 | [Projio — Project Knowledge Orchestrator for Research Repositories](projio-intro/) |  |  |
 | 2026-05-04 | [projio](projio-5min/slides.qmd) |  |  |
+| 2026-09-22 | [Open-science conventions as agent infrastructure](lsm-future-skills-2026/slides.qmd) |  |  |
