@@ -1442,6 +1442,52 @@ def pipeio_nb_watch(
         return json_dict({"error": str(exc)})
 
 
+def pipeio_nb_open(
+    flow: str,
+    name: str,
+    port: int = 0,
+    demo: bool = False,
+    reuse: bool = True,
+    host: str = "0.0.0.0",
+    python_bin: str = "",
+) -> JsonDict:
+    """Launch (or attach to) a headless marimo server for a notebook.
+
+    Starts ``marimo edit --headless --no-token --host <host>`` detached, on an
+    auto-picked free port unless ``port`` is given, and returns the coordinates
+    needed to attach: url, host, port, pid, server_id, session_id.
+
+    With ``reuse=True`` (default) a notebook already served by a live server
+    returns that server's URL and ``reused=True`` instead of starting a
+    duplicate -- two servers on one file means the stale one can silently save
+    over the other's edits.
+
+    Args:
+        flow: Flow name.
+        name: Notebook basename (with or without .py).
+        port: Pin the port (0 = auto-pick a free one).
+        demo: Resolve in the demo/ workspace instead of explore/.
+        reuse: Attach to an existing server for this notebook (default True).
+        host: Bind address (default 0.0.0.0, reachable over SSH).
+        python_bin: Python where marimo is installed.
+            Empty = auto-resolve from project config.
+    """
+    if not _pipeio_available():
+        return _unavailable("pipeio_nb_open")
+    root = get_project_root()
+    resolved_python = python_bin
+    if not resolved_python:
+        resolved_python = " ".join(_resolve_python_cmd())
+    try:
+        from pipeio.mcp import mcp_nb_open  # type: ignore[import]
+        return json_dict(mcp_nb_open(
+            root, flow=flow, name=name, port=port, demo=demo,
+            reuse=reuse, host=host, python_bin=resolved_python,
+        ))
+    except Exception as exc:
+        return json_dict({"error": str(exc)})
+
+
 def pipeio_nb_snapshot(
     flow: str,
     name: str,

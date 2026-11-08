@@ -259,8 +259,18 @@ pipeio_nb_lab(flow)                     # build Jupyter symlink manifest (percen
 pipeio_nb_publish(flow, name)           # publish to docs (nbconvert or marimo export)
 pipeio_nb_pipeline(flow, name)          # sync → publish → collect → nav
 pipeio_nb_validate(flow, name)          # structural validation (AST or marimo check)
+pipeio_nb_open(flow, name)              # launch/attach headless marimo (marimo-only)
 pipeio_nb_watch(flow, name)             # marimo edit --watch (marimo-only)
 ```
+
+`pipeio_nb_open` is the one-call launcher for agent/human pairing: it starts
+`marimo edit --headless --no-token --host 0.0.0.0` on an auto-picked free port
+and returns `{url, host, port, pid, server_id, session_id, notebook_path,
+reused}`, so you launch and attach in one step. With `reuse=True` (default) a
+notebook already served by a live server returns that server instead of
+starting a duplicate — two servers on one file means the stale one silently
+saves over the other's edits. Pass `port=N` to pin, `demo=True` for the
+`demo/` workspace.
 
 ## CLI Quick Reference
 
@@ -273,8 +283,14 @@ pipeio registry scan               # rediscover flows from filesystem
 pipeio registry validate           # check consistency
 pipeio contracts validate          # check I/O contracts
 pipeio nb status                   # notebook sync state
+pipeio nb open <flow> <notebook>   # launch/attach headless marimo (tab-completes)
 pipeio docs collect                # publish docs to site
 ```
+
+`pipeio nb open` takes `--port N` (pin), `--demo` (demo workspace), `--force`
+(skip the dedupe check) and forwards anything after `--` to marimo. Enable
+tab-completion for flow and notebook names once with
+`eval "$(register-python-argcomplete pipeio)"`.
 
 `pipeio flow new` on an existing flow fills in missing directories (rules/, explore/, demo/, publish.yml) without overwriting existing files.
 

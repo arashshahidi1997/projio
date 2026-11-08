@@ -2004,6 +2004,7 @@ and `runtime_conventions()` to see the project's commands and environments.
         rows.append("| Build Jupyter Lab manifest | `pipeio_nb_lab(flow?, sync?)` | Create symlinks manually |")
         rows.append("| Promote notebook to mod | `pipeio_nb_promote(flow, name, mod)` | Manual extraction |")
         rows.append("| Validate notebook structure | `pipeio_nb_validate(flow, name)` | Eyeball notebook formatting |")
+        rows.append("| Open marimo notebook (launch or attach) | `pipeio_nb_open(flow, name)` | Hand-type `marimo edit --headless ...` |")
         rows.append("| Live-edit marimo notebook | `pipeio_nb_watch(flow, name)` | Launch marimo CLI manually |")
         rows.append("| Execute marimo + read outputs | `pipeio_nb_snapshot(flow, name)` | Run marimo + parse output manually |")
         rows.append("| Extract figures from executed notebook | `pipeio_nb_extract(flow, name)` | Dig ipynb/marimo outputs by hand |")

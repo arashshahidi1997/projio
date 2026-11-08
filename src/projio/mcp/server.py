@@ -1526,6 +1526,25 @@ def pipeio_nb_watch_tool(
     return pipeio.pipeio_nb_watch(flow=flow, name=name, port=port)
 
 
+@server.tool("pipeio_nb_open")
+def pipeio_nb_open_tool(
+    flow: str,
+    name: str,
+    port: int = 0,
+    demo: bool = False,
+    reuse: bool = True,
+):
+    """Launch (or attach to) a headless marimo server for a flow's notebook.
+    Starts marimo edit --headless --no-token on an auto-picked free port and
+    returns {url, host, port, pid, server_id, session_id, notebook_path, reused}
+    so you can launch and attach in one call. With reuse=True (default) a
+    notebook already served by a live server returns that server instead of
+    starting a duplicate. Use demo=True for the demo/ workspace."""
+    return pipeio.pipeio_nb_open(
+        flow=flow, name=name, port=port, demo=demo, reuse=reuse,
+    )
+
+
 @server.tool("pipeio_nb_snapshot")
 def pipeio_nb_snapshot_tool(
     flow: str,

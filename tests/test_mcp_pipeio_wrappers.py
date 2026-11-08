@@ -41,6 +41,7 @@ from projio.mcp.pipeio import (
     pipeio_nb_exec,
     pipeio_nb_extract,
     pipeio_nb_lab,
+    pipeio_nb_open,
     pipeio_nb_pipeline,
     pipeio_nb_promote,
     pipeio_nb_publish,
@@ -166,6 +167,7 @@ _WRAPPER_FUNCTIONS = [
     (pipeio_nb_promote, {"flow": "f", "name": "n", "mod": "m"}),
     (pipeio_nb_validate, {"flow": "f", "name": "n"}),
     (pipeio_nb_watch, {"flow": "f", "name": "n"}),
+    (pipeio_nb_open, {"flow": "f", "name": "n"}),
     (pipeio_nb_snapshot, {"flow": "f", "name": "n"}),
     (pipeio_nb_extract, {"flow": "f", "name": "n"}),
     (pipeio_dag_export, {"flow": "f"}),
@@ -328,6 +330,20 @@ class TestPipeioNotebookDelegation:
         ) as m:
             result = pipeio_nb_audit()
         m.assert_called_once()
+
+    def test_nb_open_delegates(self) -> None:
+        with self._mock_pipeio(), mock.patch(
+            "projio.mcp.pipeio._resolve_python_cmd", return_value=["pixi", "run", "python"],
+        ), mock.patch(
+            "pipeio.mcp.mcp_nb_open", create=True,
+            return_value={"url": "http://localhost:2718", "reused": False},
+        ) as m:
+            result = pipeio_nb_open(flow="f", name="n", port=2718, demo=True)
+        m.assert_called_once_with(
+            Path("/fake/root"), flow="f", name="n", port=2718, demo=True,
+            reuse=True, host="0.0.0.0", python_bin="pixi run python",
+        )
+        assert result["url"] == "http://localhost:2718"
 
     def test_nb_promote_delegates(self) -> None:
         with self._mock_pipeio(), mock.patch(

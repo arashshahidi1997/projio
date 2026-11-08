@@ -234,12 +234,13 @@ Notebook tools support multiple backends via the `NotebookBackend` protocol. Eac
 | `pipeio_nb_promote(flow, name, mod, rule_name="", description="", apply=false)` | Promote notebook to pipeline mod: analyze → script → rule stub → docs |
 | `pipeio_nb_extract(flow, name, overwrite=false, tags_only=false)` | Extract figures/markdown/text from executed notebook for reporting (renamed from `pipeio_nb_report`) |
 | `pipeio_nb_validate(flow, name)` | Structural validation (percent: AST + import isolation; marimo: `marimo check`) |
+| `pipeio_nb_open(flow, name, port=0, demo=false, reuse=true, host="0.0.0.0", python_bin="")` | Launch (or attach to) a headless marimo server for a notebook — returns `{url, host, port, pid, server_id, session_id, notebook_path, reused}` (marimo-only) |
 | `pipeio_nb_watch(flow, name, port=0, python_bin="")` | Launch `marimo edit --watch` for live human oversight (marimo-only) |
 | `pipeio_nb_snapshot(flow, name, timeout=120, python_bin="")` | Execute marimo notebook and return cell outputs — agent's "eyes" (marimo-only) |
 
 **Percent-format (jupytext):** `pipeio_nb_sync` direction `"py2nb"` (default) regenerates `.ipynb`/`.myst.md` from the source `.py`; use `"nb2py"` after human edits in JupyterLab. `pipeio_nb_exec` syncs `.py` → `.ipynb` first, then runs via papermill. `params` overrides RunCard fields.
 
-**Marimo-format:** Single-file `.py` format — sync is a no-op, execution runs `marimo run` directly, validation runs `marimo check` for DAG integrity. Use `pipeio_nb_watch` to launch live editing with `--watch` for agent-human collaboration. Both `pipeio_nb_watch` and `pipeio_nb_snapshot` auto-resolve the project Python via `code.runner` config (conda or pixi) when `python_bin` is empty.
+**Marimo-format:** Single-file `.py` format — sync is a no-op, execution runs `marimo run` directly, validation runs `marimo check` for DAG integrity. Use `pipeio_nb_watch` to launch live editing with `--watch` for agent-human collaboration. `pipeio_nb_open` is the pairing launcher: it starts `marimo edit --headless --no-token --host 0.0.0.0` detached on an auto-picked free port (`--no-token` is what registers the server in marimo's local registry, so agents can discover it) and returns the URL, port and pid in one call. It refuses to start a second server for a notebook that already has one unless `reuse=false` — duplicate servers on one file mean the stale one can silently save over the other's edits. Equivalent CLI: `pipeio nb open <flow> <notebook>`. `pipeio_nb_open`, `pipeio_nb_watch` and `pipeio_nb_snapshot` auto-resolve the project Python via `code.runner` config (conda or pixi) when `python_bin` is empty.
 
 ### Mod authoring
 
@@ -322,7 +323,7 @@ Notebook tools support multiple backends via the `NotebookBackend` protocol. Eac
 | `datalad_pull(sibling="origin", dataset="")` | Pull from a DataLad sibling |
 | `datalad_siblings(dataset="")` | List configured DataLad siblings |
 
-`datalad_save` runs `datalad save` with the given message. `path` limits the save to a specific file or directory. Use the configured `datalad_bin` environment (typically `labpy`).
+`datalad_save` runs `datalad save` with the given message. `path` limits the save to a specific file or directory. It uses `datalad` from PATH unless `datalad_bin` (or `code.envs.datalad`) overrides it.
 
 `datalad_push` defaults to the `github` sibling. `dataset` can be a relative path to push a subdataset. `datalad_pull` defaults to `origin`.
 
