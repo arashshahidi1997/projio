@@ -4,9 +4,9 @@
 PYTHON    ?= /home/arash/.pixi/bin/pixi run python
 SNAKEMAKE ?= /home/arash/.pixi/bin/pixi run snakemake
 DATALAD   ?= datalad
-MKDOCS    ?= $(PYTHON) -m mkdocs
-PROJIO    ?= /home/arash/.pixi/bin/pixi run python -m projio
-NOTIO     ?= /home/arash/.pixi/bin/pixi run python -m notio
+MKDOCS    ?= /storage2/arash/infra/uv-tools/projio/bin/python3 -m mkdocs
+PROJIO    ?= projio
+NOTIO     ?= notio
 PANDOC    ?= pandoc
 MATLAB    ?= matlab
 PUBLISH   ?= /storage2/arash/infra/bin/publish_pypi.sh

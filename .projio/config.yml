@@ -1,6 +1,8 @@
 project_name: projio
 project_kind: generic
 push_sibling: github
+code:
+  runner: pixi
 description: ''
 indexio:
   config: .projio/indexio/config.yaml
@@ -46,5 +48,3 @@ helpers:
   docs:
     mkdocs:
       enabled: false
-runtime:
-  python_bin: /storage/share/python/environments/Anaconda3/envs/rag/bin/python
