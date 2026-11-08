@@ -24,6 +24,14 @@
 
 ---
 
+## projio-core (1)
+
+[**projio-core · adopt orphan WIP**](handoff-arash-20261109-003202-976887.md){ .note-card-title }
+
+<small>**date:** 2026-11-09 · **status:** open · **series:** projio-core</small>
+
+---
+
 ## unset (3)
 
 [**projio-biblio · release 0.3.6**](handoff-arash-20261106-172749-478914.md){ .note-card-title }
