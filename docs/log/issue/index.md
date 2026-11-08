@@ -1,16 +1,46 @@
 # Issue
 
-## open (67)
+## open (50)
 
-[**biblio_pdf_fetch_oa: html_fallback should be a clear failure**](issue-arash-20260505-220435-150667.md){ .note-card-title }
+[**projio sync's managed**](issue-arash-20261108-231012-069745.md){ .note-card-title }
 
-<small>**created:** 2026-05-05 · **status:** open · **confidence:** 1.0</small>
+<small>**created:** 2026-11-08 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
-[**biblio_merge: dedup by DOI, not just citekey**](issue-arash-20260505-220333-780011.md){ .note-card-title }
+[**pipeio docs_collect: dead links in collected flow docs (found by pixecog's clean**](issue-arash-20261108-230959-898145.md){ .note-card-title }
 
-<small>**created:** 2026-05-05 · **status:** open · **confidence:** 1.0</small>
+<small>**created:** 2026-11-08 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**[from pixecog] corpus_list fails in the uv projio env: too many SQL variables (chromadb 1.5.8)**](issue-arash-20261108-135334-178200.md){ .note-card-title }
+
+<small>**created:** 2026-11-08 · **status:** open</small>
+
+---
+
+[**[from pixecog] pipeio_nb_publish (and pipeio_nb_snapshot) fail for marimo notebo**](issue-arash-20261102-115719-272444.md){ .note-card-title }
+
+<small>**created:** 2026-11-02 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**pipeio flow scaffold: support a project-configured Snakefile preamble (needed fo**](issue-arash-20261027-151115-292559.md){ .note-card-title }
+
+<small>**created:** 2026-10-27 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**`present_build` build/ outputs under docs/ break the mkdocs-monorepo site build**](issue-arash-20260927-020039-450225.md){ .note-card-title }
+
+<small>**created:** 2026-09-27 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**projio injects the indexio chatbot `hooks:` entry into the project's COMMITTED m**](issue-arash-20260707-154143-257704.md){ .note-card-title }
+
+<small>**created:** 2026-07-07 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
@@ -50,30 +80,6 @@
 
 ---
 
-[**pipeio_run env resolution bug: `_resolve_snakemake_cmd()` finds snakemake on PAT**](issue-arash-20260414-030010-945964.md){ .note-card-title }
-
-<small>**created:** 2026-04-14 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**Cross-project biblio sharing: no way to import papers with processed derivati**](issue-arash-20260411-173902-670919.md){ .note-card-title }
-
-<small>**created:** 2026-04-11 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**projio_init study profile should pre-configure pixecog-like layout**](issue-arash-20260411-173854-577193.md){ .note-card-title }
-
-<small>**created:** 2026-04-11 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**pipeio_run wildcards parameter doesn't filter snakebids sessions**](issue-arash-20260411-155019-000942.md){ .note-card-title }
-
-<small>**created:** 2026-04-11 · **status:** open · **confidence:** 1.0</small>
-
----
-
 [**pipeio_registry_scan should support mod grouping hints**](issue-arash-20260411-155000-964485.md){ .note-card-title }
 
 <small>**created:** 2026-04-11 · **status:** open · **confidence:** 1.0</small>
@@ -92,49 +98,7 @@
 
 ---
 
-[**pipeio_dag_export SVG: dot binary permission/PATH issues after install**](issue-arash-20260410-142442-901446.md){ .note-card-title }
-
-<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**pipeio_dag_export SVG fails with Permission denied on dot**](issue-arash-20260410-134708-801684.md){ .note-card-title }
-
-<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**`_work_to_minimal()` in openalex_resolve**](issue-arash-20260410-034308-266853.md){ .note-card-title }
-
-<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**biblio_extract: YAML parsing fails when LLM output contains colons in summary**](issue-arash-20260410-015122-436271.md){ .note-card-title }
-
-<small>**created:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**Citekey generation mangles diacritics in author names**](issue-arash-20260409-231703-392876.md){ .note-card-title }
-
-<small>**created:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**`biblio_pdf_fetch_oa` reports "html_fallback: 15" but downloads 0 files**](issue-arash-20260409-231641-242830.md){ .note-card-title }
-
-<small>**created:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
-
----
-
 [**`biblio_enrich` silently returns 0 when resolution is missing**](issue-arash-20260409-231618-516346.md){ .note-card-title }
-
-<small>**created:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**Missing MCP tool: `biblio_openalex_resolve`**](issue-arash-20260409-231546-838942.md){ .note-card-title }
 
 <small>**created:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
 
@@ -149,12 +113,6 @@
 [**pipeio docs_collect: top-level pipelines index should include architecture me**](issue-arash-20260409-145340-604198.md){ .note-card-title }
 
 <small>**created:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**Commit pipeio fixes + add input stage resolution to PipelineContext**](issue-arash-20260407-050947-246557.md){ .note-card-title }
-
-<small>**created:** 2026-04-07 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
@@ -212,12 +170,6 @@
 
 ---
 
-[**biblio pdf_fetch_oa saves HTML paywall pages as**](issue-arash-20260402-233201-350554.md){ .note-card-title }
-
-<small>**created:** 2026-04-02 · **status:** open · **confidence:** 1.0</small>
-
----
-
 [**projio: Update MCP tools and CLAUDE**](issue-arash-20260402-220237-298776.md){ .note-card-title }
 
 <small>**created:** 2026-04-02 · **status:** open · **confidence:** 1.0</small>
@@ -254,19 +206,7 @@
 
 ---
 
-[**biblio needs a batch docling command that processes all (or filtered) citekeys w**](issue-arash-20260402-015659-415628.md){ .note-card-title }
-
-<small>**created:** 2026-04-02 · **status:** open · **confidence:** 1.0</small>
-
----
-
 [**projio: model project code tiers in config (core_library + project_utils)**](issue-arash-20260401-225907-367159.md){ .note-card-title }
-
-<small>**created:** 2026-04-01 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**Background agents running queued tasks in a project cannot read files outside th**](issue-arash-20260401-160226-979585.md){ .note-card-title }
 
 <small>**created:** 2026-04-01 · **status:** open · **confidence:** 1.0</small>
 
@@ -287,18 +227,6 @@
 [**pipeio_run_status / log_parse: conda run buffers stdout, logs empty during BIDS indexing**](issue-arash-20260331-150536-741007.md){ .note-card-title }
 
 <small>**created:** 2026-03-31 · **status:** open</small>
-
----
-
-[**Fix for pipeio_run --directory issue: cd into flow directory before launching sn**](issue-arash-20260331-130833-297787.md){ .note-card-title }
-
-<small>**created:** 2026-03-31 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**DAG tool returns 0 edges for ecephys despite clear rule dependencies**](issue-arash-20260331-034232-267346.md){ .note-card-title }
-
-<small>**created:** 2026-03-31 · **status:** open · **confidence:** 1.0</small>
 
 ---
 
@@ -350,18 +278,6 @@
 
 ---
 
-[**Add MCP tool for biblio graph expansion**](issue-arash-20260328-174906-119594.md){ .note-card-title }
-
-<small>**created:** 2026-03-28 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**Migrate graph**](issue-arash-20260328-145700-791144.md){ .note-card-title }
-
-<small>**created:** 2026-03-28 · **status:** open · **confidence:** 1.0</small>
-
----
-
 [**Feature request: inject git-annex into PATH for git subprocess calls**](issue-arash-20260327-141525-036428.md){ .note-card-title }
 
 <small>**created:** 2026-03-27 · **status:** open · **confidence:** 1.0</small>
@@ -375,24 +291,6 @@
 ---
 
 [**Close issue-arash-20260326-185507 (module_context → pipeio): decided not worth g**](issue-arash-20260326-232713-565171.md){ .note-card-title }
-
-<small>**created:** 2026-03-26 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**Absorb module_context extraction into pipeio (merge with pipeio_mod_resolve or a**](issue-arash-20260326-185507-424521.md){ .note-card-title }
-
-<small>**created:** 2026-03-26 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**Absorb smk_logging into pipeio as standardized Snakemake script logging**](issue-arash-20260326-185435-586786.md){ .note-card-title }
-
-<small>**created:** 2026-03-26 · **status:** open · **confidence:** 1.0</small>
-
----
-
-[**Absorb toc-index note directory indexing into notio**](issue-arash-20260326-185404-161144.md){ .note-card-title }
 
 <small>**created:** 2026-03-26 · **status:** open · **confidence:** 1.0</small>
 
@@ -412,7 +310,25 @@
 
 ---
 
-## partial (1)
+## partial (6)
+
+[**[from pixecog] Two tooling requests from the pixecog workspace refactor (2026-10**](issue-arash-20261028-010346-194501.md){ .note-card-title }
+
+<small>**created:** 2026-10-28 · **status:** partial · **confidence:** 1.0</small>
+
+---
+
+[**Cross-project biblio sharing: no way to import papers with processed derivati**](issue-arash-20260411-173902-670919.md){ .note-card-title }
+
+<small>**created:** 2026-04-11 · **status:** partial · **confidence:** 1.0</small>
+
+---
+
+[**projio_init study profile should pre-configure pixecog-like layout**](issue-arash-20260411-173854-577193.md){ .note-card-title }
+
+<small>**created:** 2026-04-11 · **status:** partial · **confidence:** 1.0</small>
+
+---
 
 [**Notio manuscript: dual-render master files and mkdocs transclusion setup**](issue-arash-20260402-121445-694073.md){ .note-card-title }
 
@@ -420,8 +336,88 @@
 
 ---
 
-??? note "done (33)"
+[**Background agents running queued tasks in a project cannot read files outside th**](issue-arash-20260401-160226-979585.md){ .note-card-title }
 
+<small>**created:** 2026-04-01 · **status:** partial · **confidence:** 1.0</small>
+
+---
+
+[**DAG tool returns 0 edges for ecephys despite clear rule dependencies**](issue-arash-20260331-034232-267346.md){ .note-card-title }
+
+<small>**created:** 2026-03-31 · **status:** partial · **confidence:** 1.0</small>
+
+---
+
+## superseded (1)
+
+[**pipeio_run env resolution bug: `_resolve_snakemake_cmd()` finds snakemake on PAT**](issue-arash-20260414-030010-945964.md){ .note-card-title }
+
+<small>**created:** 2026-04-14 · **status:** superseded · **confidence:** 1.0</small>
+
+---
+
+??? note "done (60)"
+
+    [**[from pixecog] note_create MCP tool creates nothing: every call returns {"error**](issue-arash-20261103-173940-876083.md){ .note-card-title }
+    
+    <small>**created:** 2026-11-03 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**[from pixecog] projio skills: stale hardcoded conventions, sync-copy ambiguity,**](issue-arash-20261028-105833-463321.md){ .note-card-title }
+    
+    <small>**created:** 2026-10-28 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**projio/notio MCP bug: `note_create` fails on response-parse (`Expecting value: l**](issue-arash-20260930-053615-513170.md){ .note-card-title }
+    
+    <small>**created:** 2026-09-30 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**INFRA BUG (projio notio MCP): `note_create` errors on its response parse — retur**](issue-arash-20260930-040218-059761.md){ .note-card-title }
+    
+    <small>**created:** 2026-09-30 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**biblio OpenAlex import leaves ~486 @article entries with no `journal` field -> b**](issue-arash-20260927-021521-694402.md){ .note-card-title }
+    
+    <small>**created:** 2026-09-27 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**`note_create` MCP `frontmatter` param requires JSON and errors opaquely on YAML**](issue-arash-20260927-015610-712117.md){ .note-card-title }
+    
+    <small>**created:** 2026-09-27 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**biblio: `graph_promote` cannot be scoped to a single seed paper — silently sweep**](issue-arash-20260625-165910-006259.md){ .note-card-title }
+    
+    <small>**created:** 2026-06-25 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**`note_search` MCP tool returns empty — hardcodes `corpus="notes"` which isn't**](issue-arash-20260622-194659-428259.md){ .note-card-title }
+    
+    <small>**created:** 2026-06-22 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**biblio_pdf_fetch_oa: html_fallback should be a clear failure**](issue-arash-20260505-220435-150667.md){ .note-card-title }
+    
+    <small>**created:** 2026-05-05 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**biblio_merge: dedup by DOI, not just citekey**](issue-arash-20260505-220333-780011.md){ .note-card-title }
+    
+    <small>**created:** 2026-05-05 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
     [**Test coverage audit + expansion: figio package (via projio MCP wrappers)**](issue-arash-20260412-013614-359946.md){ .note-card-title }
     
     <small>**created:** 2026-04-12 · **status:** done · **confidence:** 1.0</small>
@@ -494,6 +490,12 @@
     
     ---
     
+    [**pipeio_run wildcards parameter doesn't filter snakebids sessions**](issue-arash-20260411-155019-000942.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-11 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
     [**pipeio_docs_collect produces duplicate notebook HTMLs alongside pipeio_nb_pub**](issue-arash-20260410-152106-067627.md){ .note-card-title }
     
     <small>**created:** 2026-04-10 · **status:** done · **confidence:** 1.0</small>
@@ -503,6 +505,48 @@
     [**Create pipeio-flow-create skill and pixecog-flow-setup skill**](issue-arash-20260410-150432-267829.md){ .note-card-title }
     
     <small>**created:** 2026-04-10 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio_dag_export SVG: dot binary permission/PATH issues after install**](issue-arash-20260410-142442-901446.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-10 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio_dag_export SVG fails with Permission denied on dot**](issue-arash-20260410-134708-801684.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-10 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**`_work_to_minimal()` in openalex_resolve**](issue-arash-20260410-034308-266853.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-10 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**biblio_extract: YAML parsing fails when LLM output contains colons in summary**](issue-arash-20260410-015122-436271.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-10 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Citekey generation mangles diacritics in author names**](issue-arash-20260409-231703-392876.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**`biblio_pdf_fetch_oa` reports "html_fallback: 15" but downloads 0 files**](issue-arash-20260409-231641-242830.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Missing MCP tool: `biblio_openalex_resolve`**](issue-arash-20260409-231546-838942.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-09 · **status:** done · **confidence:** 1.0</small>
     
     ---
     
@@ -519,6 +563,12 @@
     ---
     
     [**Move runtime env configuration into**](issue-arash-20260407-162859-574826.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Commit pipeio fixes + add input stage resolution to PipelineContext**](issue-arash-20260407-050947-246557.md){ .note-card-title }
     
     <small>**created:** 2026-04-07 · **status:** done · **confidence:** 1.0</small>
     
@@ -584,6 +634,18 @@
     
     ---
     
+    [**biblio pdf_fetch_oa saves HTML paywall pages as**](issue-arash-20260402-233201-350554.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-02 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**biblio needs a batch docling command that processes all (or filtered) citekeys w**](issue-arash-20260402-015659-415628.md){ .note-card-title }
+    
+    <small>**created:** 2026-04-02 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
     [**Update agent-safety**](issue-arash-20260331-172325-785765.md){ .note-card-title }
     
     <small>**created:** 2026-03-31 · **status:** done · **confidence:** 1.0</small>
@@ -602,6 +664,24 @@
     
     ---
     
+    [**Fix for pipeio_run --directory issue: cd into flow directory before launching sn**](issue-arash-20260331-130833-297787.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-31 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Add MCP tool for biblio graph expansion**](issue-arash-20260328-174906-119594.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-28 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Migrate graph**](issue-arash-20260328-145700-791144.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-28 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
     [**Implement notio reindex — generate/update index**](issue-arash-20260326-232746-941302.md){ .note-card-title }
     
     <small>**created:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
@@ -614,14 +694,68 @@
     
     ---
     
+    [**Absorb module_context extraction into pipeio (merge with pipeio_mod_resolve or a**](issue-arash-20260326-185507-424521.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Absorb smk_logging into pipeio as standardized Snakemake script logging**](issue-arash-20260326-185435-586786.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Absorb toc-index note directory indexing into notio**](issue-arash-20260326-185404-161144.md){ .note-card-title }
+    
+    <small>**created:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
+    
+    ---
+    
     [**MCP tools missing for index setup and source registration**](issue-arash-20260326-174001-720656.md){ .note-card-title }
     
     <small>**created:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
     
     ---
     
-??? note "resolved (25)"
+??? note "resolved (31)"
 
+    [**[from pixecog] `projio sync` regenerates questio plan pages even when the projec**](issue-arash-20261028-142723-373554.md){ .note-card-title }
+    
+    <small>**created:** 2026-10-28 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**`projio sync` crashes in _sync_render_config when render**](issue-arash-20261027-141955-723158.md){ .note-card-title }
+    
+    <small>**created:** 2026-10-27 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio: the uncommitted profile-support change blocks a pixecog pixi**](issue-arash-20261027-141848-635696.md){ .note-card-title }
+    
+    <small>**created:** 2026-10-27 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**pipeio docs_collect / docs_nav ignore the per-notebook `publish_html` flag**](issue-arash-20261022-190414-524215.md){ .note-card-title }
+    
+    <small>**created:** 2026-10-22 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**`projio sync` crashes in `_sync_render_config` (AttributeError: 'list' has no 'r**](issue-arash-20260927-015531-851470.md){ .note-card-title }
+    
+    <small>**created:** 2026-09-27 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
+    [**Feature: `pipeio nb open <flow> <notebook>` — one-command marimo launch (agent**](issue-arash-20260920-132615-210166.md){ .note-card-title }
+    
+    <small>**created:** 2026-09-20 · **status:** resolved · **confidence:** 1.0</small>
+    
+    ---
+    
     [**pipeio_nb_exec output convention unclear — `_executed**](issue-arash-20260410-000908-908952.md){ .note-card-title }
     
     <small>**created:** 2026-04-10 · **status:** resolved · **confidence:** 1.0</small>

@@ -566,3 +566,15 @@ Session: `6b152f66` | Task: `task-arash-20260511-handbook-40-marimo-holoviews.md
 Link selection criteria: only documentation URLs I'm confident exist (official tool docs, GitHub repos, doi.org for peer-reviewed papers, stable community handbooks like Turing Way). Avoided speculative deep-links into handbook subsections that might have moved.
 
 Session: `a763f762` | Task: `task-arash-20260511-handbook-references.md`
+
+## 2026-06-22 19:51 | projio | sonnet | 1 steps
+
+Both `presentio.py` and `manuscripto.py` call `note_search(query=..., k=5)` without specifying corpus, so they inherit the auto-detection behavior for free.
+
+Session: `67bf9279` | Task: `task-arash-20260622-194732-637622.md`
+
+## 2026-09-20 13:50 | projio | opus | 1 steps
+
+Nothing is committed — the changes sit in the working tree of both the `projio` repo and the `packages/pipeio` subdataset.
+
+Session: `a4ea7509` | Task: `task-arash-20260920-132647-995977.md`

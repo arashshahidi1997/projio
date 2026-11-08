@@ -22,21 +22,21 @@
 
 ## pending (32)
 
+[**Literature: foundational PKM / second-brain / Memex anchors for cognitive-architecture chapter**](task-arash-20260519-114235-616815.md){ .note-card-title }
+
+<small>**date:** 2026-05-19 · **status:** pending</small>
+
+---
+
+[**LSM Future Skills 'AI in Daily Research' breakout — submit contribution by 2026-05-27**](task-arash-20260511-lsm-future-skills-ai-breakout.md){ .note-card-title }
+
+<small>**date:** 2026-05-11 · **status:** pending · **tags:** [outreach, workshop, lsm, future-skills, agentic-workshop-2026-09]</small>
+
+---
+
 [**Prototype marimo-WASM explorable embedded in handbook chapter 1**](task-arash-20260507-222051-589638.md){ .note-card-title }
 
 <small>**date:** 2026-05-07 · **status:** pending · **tags:** [handbook, marimo, interactive, prototype]</small>
-
----
-
-[**Sketch handbook outline + draft chapter 1 ("Interactivity as a research medium")**](task-arash-20260507-222028-504938.md){ .note-card-title }
-
-<small>**date:** 2026-05-07 · **status:** pending · **tags:** [handbook, writing, chapter-1]</small>
-
----
-
-[**Move Interactive Mathematics deep-research PDF into projio + create handbook reference area**](task-arash-20260507-222003-098400.md){ .note-card-title }
-
-<small>**date:** 2026-05-07 · **status:** pending · **tags:** [handbook, reference, agentic-workshop-2026-09]</small>
 
 ---
 
@@ -260,6 +260,14 @@
 
 ---
 
+## in-progress (1)
+
+[**Rework LSM Sept 22 talk to reflect lived experience — interview in progress**](task-arash-20260920-152640-993267.md){ .note-card-title }
+
+<small>**date:** 2026-09-20 · **status:** in-progress · **tags:** [lsm-future-skills-2026, talk, interview, handoff]</small>
+
+---
+
 ## planned (1)
 
 [**OSF integration: manifest, push/pull, registration, preprint**](task-arash-20260416-025441-887422.md){ .note-card-title }
@@ -300,8 +308,140 @@
     
     ---
     
-??? note "done (86)"
+??? note "done (108)"
 
+    [**Feature: `pipeio nb open <flow> <notebook>` — one-command marimo launch (agent**](task-arash-20260920-132647-995977.md){ .note-card-title }
+    
+    <small>**date:** 2026-09-20 · **status:** done</small>
+    
+    ---
+    
+    [**`note_search` MCP tool returns empty — hardcodes `corpus="notes"` which isn't**](task-arash-20260622-194732-637622.md){ .note-card-title }
+    
+    <small>**date:** 2026-06-22 · **status:** done</small>
+    
+    ---
+    
+    [**Handbook references: populate references.md + add Further reading per chapter**](task-arash-20260511-handbook-references.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, references]</small>
+    
+    ---
+    
+    [**Handbook draft: 99-honest-gaps — synthesize all 8 gaps from survey**](task-arash-20260511-handbook-99-honest-gaps.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, chapter-99-honest-gaps]</small>
+    
+    ---
+    
+    [**Handbook draft: 90-future-directions — agent hierarchies + live agent communication**](task-arash-20260511-handbook-90-future-directions.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, chapter-90-future-directions]</small>
+    
+    ---
+    
+    [**Handbook draft: 80-orchestration — worklog, goals, cross-project dispatch**](task-arash-20260511-handbook-80-orchestration.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, chapter-80-orchestration]</small>
+    
+    ---
+    
+    [**Handbook draft: 70-agentic — Claude Code+MCP, permissions, skills, captures→tasks→queues**](task-arash-20260511-handbook-70-agentic.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, chapter-70-agentic]</small>
+    
+    ---
+    
+    [**Handbook draft: 60-projio — stack-aware layer, notio, pipeio, biblio+indexio, figio, codio**](task-arash-20260511-handbook-60-projio.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, chapter-60-projio]</small>
+    
+    ---
+    
+    [**Handbook draft: 50-publication — MkDocs, Quarto, cross-link protocol**](task-arash-20260511-handbook-50-publication.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, chapter-50-publication]</small>
+    
+    ---
+    
+    [**Handbook draft: 40-marimo — reactive cells, analysis notebooks, explorables**](task-arash-20260511-handbook-40-marimo.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, chapter-40-marimo]</small>
+    
+    ---
+    
+    [**Patch 40-marimo: add holoviews + xarray pairing section**](task-arash-20260511-handbook-40-marimo-holoviews.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, chapter-40-marimo, patch]</small>
+    
+    ---
+    
+    [**Handbook draft: 30-snakemake — DAG, wildcards, config-driven, three idioms**](task-arash-20260511-handbook-30-snakemake.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, chapter-30-snakemake]</small>
+    
+    ---
+    
+    [**Handbook draft: 20-datalad — super/subdatasets, siblings, code-as-subdataset**](task-arash-20260511-handbook-20-datalad.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, chapter-20-datalad]</small>
+    
+    ---
+    
+    [**Handbook draft: 10-bids — strict raw root, derivatives, beyond-ephys**](task-arash-20260511-handbook-10-bids.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-11 · **status:** done · **tags:** [handbook, writing, stack-axis, agentic-workshop-2026-09, chapter-10-bids]</small>
+    
+    ---
+    
+    [**Stack-axis roadmap synthesis (from stack-axis survey + spec)**](task-arash-20260508-160002-200003.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-08 · **status:** done · **tags:** [handbook, workshop, roadmap, planning, stack-axis, agentic-workshop-2026-09]</small>
+    
+    ---
+    
+    [**Stack-axis layout/spec: handbook + workshop (from stack-axis survey)**](task-arash-20260508-160001-200002.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-08 · **status:** done · **tags:** [handbook, workshop, spec, stack-axis, agentic-workshop-2026-09]</small>
+    
+    ---
+    
+    [**Stack-axis survey: BIDS / DataLad / Snakemake / Marimo / Quarto+MkDocs / projio / agentic — across study projects**](task-arash-20260508-160000-200001.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-08 · **status:** done · **tags:** [handbook, workshop, survey, stack-axis, agentic-workshop-2026-09]</small>
+    
+    ---
+    
+    [**Roadmap synthesis: handbook + workshop initiative (May → Sept 2026)**](task-arash-20260508-020200-100003.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-08 · **status:** done · **tags:** [handbook, workshop, roadmap, planning, agentic-workshop-2026-09]</small>
+    
+    ---
+    
+    [**Layout/spec for handbook + workshop material (from tool-use survey)**](task-arash-20260508-020131-100002.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-08 · **status:** done · **tags:** [handbook, workshop, spec, agentic-workshop-2026-09]</small>
+    
+    ---
+    
+    [**Survey: tool use across projio + study projects (cogpy, pixecog, gecog, msol)**](task-arash-20260508-020130-100001.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-08 · **status:** done · **tags:** [handbook, workshop, survey, agentic-workshop-2026-09]</small>
+    
+    ---
+    
+    [**Sketch handbook outline + draft chapter 1 ("Interactivity as a research medium")**](task-arash-20260507-222028-504938.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-07 · **status:** done · **tags:** [handbook, writing, chapter-1]</small>
+    
+    ---
+    
+    [**Move Interactive Mathematics deep-research PDF into projio + create handbook reference area**](task-arash-20260507-222003-098400.md){ .note-card-title }
+    
+    <small>**date:** 2026-05-07 · **status:** done · **tags:** [handbook, reference, agentic-workshop-2026-09]</small>
+    
+    ---
+    
     [**report_build empty-bib edge case: skip bibliography preflight when no citations**](task-arash-20260420-195132-741415.md){ .note-card-title }
     
     <small>**date:** 2026-04-20 · **status:** done</small>

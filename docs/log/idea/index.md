@@ -1,5 +1,41 @@
 # Idea
 
+[**[from worklog] Session graph schema and writers in the manager core (worklog ...**](idea-arash-20261106-150745-519512.md){ .note-card-title }
+
+<small>**date:** 2026-11-06 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**[from worklog] Wiki SPEC changes for biblio (W02 / lit-studio R44), to go wit...**](idea-arash-20261106-150724-684047.md){ .note-card-title }
+
+<small>**date:** 2026-11-06 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**[from worklog] Manager change request: register the session id at start, send...**](idea-arash-20261105-155114-000518.md){ .note-card-title }
+
+<small>**date:** 2026-11-05 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**[from lit-studio, R58] Brainstorm: cover run-record provenance and automatic claim review better than Claude Science**](idea-arash-20261104-140644-946360.md){ .note-card-title }
+
+<small>**date:** 2026-11-04 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**[from lit-studio, R49] mcp-config: when merging into an existing .mcp.json, also point other projio.mcp.server entries at the current interpreter**](idea-arash-20261029-235153-989607.md){ .note-card-title }
+
+<small>**date:** 2026-10-29 · **status:** open · **confidence:** 1.0</small>
+
+---
+
+[**Brain-inspired filesystem for project dev — cognitive architecture as repo layout**](idea-arash-20260519-113429-257301.md){ .note-card-title }
+
+<small>**date:** 2026-05-19</small>
+
+---
+
 [**Handbook + Workshop initiative — architecture, conceptual frame, tools**](idea-arash-20260507-221835-382557.md){ .note-card-title }
 
 <small>**date:** 2026-05-07</small>
@@ -26,7 +62,7 @@
 
 [**Add per-flow CHANGELOG**](idea-arash-20260413-145305-923913.md){ .note-card-title }
 
-<small>**date:** 2026-04-13 · **status:** open · **confidence:** 1.0</small>
+<small>**date:** 2026-04-13 · **status:** done · **confidence:** 1.0</small>
 
 ---
 
@@ -56,13 +92,13 @@
 
 [**Study project profiles — user preference for projio-native profiles over cook**](idea-arash-20260411-173908-283692.md){ .note-card-title }
 
-<small>**date:** 2026-04-11 · **status:** open · **confidence:** 1.0</small>
+<small>**date:** 2026-04-11 · **status:** partial · **confidence:** 1.0</small>
 
 ---
 
 [**Skill: pipeio-flow-create — guided flow creation workflow**](idea-arash-20260410-150021-808875.md){ .note-card-title }
 
-<small>**date:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
+<small>**date:** 2026-04-10 · **status:** done · **confidence:** 1.0</small>
 
 ---
 
@@ -86,7 +122,7 @@
 
 [**Feature request: pipeio_nb_report — extract notebook results into a structure**](idea-arash-20260410-115819-587190.md){ .note-card-title }
 
-<small>**date:** 2026-04-10 · **status:** open · **confidence:** 1.0</small>
+<small>**date:** 2026-04-10 · **status:** done · **confidence:** 1.0</small>
 
 ---
 
@@ -98,25 +134,25 @@
 
 [**Pipeline completeness dashboard: `biblio_status`**](idea-arash-20260409-231800-246938.md){ .note-card-title }
 
-<small>**date:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
+<small>**date:** 2026-04-09 · **status:** done · **confidence:** 1.0</small>
 
 ---
 
 [**`graph_expand` → `biblio_ingest` bridge tool**](idea-arash-20260409-231734-553212.md){ .note-card-title }
 
-<small>**date:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
+<small>**date:** 2026-04-09 · **status:** done · **confidence:** 1.0</small>
 
 ---
 
 [**Add crossref DOI resolution to biblio MCP**](idea-arash-20260409-214919-989861.md){ .note-card-title }
 
-<small>**date:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
+<small>**date:** 2026-04-09 · **status:** done · **confidence:** 1.0</small>
 
 ---
 
 [**Systematic literature processing — biblio × questio bridge**](idea-arash-20260409-210844-158219.md){ .note-card-title }
 
-<small>**date:** 2026-04-09 · **status:** open · **confidence:** 1.0</small>
+<small>**date:** 2026-04-09 · **status:** done · **confidence:** 1.0</small>
 
 ---
 
@@ -146,7 +182,7 @@
 
 [**Auto-dispatch skill: questio_gap → pipeio_run**](idea-arash-20260408-035007-479946.md){ .note-card-title }
 
-<small>**date:** 2026-04-08 · **status:** open · **confidence:** 1.0</small>
+<small>**date:** 2026-04-08 · **status:** superseded · **confidence:** 1.0</small>
 
 ---
 
@@ -242,7 +278,7 @@
 
 [**Feature request: background / async mode for biblio_docling**](idea-arash-20260326-155537-817950.md){ .note-card-title }
 
-<small>**date:** 2026-03-26 · **status:** open · **confidence:** 1.0</small>
+<small>**date:** 2026-03-26 · **status:** done · **confidence:** 1.0</small>
 
 ---
 
