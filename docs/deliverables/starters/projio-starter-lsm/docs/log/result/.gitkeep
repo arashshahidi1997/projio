@@ -1,0 +1,3 @@
+# Agent-written result notes land here.
+# Convention: result-<who>-<YYYYMMDD>-<slug>.md, with frontmatter citing its
+# provenance via `source_note:` (the idea note) and `source_task:` (if any).

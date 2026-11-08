@@ -1,0 +1,49 @@
+# projio workspace config: projio-starter-lsm
+# Minimal, valid config for the clone-and-run demo. Only the subsystems the
+# starter actually ships deps for (indexio + notio) are enabled.
+project_name: projio-starter-lsm
+project_kind: study
+description: "Smallest stack-aware research project: BIDS data, one Snakemake rule, a marimo notebook, a Quarto report, and a projio MCP server an agent can query."
+
+layout:
+  docs: docs
+  notes: docs/log
+  pipelines: code/pipelines
+  libraries: code/lib
+  utils: code/utils
+
+# Semantic search over the notes (optional). rag_query reads this config path to
+# find the Chroma store; build it on demand (see the README "Semantic search").
+indexio:
+  config: .projio/indexio/config.yaml
+  persist_dir: .projio/indexio/index
+
+# Structured project notes (idea / result) under docs/log/.
+notio:
+  enabled: true
+  notes_dir: docs/log/
+
+# Subsystems not shipped in this minimal starter (see README "What's missing").
+biblio:
+  enabled: false
+codio:
+  enabled: false
+pipeio:
+  enabled: false
+
+# Use pixi to run compute tools (auto-detected from pixi.toml; set explicitly).
+code:
+  runner: pixi
+  project_utils: ""
+
+# Auto-building the index during `projio sync` needs a newer projio than the
+# pinned 0.1.2 (which has no on_sync step). This starter builds the index on
+# demand instead (see the README "Semantic search" section). Kept here for
+# forward compatibility.
+automation:
+  index:
+    on_sync: false
+    background: false
+
+runtime:
+  python_bin: null

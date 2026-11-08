@@ -1,0 +1,15 @@
+{
+  "Name": "projio-starter-lsm synthetic resting-state EEG",
+  "BIDSVersion": "1.9.0",
+  "DatasetType": "raw",
+  "Authors": [
+    "projio-starter-lsm"
+  ],
+  "License": "CC0",
+  "GeneratedBy": [
+    {
+      "Name": "make_synthetic_eeg.py",
+      "Description": "Deterministic synthetic EEG generator shipped with the starter"
+    }
+  ]
+}

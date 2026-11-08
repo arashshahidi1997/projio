@@ -1,0 +1,69 @@
+---
+title: "Demo report: resting-state EEG burst screen"
+subtitle: "projio-starter-lsm"
+date: today
+format:
+  html:
+    toc: true
+    embed-resources: true
+execute:
+  echo: true
+  warning: false
+---
+
+## What this is
+
+A minimal Quarto report scaffold. It reads the cleaned signal produced by the
+demo pipeline and reports a first-pass burst screen. Build it with:
+
+```bash
+pixi run quarto render docs/deliverables/report.qmd
+```
+
+Run the pipeline first so the derivative exists:
+
+```bash
+pixi run snakemake -s code/pipelines/demo/Snakefile --cores 1
+```
+
+## Method
+
+The raw synthetic EEG (`data/raw/sub-01/eeg/`) is high-pass filtered and
+notched by `code/pipelines/demo/scripts/clean.py`, then screened for transient
+bursts via a moving-window RMS envelope and a `mean + N sigma` threshold.
+
+## Result
+
+```{python}
+# | label: burst-screen
+from pathlib import Path
+
+import numpy as np
+
+root = Path.cwd()
+# quarto renders from the .qmd dir; walk up to the repo root.
+while not (root / "pixi.toml").exists() and root != root.parent:
+    root = root.parent
+
+cleaned = root / "data" / "derivatives" / "demo" / "sub-01" / "sub-01_task-rest_desc-clean_eeg.txt"
+fs = 250.0  # Hz, from the raw sidecar
+
+if not cleaned.exists():
+    print("No cleaned signal yet. Run the demo pipeline, then re-render.")
+else:
+    x = np.loadtxt(cleaned, dtype=float)
+    win = max(1, int(0.05 * fs))
+    envelope = np.sqrt(np.convolve(x**2, np.ones(win) / win, mode="same"))
+    n_sigma = 4
+    threshold = envelope.mean() + n_sigma * envelope.std()
+    n_bursts = int((np.diff((envelope > threshold).astype(int)) == 1).sum())
+    print(f"samples: {x.size}  |  threshold (mean + {n_sigma} sigma): {threshold:.2f} uV")
+    print(f"detected burst events: {n_bursts}")
+```
+
+## Provenance
+
+This report is the deliverable end of the loop the starter demonstrates:
+**idea note -> pipeline -> result note -> report**. See
+`docs/log/idea/` for the intent note and `docs/log/result/` for the agent's
+result note.

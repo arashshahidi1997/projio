@@ -1,0 +1,27 @@
+# Demo flow: raw synthetic EEG -> cleaned signal. One rule.
+#
+# The rule runs from the repository root regardless of where you invoke
+# snakemake from, so both of these work:
+#   pixi run snakemake -s code/pipelines/demo/Snakefile --cores 1   # from root
+#   cd code/pipelines/demo && pixi run snakemake --cores 1          # from the flow dir
+from pathlib import Path
+
+# code/pipelines/demo -> repo root
+ROOT = Path(workflow.basedir).resolve().parents[2]
+workdir: str(ROOT)
+
+
+rule all:
+    input:
+        "data/derivatives/demo/sub-01/sub-01_task-rest_desc-clean_eeg.txt",
+
+
+rule clean:
+    """High-pass + notch the raw signal (see scripts/clean.py for the cutoffs)."""
+    input:
+        signal="data/raw/sub-01/eeg/sub-01_task-rest_eeg.txt",
+        sidecar="data/raw/sub-01/eeg/sub-01_task-rest_eeg.json",
+    output:
+        "data/derivatives/demo/sub-01/sub-01_task-rest_desc-clean_eeg.txt",
+    script:
+        "scripts/clean.py"

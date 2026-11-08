@@ -1,6 +1,7 @@
 ---
-title: "Example idea: detect bursts in the resting-state EEG — but the proposed threshold conflicts with the pipeline"
+title: "Example idea: detect bursts in the resting-state EEG (the proposed threshold conflicts with the pipeline)"
 date: 2026-09-01
+timestamp: 20260901-000000-000000
 tags: [idea, example, starter]
 ---
 
@@ -16,7 +17,7 @@ contains transient bursts. A first analysis pass should:
 
 **Open question I want the agent to resolve:** the threshold should be
 either `3σ` or `4σ`. I haven't picked one. The right answer depends on
-the noise floor of this specific recording — the agent should look at
+the noise floor of this specific recording, so the agent should look at
 the actual signal in `data/raw/sub-01/eeg/sub-01_task-rest_eeg.txt`
 (check its sampling rate from `data/raw/sub-01/eeg/sub-01_task-rest_eeg.json`
 if present, otherwise estimate from the file's line count vs.
@@ -29,7 +30,7 @@ with justification.*
 A good response to *"summarise the idea in `docs/log/idea/` and propose
 one next step"* is **not** a paraphrase of the list above. It should:
 
-1. **Read at least two files beyond this one** — at minimum
+1. **Read at least two files beyond this one**, at minimum
    `code/pipelines/demo/scripts/clean.py` (to see the actual filter
    settings the pipeline applies) and `data/raw/sub-01/eeg/…` (to see
    what's in the signal).
@@ -41,12 +42,12 @@ one next step"* is **not** a paraphrase of the list above. It should:
    the actual signal, not a textbook default.
 4. **Propose the next step**: usually "run the pipeline, write a
    result note in `docs/log/result/` citing this idea note as
-   `source_idea:`."
+   `source_note:`."
 
 ## Why this is in `docs/log/idea/`
 
-This file captures *intent* — the question, the hypothesis, the open
-sub-decisions — before any code lands. In a real project the intent
+This file captures *intent* (the question, the hypothesis, the open
+sub-decisions) before any code lands. In a real project the intent
 note is the artifact the result note cites as its provenance source.
 Closing that loop (claim → code → idea → data) is the whole point of
 the *receipts-on-disk* convention.

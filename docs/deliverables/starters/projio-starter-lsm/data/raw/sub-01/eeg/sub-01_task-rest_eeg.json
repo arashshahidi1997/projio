@@ -1,0 +1,12 @@
+{
+  "TaskName": "rest",
+  "SamplingFrequency": 250,
+  "EEGReference": "synthetic",
+  "PowerLineFrequency": 50,
+  "SoftwareFilters": "n/a",
+  "RecordingDuration": 8.0,
+  "RecordingType": "continuous",
+  "EEGChannelCount": 1,
+  "Units": "uV",
+  "Description": "Single-channel synthetic signal: 10 Hz alpha + 50 Hz mains + four 30 Hz transient bursts on broadband noise. One value per line, no header."
+}

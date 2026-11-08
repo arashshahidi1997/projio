@@ -1,0 +1,26 @@
+# indexio config: projio-starter-lsm
+#
+# Defines the semantic-search index that rag_query / note_search hit.
+# `projio sync` builds this into a per-clone Chroma store (see the store below).
+# The embedding model is a small sentence-transformers model; the first build
+# downloads it from Hugging Face (needs network once, then it is cached).
+
+embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+chunk_size_chars: 1000
+chunk_overlap_chars: 200
+
+default_store: local
+
+stores:
+  local:
+    persist_directory: .projio/indexio/index
+    read_only: false
+    description: "Per-clone writable Chroma cache (gitignored)"
+
+sources:
+  # The notes corpus: every markdown note under docs/log/ (idea, result, ...).
+  # This is what makes the README's `rag_query(..., corpus="notes")` return
+  # real hits on a fresh clone.
+  - id: notes
+    corpus: notes
+    glob: "docs/log/**/*.md"

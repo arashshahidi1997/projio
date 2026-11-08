@@ -1,0 +1,36 @@
+[workspace]
+name = "projio-starter-lsm"
+version = "0.1.0"
+description = "Clone-and-run starter for the LSM Future Skills 2026 talk: BIDS data, one Snakemake rule, a marimo notebook, a Quarto report, and a projio MCP server."
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
+# System binaries and compute deps shelled out to by the pipeline / notebook /
+# report. Kept on conda-forge; Python tooling that ships on PyPI lives below.
+[dependencies]
+python = ">=3.11,<3.13"
+quarto = ">=1.5"
+pandoc = ">=3.1"
+numpy = ">=1.26"
+matplotlib = ">=3.8"
+
+# projio and its subsystems come from PyPI. The pin keeps this README's commands
+# working under projio API drift; bump it yourself for the latest.
+# The `indexio` extra is what makes rag_query work; `notio` adds note tooling.
+[pypi-dependencies]
+projio = { version = "==0.1.2", extras = ["indexio", "notio"] }
+marimo = ">=0.9"
+# snakemake from PyPI: conda-forge has no osx-arm64 build; PyPI wheels are cross-platform
+snakemake = ">=8.0"
+
+[tasks]
+# Non-destructive: discover libraries, validate config, build the notes index.
+sync = "projio sync"
+# Run the one Snakemake rule (raw -> cleaned).
+pipeline = "snakemake -s code/pipelines/demo/Snakefile --cores 1"
+# Launch the projio MCP server by hand (Claude Code does this via .mcp.json).
+mcp = "python -m projio.mcp.server"
+# Open the marimo notebook for interactive exploration.
+notebook = "marimo edit notebooks/explore.py"
+# Render the Quarto report.
+report = "quarto render docs/deliverables/report.qmd"
