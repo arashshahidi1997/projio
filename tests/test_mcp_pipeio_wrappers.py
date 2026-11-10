@@ -345,6 +345,19 @@ class TestPipeioNotebookDelegation:
         )
         assert result["url"] == "http://localhost:2718"
 
+    def test_nb_publish_resolves_project_python(self) -> None:
+        with self._mock_pipeio(), mock.patch(
+            "projio.mcp.pipeio._resolve_python_cmd", return_value=["pixi", "run", "python"],
+        ), mock.patch(
+            "pipeio.mcp.mcp_nb_publish", create=True, return_value={"published": ["x.html"]},
+        ) as m:
+            result = pipeio_nb_publish(flow="f", name="n")
+        m.assert_called_once_with(
+            Path("/fake/root"), flow="f", name="n", format="",
+            python_bin="pixi run python", timeout=600,
+        )
+        assert result["published"] == ["x.html"]
+
     def test_nb_promote_delegates(self) -> None:
         with self._mock_pipeio(), mock.patch(
             "pipeio.mcp.mcp_nb_promote", create=True, return_value={"promoted": True},

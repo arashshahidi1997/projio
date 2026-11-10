@@ -256,12 +256,20 @@ and next steps for review. Use `apply=True` to also scaffold doc stubs.
 ```
 pipeio_nb_sync(flow, name)              # py → ipynb/myst (no-op for marimo)
 pipeio_nb_lab(flow)                     # build Jupyter symlink manifest (percent-only)
-pipeio_nb_publish(flow, name)           # publish to docs (nbconvert or marimo export)
+pipeio_nb_publish(flow, name)           # publish to docs (nbconvert, or marimo export html)
 pipeio_nb_pipeline(flow, name)          # sync → publish → collect → nav
 pipeio_nb_validate(flow, name)          # structural validation (AST or marimo check)
 pipeio_nb_open(flow, name)              # launch/attach headless marimo (marimo-only)
 pipeio_nb_watch(flow, name)             # marimo edit --watch (marimo-only)
 ```
+
+Marimo notebooks have no `.ipynb`/MyST pair: `pipeio_nb_publish` runs
+`marimo export html` (which executes the notebook) into `.build/notebooks/`,
+and `pipeio_docs_collect` picks that HTML up when the entry has
+`publish_html: true` (collect never executes notebooks). `pipeio_nb_publish`
+and `pipeio_nb_snapshot` run marimo in the project env (auto-resolved, e.g.
+`pixi run python -m marimo`; override with `python_bin`), so the MCP server
+env does not need marimo.
 
 `pipeio_nb_open` is the one-call launcher for agent/human pairing: it starts
 `marimo edit --headless --no-token --host 0.0.0.0` on an auto-picked free port
@@ -293,6 +301,26 @@ tab-completion for flow and notebook names once with
 `eval "$(register-python-argcomplete pipeio)"`.
 
 `pipeio flow new` on an existing flow fills in missing directories (rules/, explore/, demo/, publish.yml) without overwriting existing files.
+
+### Project Snakefile preamble
+
+`pipeio flow new` and `pipeio_flow_new` write the same scaffold Snakefile. A
+project adds its own lines after `configfile: "config.yml"` in
+`.projio/pipeio/config.yml`:
+
+```yaml
+scaffold:
+  snakefile_includes:            # one `include:` line each, in order
+    - ../_common/provenance.smk
+  snakefile_preamble: |          # optional free text, after the includes
+    from utils.flow import setup
+```
+
+Include paths are written as given; Snakemake resolves them relative to the
+Snakefile, so `../_common/x.smk` is `code/pipelines/_common/x.smk`
+(`_`-prefixed dirs are skipped by registry scan). Only new Snakefiles get the
+lines: an existing Snakefile is never rewritten, so add the include to older
+flows by hand.
 
 ## Agentic Workflows: pipeio + ecosystem tools
 

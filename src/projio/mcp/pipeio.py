@@ -683,25 +683,38 @@ def pipeio_nb_sync_flow(
         return json_dict({"error": str(exc)})
 
 
-def pipeio_nb_publish(flow: str, name: str, format: str = "") -> JsonDict:
+def pipeio_nb_publish(
+    flow: str,
+    name: str,
+    format: str = "",
+    python_bin: str = "",
+    timeout: int = 600,
+) -> JsonDict:
     """Publish a notebook to docs/pipelines/<flow>/notebooks/.
 
     Publishes MyST markdown and/or HTML based on notebook.yml settings.
     Pass format='html' to force HTML output (for demo notebooks),
-    or format='myst' for markdown only.
+    or format='myst' for markdown only. Marimo notebooks publish HTML via
+    ``marimo export html`` (executes the notebook in the project env).
 
     Args:
         flow: Flow name.
         name: Notebook basename (without extension).
         format: Force format ('myst', 'html', or '' for auto from notebook.yml).
+        python_bin: Python with marimo + compute libs (marimo only).
+            Empty = auto-resolve from project config (``code.runner`` /
+            ``code.envs.default``, e.g. ``pixi run python``).
+        timeout: Seconds allowed for the marimo export.
     """
     if not _pipeio_available():
         return _unavailable("pipeio_nb_publish")
     root = get_project_root()
+    resolved_python = python_bin or " ".join(_resolve_python_cmd())
     try:
         from pipeio.mcp import mcp_nb_publish  # type: ignore[import]
         return json_dict(mcp_nb_publish(
             root, flow=flow, name=name, format=format,
+            python_bin=resolved_python, timeout=timeout,
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})

@@ -1213,10 +1213,16 @@ def pipeio_nb_sync_flow_tool(
 
 
 @server.tool("pipeio_nb_publish")
-def pipeio_nb_publish_tool(flow: str, name: str, format: str = ""):
+def pipeio_nb_publish_tool(
+    flow: str, name: str, format: str = "", python_bin: str = "", timeout: int = 600,
+):
     """Publish a notebook to docs/pipelines/<flow>/notebooks/.
-    Publishes myst and/or html based on notebook.yml. Pass format='html' to force HTML."""
-    return pipeio.pipeio_nb_publish(flow=flow, name=name, format=format)
+    Publishes myst and/or html based on notebook.yml. Pass format='html' to force HTML.
+    Marimo notebooks publish HTML via `marimo export html` (runs in the project env;
+    python_bin overrides the auto-resolved Python, e.g. 'pixi run python')."""
+    return pipeio.pipeio_nb_publish(
+        flow=flow, name=name, format=format, python_bin=python_bin, timeout=timeout,
+    )
 
 
 @server.tool("pipeio_nb_analyze")
