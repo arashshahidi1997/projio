@@ -1140,7 +1140,13 @@ def _gitignore_entries_for_framework(site_framework: str) -> list[str]:
     return entries
 
 
-def _ensure_projio_gitignore(root: Path, *, site_framework: str) -> None:
+def _ensure_projio_gitignore(root: Path, *, site_framework: str, dry_run: bool = False, quiet: bool = False) -> str:
+    """Write or refresh the managed ``# >>> projio >>>`` block in ``.gitignore``.
+
+    Lines outside the block are left as they are. Returns ``"created"``,
+    ``"updated"`` or ``"unchanged"`` (``"would_create"`` / ``"would_update"``
+    with ``dry_run``).
+    """
     path = root / ".gitignore"
     block_lines = [_GITIGNORE_BEGIN, *sorted(dict.fromkeys(_gitignore_entries_for_framework(site_framework))), _GITIGNORE_END]
     block = "\n".join(block_lines) + "\n"
@@ -1148,15 +1154,21 @@ def _ensure_projio_gitignore(root: Path, *, site_framework: str) -> None:
         text = path.read_text(encoding="utf-8")
         pattern = rf"(?ms)^{re.escape(_GITIGNORE_BEGIN)}\n.*?^{re.escape(_GITIGNORE_END)}\n?"
         if re.search(pattern, text):
-            new_text = re.sub(pattern, block, text)
+            new_text = re.sub(pattern, lambda _m: block, text, count=1)
         else:
             new_text = text.rstrip("\n") + "\n\n" + block
+        if text == new_text:
+            return "unchanged"
+        action = "updated"
     else:
         new_text = block
-    if path.exists() and path.read_text(encoding="utf-8") == new_text:
-        return
+        action = "created"
+    if dry_run:
+        return f"would_{action[:-1]}"
     path.write_text(new_text, encoding="utf-8")
-    print(f"[OK] updated {path.relative_to(root)}")
+    if not quiet:
+        print(f"[OK] updated {path.relative_to(root)}")
+    return action
 
 
 def untrack_gitignored(root: str | Path, *, dry_run: bool = False) -> list[str]:

@@ -765,6 +765,15 @@ def _sync_agent_configs(root: Path, *, dry_run: bool = False) -> dict[str, dict[
     return results
 
 
+def _sync_gitignore(root: Path, *, dry_run: bool = False) -> str:
+    """Refresh the ``# >>> projio >>>`` .gitignore block so entry changes reach existing projects."""
+    from projio.init import _detect_site_framework, _ensure_projio_gitignore
+
+    return _ensure_projio_gitignore(
+        root, site_framework=_detect_site_framework(root), dry_run=dry_run, quiet=True,
+    )
+
+
 def _with_project_root(root: Path, func):
     """Call *func* with ``PROJIO_ROOT`` pointing at *root* (the MCP helpers read it)."""
     import os
@@ -1265,6 +1274,7 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
     8. Ensure mkdocs.yml has monorepo plugin + pipeio !include
     9. Sync VS Code settings (PandocCiter + watcher excludes) via managed block
     10. Sync agent MCP configs (codex, copilot)
+    10b. Refresh the managed # >>> projio >>> block in .gitignore
     11. Write .claude/skills/<name>/ (native Claude Code skills) from discovered skills
     12. Regenerate questio plan docs if plan/questions.yml exists (unless questio.enabled is false)
     12b. Regenerate docs/deliverables/ indexes, independent of questio
@@ -1412,6 +1422,13 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
             print(f"{prefix}[~] {agent_name}: MCP config regenerated")
         elif action["action"] == "error":
             print(f"[!] {agent_name}: {action.get('reason', '')}")
+
+    # 10b. Refresh the managed .gitignore block (same entries as projio init)
+    gitignore_action = _sync_gitignore(root_path, dry_run=dry_run)
+    if gitignore_action in ("created", "updated", "would_create", "would_update"):
+        print(f"{prefix}[~] .gitignore: projio managed block refreshed (lines outside it untouched)")
+    else:
+        print("[=] .gitignore: projio managed block up to date")
 
     # 11. Write .claude/skills/<name>/ (native Claude Code skills) from discovered skills
     cmd_action = _sync_claude_skills(root_path, dry_run=dry_run)

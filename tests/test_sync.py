@@ -9,6 +9,7 @@ from projio.sync import (
     _detect_project_utils,
     _discover_code_libs,
     _get_bundled_filter,
+    _sync_gitignore,
     _sync_lua_filter,
     _sync_project_utils_config,
     _sync_quarto_config,
@@ -360,3 +361,43 @@ def test_sync_workspace_survives_broken_render_yml(tmp_path: Path) -> None:
     result = sync_workspace(tmp_path)
     assert result["render"]["action"] in ("error", "generated")
     assert (tmp_path / ".projio" / "render" / "quarto.yml").is_file()
+
+
+# ---------------------------------------------------------------------------
+# .gitignore managed block
+# ---------------------------------------------------------------------------
+
+
+def test_sync_gitignore_refreshes_stale_block_only(tmp_path: Path) -> None:
+    from projio.init import _GITIGNORE_BEGIN, _GITIGNORE_END
+
+    gi = tmp_path / ".gitignore"
+    gi.write_text(
+        "# mine\nsecrets.env\n\n"
+        f"{_GITIGNORE_BEGIN}\ndocs/pipelines/mkdocs.yml\n.mcp.json\n{_GITIGNORE_END}\n"
+        "\nlocal-only/\n",
+        encoding="utf-8",
+    )
+    assert _sync_gitignore(tmp_path, dry_run=True) == "would_update"
+    assert "docs/pipelines/mkdocs.yml" in gi.read_text(encoding="utf-8")
+
+    assert _sync_gitignore(tmp_path) == "updated"
+    text = gi.read_text(encoding="utf-8")
+    assert "docs/pipelines/mkdocs.yml" not in text
+    assert ".projio/indexio/index/" in text
+    assert text.startswith("# mine\nsecrets.env\n\n")
+    assert text.endswith("\nlocal-only/\n")
+    assert text.count(_GITIGNORE_BEGIN) == 1
+
+    assert _sync_gitignore(tmp_path) == "unchanged"
+    assert gi.read_text(encoding="utf-8") == text
+
+
+def test_sync_gitignore_appends_block_when_missing(tmp_path: Path) -> None:
+    from projio.init import _GITIGNORE_BEGIN
+
+    gi = tmp_path / ".gitignore"
+    gi.write_text("secrets.env\n", encoding="utf-8")
+    assert _sync_gitignore(tmp_path) == "updated"
+    text = gi.read_text(encoding="utf-8")
+    assert text.startswith("secrets.env\n\n" + _GITIGNORE_BEGIN)
