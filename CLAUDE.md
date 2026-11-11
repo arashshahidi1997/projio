@@ -94,7 +94,7 @@ Projio promotes **search before creation**: discover existing implementations, c
 Skills are prompt-based workflow templates discoverable via `agent_instructions()` and readable via `skill_read(name)`. Three locations, in order of precedence:
 
 - **Project skills** (per-project): `.projio/skills/{name}/SKILL.md` (or via `docs/prompts/skills/`)
-- **Package skills**: shipped by an installed package and declared with the `projio.skills` entry point (`[project.entry-points."projio.skills"] biblio = "biblio.skills_bundle:skills_dir"`); ecosystem packages with a `<pkg>/skills/` folder are found without one. biblio ships `wiki-ingest`, `wiki-synthesize`, `wiki-maintain`, `wiki-review`, `zotero-add`, `literature-sourcing`, `biblio-batch-curate`. See `projio.mcp.context.package_skill_dirs`.
+- **Package skills**: shipped by an installed package and declared with the `projio.skills` entry point (`[project.entry-points."projio.skills"] biblio = "biblio.skills_bundle:skills_dir"`); ecosystem packages with a `<pkg>/skills/` folder are found without one. biblio ships `paper-text`, `literature-sourcing`, `zotero-add` (stable) and `wiki-ingest`, `wiki-synthesize`, `wiki-maintain`, `wiki-review`, `paper-scrutiny`, `biblio-batch-curate` (beta); since 0.4.0 `literature-sourcing` needs only the biblio CLI. See `projio.mcp.context.package_skill_dirs`.
 - **Ecosystem skills** (bundled with projio): `src/projio/data/skills/{name}/SKILL.md`
 
 `projio sync` writes every discovered skill into `.claude/skills/<name>/` as a native Claude Code skill (a stamped, gitignored copy; the project's own skill folders are never touched). The frontmatter `description` is what the agent sees to choose a skill, so it must say when to use it.
