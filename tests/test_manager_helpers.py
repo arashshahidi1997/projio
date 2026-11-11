@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -127,7 +128,7 @@ def test_board_skeleton_auto_blocks_and_gitignore(repo: Path, tmp_path_factory: 
     text = board.read_text()
     assert str(board) in res.stdout
     assert "not gitignored" in res.stderr
-    assert _headings(text) == ["Delegate", "Decisions waiting for you", "Sessions, by state",
+    assert _headings(text) == ["What's up", "Delegate", "Decisions waiting for you", "Sessions, by state",
                                "Waiting on others", "Sync"]
     assert text.startswith("# demo-manager board")
     assert "name · machine · session id · last contact" in text
@@ -155,7 +156,7 @@ def test_board_keeps_hand_written_text(repo: Path) -> None:
         "## Sync\n\n- pix-manager · gamma2 · `local_1` · 2026-11-05\n")
     _board(repo)
     first = board.read_text()
-    assert _headings(first) == ["Copy into a new session", "Decisions waiting for you", "Parking lot", "Sessions",
+    assert _headings(first) == ["What's up", "Copy into a new session", "Decisions waiting for you", "Parking lot", "Sessions",
                                 "Waiting on others", "Sync"]
     assert "## not a heading, part of the kickoff" in first
     assert "A standing note under the title." in first and "Updated long ago." not in first
@@ -166,7 +167,7 @@ def test_board_keeps_hand_written_text(repo: Path) -> None:
 
     _board(repo)
     second = board.read_text()
-    drop = lambda t: [ln for ln in t.splitlines() if not ln.startswith("Updated ")]  # noqa: E731
+    drop = lambda t: [ln for ln in t.splitlines() if not ln.startswith(("Updated ", "As of "))]  # noqa: E731
     assert drop(second) == drop(first)
 
 
@@ -182,9 +183,55 @@ def test_board_repairs_duplicated_sections(repo: Path) -> None:
         "## Delegate\n\nKickoffs below.\n\n### 1. demo-x · y\n\n```text\nkickoff\n```\n")
     _board(repo)
     text = board.read_text()
-    assert _headings(text) == ["Delegate", "Decisions waiting for you", "Sessions, by state", "Waiting on others",
-                               "Sync", "Sync"]
+    assert _headings(text) == ["What's up", "Delegate", "Decisions waiting for you", "Sessions, by state",
+                               "Waiting on others", "Sync", "Sync"]
     assert "### 1. demo-x · y" in text and "Nothing to delegate." not in text
     assert "_None._" not in text.split("## Decisions")[0]
     assert text.count("- one") == 1
     assert text.count("<!-- auto:unpushed -->") == 1 and "- e · f · g · h" in text
+
+
+def _stamps(text: str) -> tuple[str, str]:
+    updated = re.search(r"^Updated (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ", text, re.M)
+    as_of = re.search(r"As of (\d{4}-\d{2}-\d{2} \d{2}:\d{2})", text.split("## What's up")[1].split("\n## ")[0])
+    assert updated and as_of, text
+    return updated.group(1), as_of.group(1)
+
+
+def test_board_whats_up_stamped_first(repo: Path) -> None:
+    _board(repo)
+    text = (repo / ".scratch" / "demo-manager-board.md").read_text()
+    assert _headings(text)[0] == "What's up"
+    updated, as_of = _stamps(text)
+    assert updated == as_of
+    whatsup = text.split("## What's up")[1].split("\n## ")[0]
+    assert "Running now" in whatsup and "Waiting on you" in whatsup
+    assert "**independent**" in text.split("## Delegate")[1].split("\n## ")[0]
+
+
+@pytest.mark.parametrize("stamp_line, kept_tail", [
+    ("As of 2026-11-01 09:00.", "."),
+    ("*As of 2026-11-01 09:00 (gamma2 local time). Read this first; details below.*",
+     " (gamma2 local time). Read this first; details below.*"),
+    ("As of this afternoon.", "."),
+    ("", ""),
+])
+def test_board_whats_up_restamps_and_keeps_lines(repo: Path, stamp_line: str, kept_tail: str) -> None:
+    board = repo / ".scratch" / "demo-manager-board.md"
+    board.parent.mkdir()
+    lines = "- **Running (2):** wiki batch; corpus fix.\n- Waiting on you: the push.\n- Next: release."
+    board.write_text("# demo-manager board\n\nUpdated 2026-11-01 09:00 on x.\n\n"
+                     "## Delegate\n\n### 1. demo-x · y\n\n**depends on** 2 finishing\n\n```text\nkickoff\n```\n\n"
+                     "## What's up\n\n%s\n\n%s\n" % (stamp_line, lines))
+    _board(repo)
+    text = board.read_text()
+    assert _headings(text)[:2] == ["What's up", "Delegate"]
+    updated, as_of = _stamps(text)
+    assert updated == as_of and as_of != "2026-11-01 09:00"
+    whatsup = text.split("## What's up")[1].split("\n## ")[0]
+    assert lines in whatsup and "afternoon" not in whatsup and "Running now: nothing yet" not in whatsup
+    assert whatsup.count("As of ") == 1
+    if kept_tail:
+        stamped = next(ln for ln in whatsup.splitlines() if "As of " in ln)
+        assert stamped.endswith("As of %s%s" % (as_of, kept_tail))
+    assert "**depends on** 2 finishing" in text

@@ -17,6 +17,7 @@ Sections:
   board     rewrites the board (`board.path`, default .scratch/<prefix>manager-board.md) and prints its path.
             The hand-written text of every section is kept; the blocks between `<!-- auto:… -->` markers
             (newest handoffs and dirty units under Sessions, unpushed commits under Sync) are regenerated.
+            The "As of" line of What's up and the "Updated" line get the same stamp, the time of the rewrite.
             Warns when the board is not gitignored.
 """
 
@@ -113,12 +114,15 @@ def show_dirty(cfg: dict) -> None:
 
 # The board: sections in order, with the heading and text a new board starts from. An existing section is matched
 # by the start of its heading (any of BOARD_ALIASES) and keeps its heading, so a manager may rename one.
-BOARD_ALIASES = {"copy": ("copy", "delegate", "kickoff"), "decisions": ("decision",), "sessions": ("session",),
+BOARD_ALIASES = {"whatsup": ("what",), "copy": ("copy", "delegate", "kickoff"), "decisions": ("decision",), "sessions": ("session",),
                  "waiting": ("waiting",), "sync": ("sync",)}
 BOARD_SECTIONS = [
+    ("whatsup", "What's up",
+     "As of {stamp}.\n\n- Running now: nothing yet.\n- Latest: nothing yet.\n- Waiting on you: nothing yet.\n"
+     "- Next to start: nothing yet."),
     ("copy", "Delegate",
-     "Nothing to delegate. Kickoffs go here numbered, each as a ```text block; say \"delegated <n>\" or "
-     "\"delegated all\" once one is started."),
+     "Nothing to delegate. Kickoffs go here numbered, each with a tag line (**independent** or **depends on "
+     "<what>**) and a ```text block; say \"delegated <n>\" or \"delegated all\" once one is started."),
     ("decisions", "Decisions waiting for you", "_None._"),
     ("sessions", "Sessions, by state", "| Session | State | Notes |\n|---|---|---|"),
     ("waiting", "Waiting on others", "_None._"),
@@ -126,6 +130,8 @@ BOARD_SECTIONS = [
                      "Other managers (`name · machine · session id · last contact`):\n\n- none yet"),
 ]
 STRUCTURE = re.compile(r"^(\s*[-*|]|\s*\d+\.|```|###)", re.M)  # content beyond a placeholder sentence
+# The stamp line of What's up: "As of <date time>" or a stale "As of this afternoon", optionally in *…* or _…_.
+AS_OF = re.compile(r"^([*_]*\s*)As of (?:\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?|[^.(*_\n]*[^.(*_\n\s])", re.M)
 AUTO = re.compile(r"\n*<!-- auto:(\w+) -->.*?<!-- /auto:\1 -->\n*", re.S)
 
 
@@ -174,6 +180,13 @@ def parse_board(text: str) -> tuple[list[str], list[tuple[str | None, str, str]]
     return preamble, out
 
 
+def stamp_whatsup(text: str, now: str) -> str:
+    """Set the first "As of …" stamp to `now`, or put one on top; every other line stays as written."""
+    if AS_OF.search(text):
+        return AS_OF.sub(lambda m: m.group(1) + "As of " + now, text, count=1)
+    return "As of %s.\n\n%s" % (now, text) if text.strip() else "As of %s." % now
+
+
 def write_board(cfg: dict, rows: list[dict]) -> str:
     """Rewrite the board. Known sections come in BOARD_SECTIONS order, each followed by its auto blocks; a section
     the board has twice is kept once when the copies match, and copies that are only a placeholder sentence yield
@@ -182,12 +195,13 @@ def write_board(cfg: dict, rows: list[dict]) -> str:
     path = board_path(cfg)
     manager = (cfg.get("prefix") or "") + "manager"
     host = socket.gethostname().split(".")[0]
+    now = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
     old = ""
     if os.path.exists(path):
         with open(path, encoding="utf-8") as fh:
             old = fh.read()
     preamble, sections = parse_board(old)
-    defaults = {k: (h, d.format(manager=manager, host=host)) for k, h, d in BOARD_SECTIONS}
+    defaults = {k: (h, d.format(manager=manager, host=host, stamp=now)) for k, h, d in BOARD_SECTIONS}
     known: dict = {k: [] for k in defaults}
     after: dict = {None: []}  # unknown sections, by the known key they followed
     last = None
@@ -201,14 +215,14 @@ def write_board(cfg: dict, rows: list[dict]) -> str:
     for key, entries in known.items():
         real = [e for e in entries if STRUCTURE.search(e[1])]
         known[key] = real or entries[:1] or [defaults[key]]
+    known["whatsup"] = [(h, stamp_whatsup(t, now)) for h, t in known["whatsup"]]
     auto = {
         "sessions": [_auto("handoffs", "Newest open handoff per series", handoff_lines(rows)),
                      _auto("dirty", "Uncommitted, by unit", dirty_lines(cfg))],
         "sync": [_auto("unpushed", "Unpushed commits", unpushed_lines())],
     }
     out = ["# %s board" % manager, "",
-           "Updated %s on %s. Rewritten every round; gitignored. Chat replies point here."
-           % (dt.datetime.now().strftime("%Y-%m-%d %H:%M"), host)]
+           "Updated %s on %s. Rewritten every round; gitignored. Chat replies point here." % (now, host)]
     if preamble:
         out += [""] + preamble
 

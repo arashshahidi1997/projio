@@ -32,6 +32,12 @@ Refresh with `round.py board`, open it with
 `show_pane(pane="file", path=".scratch/projio-manager-board.md")`. Other
 managers in Sync: pix-manager (gamma2), lit-manager and worklog-manager (laptop).
 
+**Decisions (drill).** Record each answer, dated, in the issue or idea note it
+concerns (a `Decision (YYYY-MM-DD)` line); a release decision goes in the
+package's newest handoff. Relay it to the session that owns the note.
+**Reporting up** goes to worklog-manager (laptop, by session id from Sync),
+only with a `decide` / `needs` / `blocked` first line.
+
 ## Units of work and where their state lives
 
 | Unit | State lives in |

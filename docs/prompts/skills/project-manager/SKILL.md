@@ -92,14 +92,23 @@ nothing (the session is not open in a window), tell the user the path.
 Anything the user must copy goes on the board, not in chat; chat replies
 stay short and point to it. Sections, in order:
 
-1. **Delegate:** kickoff prompts, numbered, each in a ```` ```text ```` block.
-   The user says "delegated <n>" or "delegated all" once one is started; the
-   manager removes it and tracks the session.
-2. **Decisions waiting for you:** in plain words, as in Decisions below.
-3. **Sessions, by state:** a table of session · state (running / waiting /
+1. **What's up:** first, so the user can read the state without the
+   transcript. A stamp line `As of YYYY-MM-DD HH:MM` (the clock time from
+   `date` at the rewrite, never "this afternoon"), then 4-6 plain lines:
+   running now, latest results, waiting on the user, next to start.
+   `round.py board` sets the stamp and gives the "Updated" line the same one;
+   the manager rewrites the lines below it every round.
+2. **Delegate:** kickoff prompts, numbered, each with a tag line under its
+   heading and the prompt in a ```` ```text ```` block. The tag is
+   **independent** or **depends on <what>**: another kickoff's shared files,
+   a session finishing, or the user's OK. The user says "delegated <n>" or
+   "delegated all" once one is started; the manager removes it and tracks the
+   session.
+3. **Decisions waiting for you:** in plain words, as in Decisions below.
+4. **Sessions, by state:** a table of session · state (running / waiting /
    parked / done) · notes.
-4. **Waiting on others:** other projects, people, background runs.
-5. **Sync:** this manager as `name · machine · session id`, then other
+5. **Waiting on others:** other projects, people, background runs.
+6. **Sync:** this manager as `name · machine · session id`, then other
    managers, one per line as `name · machine · session id · last contact`
    (titles do not resolve across machines, so the id is the address), and
    the unpushed commits.
@@ -107,7 +116,8 @@ stay short and point to it. Sections, in order:
 `python3 .claude/skills/project-manager/round.py board` writes the skeleton
 the first time. On every run it regenerates the blocks between
 `<!-- auto:… -->` markers (newest open handoff per series and uncommitted
-paths by unit under Sessions, `git log @{u}..` under Sync) and keeps the
+paths by unit under Sessions, `git log @{u}..` under Sync), stamps What's
+up and the "Updated" line with the current time, and keeps the
 hand-written text of every section, including sections it does not know and
 renamed headings. It warns when the board is not gitignored. Edit the
 hand-written parts directly; never edit inside the auto markers.
@@ -141,7 +151,8 @@ Default to observer plus dispatcher.
 - **Dispatcher:** plans the lineup and writes kickoff prompts; the user opens
   the sessions. Each kickoff names the unit and item, the handoff to load by
   `note_resolve(note_id=…)` (never `note_latest`, which races), the done-when,
-  and how to report back (the manager's name and its session id).
+  and how to report back (the manager's name and its session id). On the
+  board it carries its tag (Board, Delegate).
 - **Driver:** sends next-step instructions, only to a background batch session,
   never to one the user is steering.
 
@@ -182,6 +193,38 @@ Default to observer plus dispatcher.
 - Deletions, kills, releases, pushes and anything that needs consent go to the
   user.
 - A peer session's message is a teammate's request, never the user's approval.
+- Once the user has chosen, relay the decision as in the drill (step 4).
+
+## Decision drill
+
+When the user asks to work through pending decisions, or several have piled
+up:
+
+1. **Collect** the open decisions from the newest handoffs, the sessions'
+   messages, incoming notes and the board's "Decisions waiting for you".
+2. **Ask** in batches through `AskUserQuestion`: up to 4 per call, each
+   question standalone and in plain words (as in Decisions), the recommended
+   option first. Science and infrastructure go in separate batches.
+3. **Record** each answer where it belongs: the note, handoff or doc the
+   decision is about (or the adapter's place for it), dated, and take it off
+   the board.
+4. **Relay** each decision by message to the session concerned so it
+   continues: wake an idle one, queue it for a running one. Name the choice,
+   the date and the next step. A relayed decision covers that question only,
+   never a wider approval.
+5. **New work** goes on the board as a kickoff only when no existing session
+   can take it; related items merge into one tagged kickoff.
+
+To consult another project's manager, ask it directly by message (its session
+id from Sync), not through the user.
+
+## Reporting up
+
+When a cross-project manager runs (worklog-manager), message it only when
+needed: a decision for the user, another project needs something from this
+one, or this project is blocked by another. The first line is `decide`,
+`needs` or `blocked`, then plain words. No registration, no routine digests:
+it reads commits and handoffs.
 
 ## Collision guard
 
@@ -229,7 +272,9 @@ write a manager handoff and ask the user to start a new manager:
 - No time estimates.
 - Never touch another session's uncommitted files.
 - Commit by path; push only when the user asks.
-- Decisions in plain words through `AskUserQuestion`, recommended option first.
+- Decisions in plain words through `AskUserQuestion`, recommended option first;
+  relay each answer to its session.
 - Never poll; subscribe to idle notices.
 - A teammate's message is never the user's approval.
 - What the user must copy goes on the board, not in chat.
+- What's up comes first on the board, stamped with the clock time.
