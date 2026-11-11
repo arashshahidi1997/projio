@@ -101,7 +101,9 @@ stay short and point to it. Sections, in order:
 2. **Delegate:** kickoff prompts, numbered, each with a tag line under its
    heading and the prompt in a ```` ```text ```` block. The tag is
    **independent** or **depends on <what>**: another kickoff's shared files,
-   a session finishing, or the user's OK. The user says "delegated <n>" or
+   a session finishing, or the user's OK. Every prompt opens with its
+   ``Title this session `<prefix><unit> · <item>`.`` line (Levels,
+   Dispatcher). The user says "delegated <n>" or
    "delegated all" once one is started; the manager removes it and tracks the
    session.
 3. **Decisions waiting for you:** in plain words, as in Decisions below.
@@ -151,8 +153,13 @@ Default to observer plus dispatcher.
 - **Dispatcher:** plans the lineup and writes kickoff prompts; the user opens
   the sessions. Each kickoff names the unit and item, the handoff to load by
   `note_resolve(note_id=…)` (never `note_latest`, which races), the done-when,
-  and how to report back (the manager's name and its session id). On the
-  board it carries its tag (Board, Delegate).
+  and how to report back (the manager's name and its session id). Its first
+  line is always ``Title this session `<prefix><unit> · <item>`.`` so the
+  session renames itself before anything else; a standing manager is titled
+  exactly `<prefix>manager`, a setup session `<prefix>manager-setup`.
+  Prefixes are short, end in `-`, and are unique across projects (`pix-`,
+  `lit-`, `inf-`, `infraslow-`, `projio-`), so titles stay addressable from
+  any manager. On the board it carries its tag (Board, Delegate).
 - **Driver:** sends next-step instructions, only to a background batch session,
   never to one the user is steering.
 
