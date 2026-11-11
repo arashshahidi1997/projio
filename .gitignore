@@ -17,12 +17,6 @@ build/
 .codex/config.toml
 .ipynb_checkpoints/
 .mcp.json
-
-# Exception: starter repos are templates whose .mcp.json /
-# .claude/settings.json must be visible.
-!docs/deliverables/starters/**/.mcp.json
-!docs/deliverables/starters/**/.claude/settings.json
-
 .pipeio/runs.json
 .projio.mkdocs.yml
 .projio/biblio/logs/
@@ -38,9 +32,14 @@ build/
 .vscode/mcp.json
 docs/deliverables/reports/*/_files/
 docs/deliverables/reports/*/_freeze/
-docs/pipelines/mkdocs.yml
 site/
 # <<< projio <<<
+
+# Exception: starter repos are templates whose .mcp.json /
+# .claude/settings.json must be visible (outside the projio block so sync keeps it).
+!docs/deliverables/starters/**/.mcp.json
+!docs/deliverables/starters/**/.claude/settings.json
+
 .gitnexus
 
 # manager board and other untracked scratch files

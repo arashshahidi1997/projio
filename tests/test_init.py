@@ -252,3 +252,9 @@ def test_gitignore_includes_quarto_report_caches() -> None:
     entries = _gitignore_entries_for_framework("mkdocs")
     assert "docs/deliverables/reports/*/_freeze/" in entries
     assert "docs/deliverables/reports/*/_files/" in entries
+
+
+def test_gitignore_tracks_generated_sub_navs() -> None:
+    """Generated sub-nav mkdocs.yml files are tracked so a clean checkout builds."""
+    assert not any(e.endswith("mkdocs.yml") and e.startswith("docs/")
+                   for e in _gitignore_entries_for_framework("mkdocs"))
