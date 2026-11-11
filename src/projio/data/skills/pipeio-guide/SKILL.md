@@ -267,9 +267,9 @@ Marimo notebooks have no `.ipynb`/MyST pair: `pipeio_nb_publish` runs
 `marimo export html` (which executes the notebook) into `.build/notebooks/`,
 and `pipeio_docs_collect` picks that HTML up when the entry has
 `publish_html: true` (collect never executes notebooks). `pipeio_nb_publish`
-and `pipeio_nb_snapshot` run marimo in the project env (auto-resolved, e.g.
-`pixi run python -m marimo`; override with `python_bin`), so the MCP server
-env does not need marimo.
+and `pipeio_nb_snapshot` run marimo in the project env (resolved from the
+runner `runtime_conventions()` reports; override with `python_bin`), so the
+MCP server env does not need marimo.
 
 `pipeio_nb_open` is the one-call launcher for agent/human pairing: it starts
 `marimo edit --headless --no-token --host 0.0.0.0` on an auto-picked free port
