@@ -1,6 +1,7 @@
 """Tests for projio.mcp.rag — MCP wrapper delegation, error handling, availability."""
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 from unittest import mock
@@ -314,3 +315,119 @@ class TestIndexioBuildStatus:
             result = indexio_build_status(job_id)
         assert result["status"] == "failed"
         assert "crashed" in result.get("error", "").lower()
+
+
+# ---------------------------------------------------------------------------
+# corpus_list — bounded counting (chromadb >= 1.5 "too many SQL variables")
+# ---------------------------------------------------------------------------
+
+SQLITE_MAX_VARIABLES = 32766
+
+
+class _BigCollection:
+    """Fake chroma collection larger than SQLite's variable limit.
+
+    Any get() that would return more rows than the limit raises, as chromadb
+    1.5.x does on real stores.
+    """
+
+    def __init__(self, sizes: dict[str, int]) -> None:
+        self.sizes = sizes
+        self.calls: list[dict] = []
+
+    def count(self) -> int:
+        return sum(self.sizes.values())
+
+    def get(self, where=None, include=None, limit=None, offset=None):
+        self.calls.append({"where": where, "include": include, "limit": limit, "offset": offset})
+        n = self.sizes.get(where["corpus"], 0) if where else self.count()
+        start = offset or 0
+        stop = n if limit is None else min(n, start + limit)
+        rows = max(0, stop - start)
+        if rows > SQLITE_MAX_VARIABLES:
+            raise RuntimeError("too many SQL variables")
+        result = {"ids": [f"id{i}" for i in range(start, start + rows)]}
+        if include and "metadatas" in include:
+            result["metadatas"] = [{"corpus": where["corpus"] if where else ""}] * rows
+        return result
+
+
+def _corpus_list_with(collection: _BigCollection, manifest, corpora: list[str],
+                      persist_directory: str = "/fake/store", **kwargs):
+    config = mock.Mock(sources=[mock.Mock(corpus=c) for c in corpora])
+    store_cfg = mock.Mock(persist_directory=persist_directory)
+    store_cfg.name = "local"
+    db = mock.Mock(_collection=collection)
+    with mock.patch("projio.mcp.rag._get_config", return_value=("/fake/cfg.yaml", "/fake")), \
+         mock.patch("indexio.config.load_indexio_config", return_value=config), \
+         mock.patch("indexio.config.resolve_store", return_value=store_cfg), \
+         mock.patch("langchain_chroma.Chroma", return_value=db) as chroma, \
+         mock.patch("indexio.build.load_status_manifest", return_value=manifest):
+        result = corpus_list(**kwargs)
+    result["_chroma_opened"] = chroma.called
+    return result
+
+
+def _write_chroma_sqlite(directory: Path, sizes: dict[str, int], unlabeled: int = 0) -> None:
+    """Minimal chroma.sqlite3 with the two tables corpus_list reads."""
+    import sqlite3
+
+    con = sqlite3.connect(directory / "chroma.sqlite3")
+    con.execute("CREATE TABLE embeddings (id INTEGER PRIMARY KEY, embedding_id TEXT)")
+    con.execute(
+        "CREATE TABLE embedding_metadata (id INTEGER, key TEXT, string_value TEXT,"
+        " PRIMARY KEY (id, key))"
+    )
+    row = 0
+    for corpus, n in [*sizes.items(), ("", unlabeled)]:
+        for _ in range(n):
+            row += 1
+            con.execute("INSERT INTO embeddings VALUES (?, ?)", (row, f"id{row}"))
+            if corpus:
+                con.execute("INSERT INTO embedding_metadata VALUES (?, 'corpus', ?)", (row, corpus))
+            con.execute("INSERT INTO embedding_metadata VALUES (?, 'source_id', 'x')", (row,))
+    con.commit()
+    con.close()
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("indexio") is None or importlib.util.find_spec("langchain_chroma") is None,
+    reason="needs indexio and langchain_chroma",
+)
+class TestCorpusList:
+    SIZES = {"biblio": 33024, "codelib": 46230, "docs": 903}
+    MANIFEST = {"built_at": "2026-11-10T16:32:05", "partial": True, "sources": {
+        "papers": {"corpus": "biblio", "chunks": 33024},
+        "lib_a": {"corpus": "codelib", "chunks": 40000},
+        "lib_b": {"corpus": "codelib", "chunks": 6230},
+        "docs": {"corpus": "docs", "chunks": 903},
+    }}
+
+    def test_default_reads_manifest_without_opening_store(self) -> None:
+        coll = _BigCollection(self.SIZES)
+        result = _corpus_list_with(coll, self.MANIFEST, ["biblio", "codelib", "docs"])
+        assert result["counted_from"] == "manifest"
+        assert result["partial"] is True
+        assert {r["corpus"]: r["chunks"] for r in result["corpora"]} == self.SIZES
+        assert not result["_chroma_opened"] and coll.calls == []
+
+    def test_exact_counts_sqlite_above_variable_limit(self, tmp_path: Path) -> None:
+        sizes = {"biblio": SQLITE_MAX_VARIABLES + 7000, "docs": 120}
+        _write_chroma_sqlite(tmp_path, sizes, unlabeled=5)
+        coll = _BigCollection({})
+        manifest = {"sources": {"papers": {"corpus": "biblio", "chunks": 10}}}
+        result = _corpus_list_with(coll, manifest, ["biblio", "docs"],
+                                   persist_directory=str(tmp_path), exact=True)
+        assert result["counted_from"] == "store"
+        assert {r["corpus"]: r["chunks"] for r in result["corpora"]} == {**sizes, "(other)": 5}
+        assert result["manifest_drift"] == sum(sizes.values()) + 5 - 10
+        assert not result["_chroma_opened"]
+
+    def test_no_manifest_falls_back_to_paged_chroma_api(self) -> None:
+        # /fake/store has no chroma.sqlite3, so the chroma API path is used.
+        coll = _BigCollection({**self.SIZES, "old": 50})
+        result = _corpus_list_with(coll, None, ["biblio", "codelib", "docs"])
+        counts = {r["corpus"]: r["chunks"] for r in result["corpora"]}
+        assert result["counted_from"] == "store-api"
+        assert counts == {**self.SIZES, "(other)": 50}
+        assert all(c["limit"] and c["include"] == [] for c in coll.calls)

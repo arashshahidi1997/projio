@@ -67,8 +67,80 @@ def rag_query_multi(queries: list[str], corpus: str = "", k: int = 5) -> JsonDic
     return json_dict(payload)
 
 
-def corpus_list() -> JsonDict:
-    """List indexed corpora with document counts."""
+_COUNT_PAGE = 5000
+
+
+def _count_where(collection: Any, where: dict[str, Any]) -> int:
+    """Count chunks matching *where*, paging ids so no query exceeds SQLite's variable limit."""
+    n = 0
+    offset = 0
+    while True:
+        ids = collection.get(where=where, include=[], limit=_COUNT_PAGE, offset=offset)["ids"] or []
+        n += len(ids)
+        if len(ids) < _COUNT_PAGE:
+            return n
+        offset += _COUNT_PAGE
+
+
+def _manifest_corpus_counts(manifest: dict[str, Any] | None) -> dict[str, int] | None:
+    """Chunks per corpus from the build status manifest, or None if absent."""
+    if not manifest or not isinstance(manifest.get("sources"), dict):
+        return None
+    counts: dict[str, int] = {}
+    for stats in manifest["sources"].values():
+        corpus = stats.get("corpus", "")
+        counts[corpus] = counts.get(corpus, 0) + int(stats.get("chunks", 0) or 0)
+    return counts
+
+
+def _sqlite_corpus_counts(persist_directory: Path) -> tuple[dict[str, int], int]:
+    """Chunks per corpus and total, read-only from chroma's sqlite file.
+
+    One GROUP BY over the metadata table: does not open the collection, so
+    the HNSW files (GBs on large stores) are never loaded.
+    """
+    import sqlite3
+
+    db_path = persist_directory / "chroma.sqlite3"
+    if not db_path.exists():
+        raise FileNotFoundError(db_path)
+    con = sqlite3.connect(f"{db_path.as_uri()}?mode=ro", uri=True)
+    try:
+        total = con.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0]
+        rows = con.execute(
+            "SELECT string_value, COUNT(*) FROM embedding_metadata"
+            " WHERE key = 'corpus' GROUP BY string_value"
+        ).fetchall()
+    finally:
+        con.close()
+    return {c or "": n for c, n in rows}, total
+
+
+def _store_corpus_counts(persist_directory: Path, corpora: set[str]) -> tuple[dict[str, int], int]:
+    """Chunks per corpus and total through the chroma API (paged, bounded)."""
+    from langchain_chroma import Chroma
+
+    # No embedding function: counting needs no model.
+    collection = Chroma(persist_directory=str(persist_directory))._collection
+    counts = {c: _count_where(collection, {"corpus": c}) for c in sorted(corpora)}
+    return counts, collection.count()
+
+
+def corpus_list(exact: bool = False) -> JsonDict:
+    """List indexed corpora with chunk counts.
+
+    By default the counts come from the build status manifest
+    (``indexio.status.json``) without opening the store, which is instant
+    even on large stores on network filesystems. With ``exact=True``, or when
+    there is no manifest, the store is counted: one read-only query on
+    chroma's sqlite file, falling back to paged id-only chroma queries.
+    Never fetches all metadata at once (chromadb >= 1.5 fails on large
+    stores with "too many SQL variables").
+
+    Args:
+        exact: Count chunks in the store instead of reading the manifest.
+    """
+    from indexio.build import load_status_manifest
     from indexio.config import load_indexio_config, resolve_store
 
     config_path, root = _get_config()
@@ -78,26 +150,40 @@ def corpus_list() -> JsonDict:
     except FileNotFoundError:
         return json_dict({"corpora": [], "error": "index store not found — run: indexio build"})
 
-    from langchain_chroma import Chroma
-    from indexio.query import make_embeddings
+    persist_directory = Path(store_cfg.persist_directory)
+    result: dict[str, Any] = {"store": store_cfg.name, "persist_directory": str(persist_directory)}
+    try:
+        manifest = load_status_manifest(persist_directory)
+    except Exception:
+        manifest = None
+    manifest_counts = _manifest_corpus_counts(manifest)
 
-    embeddings = make_embeddings(config.embedding_model)
-    db = Chroma(
-        embedding_function=embeddings,
-        persist_directory=str(store_cfg.persist_directory),
-    )
-    collection = db._collection
-    all_meta = collection.get(include=["metadatas"])["metadatas"] or []
-    counts: dict[str, int] = {}
-    for meta in all_meta:
-        corpus = (meta or {}).get("corpus", "")
-        counts[corpus] = counts.get(corpus, 0) + 1
+    if manifest_counts is not None and not exact:
+        counts = manifest_counts
+        result["counted_from"] = "manifest"
+        result["built_at"] = manifest.get("built_at", "")
+        result["partial"] = bool(manifest.get("partial", False))
+    else:
+        try:
+            counts, total = _sqlite_corpus_counts(persist_directory)
+            result["counted_from"] = "store"
+        except Exception:
+            corpora = {src.corpus for src in config.sources} | set(manifest_counts or {})
+            counts, total = _store_corpus_counts(persist_directory, corpora)
+            result["counted_from"] = "store-api"
+        rest = total - sum(counts.values())
+        if rest > 0:
+            # Chunks without a corpus, or (store-api) one no longer configured.
+            counts["(other)"] = rest
+        if manifest_counts is not None:
+            drift = total - sum(manifest_counts.values())
+            if drift:
+                result["manifest_drift"] = drift
 
-    return json_dict({
-        "store": store_cfg.name,
-        "persist_directory": str(store_cfg.persist_directory),
-        "corpora": [{"corpus": c, "chunks": n} for c, n in sorted(counts.items())],
-    })
+    counts = {c: n for c, n in counts.items() if n}
+    result["total_chunks"] = sum(counts.values())
+    result["corpora"] = [{"corpus": c, "chunks": n} for c, n in sorted(counts.items())]
+    return json_dict(result)
 
 
 def indexio_sources_list() -> JsonDict:
