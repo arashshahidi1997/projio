@@ -1611,12 +1611,18 @@ def _scaffold_claude(root: Path, component_dir: Path) -> None:
     update_claude_permissions(root, dry_run=False)
 
     # .mcp.json — MCP server config for Claude Code
-    from .mcp.config_gen import write_mcp_config
+    from .mcp.config_gen import stale_managed_entries, write_mcp_config
     mcp_json = root / ".mcp.json"
     if not mcp_json.exists():
         write_mcp_config(root, yes=True)
     else:
         print(f"  [skip] .mcp.json already exists")
+        stale = stale_managed_entries(mcp_json)
+        if stale:
+            print(
+                f"  [hint] .mcp.json entries {', '.join(stale)} run projio's server "
+                "with another interpreter; `projio mcp-config --yes` updates them"
+            )
 
     # CLAUDE.md — project context with tool routing
     claude_md = root / "CLAUDE.md"

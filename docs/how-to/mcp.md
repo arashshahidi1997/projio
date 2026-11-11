@@ -49,6 +49,10 @@ If `runtime.python_bin` is not set, `projio mcp-config` falls back to the curren
 }
 ```
 
+### Merging into an existing file
+
+If `.mcp.json` already exists, projio merges into it. It writes its own `projio` (and `worklog`) entries. Any other entry that runs `-m projio.mcp.server`, such as a lab hub with its own `PROJIO_ROOT`, gets the same interpreter, and any entry that runs `-m worklog.mcp_server` gets the `worklog-mcp` command. Their `env` is kept. Entries for other servers are not changed. The preview lists each `[add]` and `[update]` and warns about any command that still runs from a conda env, so running `projio mcp-config -C . --yes` once moves every projio-managed server to the current runtime.
+
 ### Custom output path
 
 ```bash

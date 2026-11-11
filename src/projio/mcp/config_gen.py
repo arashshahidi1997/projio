@@ -7,6 +7,7 @@ canonical list of ``McpServerDef`` built from project config.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import sys
 from dataclasses import dataclass, field
@@ -96,21 +97,121 @@ def _merge_json(existing_text: str | None, payload: dict) -> dict:
     return existing
 
 
+_PROJIO_MODULE = "projio.mcp.server"
+_WORKLOG_MODULE = "worklog.mcp_server"
+_CONDA_ENV_RE = re.compile(r"/(?:ana|mini)?conda\d*/envs/|/(?:mamba|mini)forge\d*/envs/", re.I)
+
+
+def _entry_module(entry: Any) -> str | None:
+    """Return the module an entry runs with ``python -m <module>``, if any."""
+    if not isinstance(entry, dict):
+        return None
+    args = entry.get("args") or []
+    if not isinstance(args, list):
+        return None
+    for i, arg in enumerate(args[:-1]):
+        if arg == "-m":
+            return args[i + 1]
+    return None
+
+
+def refresh_managed_entries(
+    servers: dict[str, Any], generated: dict[str, Any],
+) -> None:
+    """Point projio-managed entries that projio did not generate at the current runtime.
+
+    An entry that runs ``-m projio.mcp.server`` (e.g. a lab hub with its own
+    ``PROJIO_ROOT``) gets the generated ``projio`` command.  An entry that runs
+    ``-m worklog.mcp_server`` gets the generated ``worklog`` command and args
+    (the ``worklog-mcp`` script when it is on PATH).  ``env`` is kept, and any
+    other entry is left untouched.  Mutates *servers* in place.
+    """
+    projio_def = generated.get("projio")
+    worklog_def = generated.get("worklog")
+    for name, entry in servers.items():
+        if name in generated:
+            continue
+        module = _entry_module(entry)
+        if module == _PROJIO_MODULE and projio_def:
+            entry["command"] = projio_def["command"]
+        elif module == _WORKLOG_MODULE and worklog_def:
+            entry["command"] = worklog_def["command"]
+            entry["args"] = list(worklog_def.get("args", []))
+
+
+def _describe_changes(old: dict[str, Any], new: dict[str, Any]) -> list[str]:
+    """One line per server entry that is added or whose command/args change."""
+    lines: list[str] = []
+    for name, entry in new.items():
+        before = old.get(name)
+        if before is None:
+            lines.append(f"  [add] {name}: {entry.get('command')}")
+            continue
+        if not isinstance(before, dict) or not isinstance(entry, dict):
+            continue
+        if before.get("command") != entry.get("command"):
+            lines.append(
+                f"  [update] {name}: {before.get('command')} -> {entry.get('command')}"
+            )
+        elif before.get("args") != entry.get("args"):
+            lines.append(f"  [update] {name}: args {before.get('args')} -> {entry.get('args')}")
+    return lines
+
+
+def _conda_warnings(servers: dict[str, Any]) -> list[str]:
+    """Warn about entries whose command still runs from a conda env."""
+    return [
+        f"  [warn] {name}: command runs from a conda env ({entry.get('command')})"
+        for name, entry in servers.items()
+        if isinstance(entry, dict) and _CONDA_ENV_RE.search(str(entry.get("command", "")))
+    ]
+
+
 def _write_json(path: Path, payload: dict, *, dry_run: bool = False) -> Path:
-    """Write JSON payload to *path*, merging with existing content."""
+    """Write JSON payload to *path*, merging with existing content.
+
+    Existing entries that run projio's or worklog's server are pointed at the
+    current runtime (see :func:`refresh_managed_entries`); the change list and
+    any conda warnings are printed before the file.
+    """
     existing_text = path.read_text(encoding="utf-8") if path.exists() else None
+    old = _merge_json(existing_text, {})
     merged = _merge_json(existing_text, payload)
+    report: list[str] = []
+    for key, generated in payload.items():
+        section = merged.get(key, {})
+        refresh_managed_entries(section, generated)
+        report += _describe_changes(old.get(key, {}) or {}, section)
+        report += _conda_warnings(section)
     rendered = json.dumps(merged, indent=2) + "\n"
 
     if dry_run:
         print(f"Would write {path}")
+        for line in report:
+            print(line)
         print(rendered)
         return path
 
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(rendered, encoding="utf-8")
+    for line in report:
+        print(line)
     print(f"[OK] wrote {path}")
     return path
+
+
+def stale_managed_entries(path: Path, *, python_bin: str | None = None) -> list[str]:
+    """Names of ``-m projio.mcp.server`` entries in *path* not run by the current interpreter."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, ValueError):
+        return []
+    servers = data.get("mcpServers") or {}
+    python = python_bin or sys.executable
+    return [
+        name for name, entry in servers.items()
+        if _entry_module(entry) == _PROJIO_MODULE and entry.get("command") != python
+    ]
 
 
 # ---------------------------------------------------------------------------
