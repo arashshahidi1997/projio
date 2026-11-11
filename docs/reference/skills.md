@@ -31,6 +31,7 @@ Skills also ship with installed packages that declare a `projio.skills` entry po
 | Skill | Purpose |
 |-------|---------|
 | `literature-discovery` | Search the paper corpus for methods, parameters, validation plots |
+| `literature-audit` | Audit coverage for a topic: relevant held papers, papers one import away in a shared corpus, and fetch-needed papers from the citation graph |
 | `codelib-discovery` | Search the code-library catalog for reusable implementations |
 | `rag-query` | Run a focused semantic search across any corpus |
 | `biblio-batch-curate` | A batch of papers from references to extracted, compiled, indexed (shipped by biblio) |
