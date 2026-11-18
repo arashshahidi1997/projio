@@ -1,0 +1,24 @@
+# Manager config: the machine keys the project-manager helpers (incoming.py, round.py, procs.py) read.
+# Lives at .claude/manager.yml (any project) or .projio/manager.yml (a projio project); $MANAGER_CONFIG overrides.
+# Every key has a default and a folder that does not exist is skipped. Check what is in use with
+#   python3 .claude/skills/project-manager/round.py config
+# The prose half of the adapter is the skill named in adapter_skill.
+prefix: "{{prefix}}"                    # session titles start with it; the standing manager is "{{prefix}}manager"
+adapter_skill: {{prefix}}manager
+incoming:                               # notes other projects drop into this repo; leave dirs empty if none arrive
+  dirs: []                              # e.g. [docs/log/issue, docs/log/idea] in a projio project
+  title_prefix: "[from "                # a note titled "[from <project>] …" is incoming
+  body_markers: []                      # or a body line such as "### Source context: <project>"
+  open_statuses: [open]
+  cited_by:
+    globs: []                           # docs that cite note ids, e.g. ["docs/**/*.md"]
+    git_log: true                       # commit messages that cite note ids
+handoffs:
+  dir: {{handoffs_dir}}                 # one file per handoff: handoff-YYYYMMDD-HHMMSS-<slug>.md
+board:
+  path: .scratch/{{prefix}}manager-board.md   # gitignored; `round.py board` rewrites it
+units:                                  # group paths so two sessions in one unit show as a collision
+  - {name: code, paths: [src, tests]}
+  - {name: docs, paths: [docs, README.md]}
+procs:
+  protect: ["^SCREEN", "^tmux"]         # process groups the housekeeping survey never proposes to kill

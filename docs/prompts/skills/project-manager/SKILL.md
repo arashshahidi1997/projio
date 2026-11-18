@@ -1,13 +1,14 @@
 ---
 name: project-manager
 description: >
-  Core procedure for a manager session in a projio project: one that knows what
+  Core procedure for a manager session in any git project (projio or not): one that knows what
   came in from other projects, which sessions run and what they finished, and
   what the user should decide or start next. Use when the user asks for an
   overview or orchestration, or opens the standing manager session
   (`<prefix>manager`). Always entered through the project's adapter skill
-  (named in `.projio/manager.yml`), which says what the units of work are.
-  Also defines the three-line report work sessions send the manager at wrap.
+  (named in the manager config, `.projio/manager.yml` or `.claude/manager.yml`),
+  which says what the units of work are; `manager-setup` creates both. Also
+  defines the three-line report work sessions send the manager at wrap.
 metadata:
   short-description: Manager core - incoming notes, session states, board, handoffs, decisions, restart
   tags: [manager, orchestration, sessions, handoff, workflow]
@@ -31,16 +32,39 @@ time estimates**.
 
 This file is the core. The project's **adapter** fills in the rest:
 
-- `.projio/manager.yml`: machine keys the helpers read (title `prefix`, the
+- the **manager config**: machine keys the helpers read (title `prefix`, the
   incoming note folders and signals, the handoff folder, the `board` path,
-  `units` for grouping paths, protected processes).
+  `units` for grouping paths, protected processes). The helpers use the first
+  that exists of `$MANAGER_CONFIG`, `.projio/manager.yml` (projio) and
+  `.claude/manager.yml` (any other project). Every key has a default and a
+  folder that does not exist is skipped, so git and a handoff folder are
+  enough. `round.py config` shows what is in use.
 - the adapter skill (`adapter_skill` in that file, usually `<prefix>manager`):
   the units of work and where their state lives, which files belong to the
   sessions (the manager never edits them), the collision unit, the
   integration step, the opener and wrap skills, standing approvals the user
   gave (dated), and any project-specific round sections.
 
-Read the adapter skill before the first round.
+Read the adapter skill before the first round. A project without a manager
+yet gets one from the `manager-setup` skill.
+
+## projio or not
+
+Most of this file works in any git project. Where it names projio, use the
+generic equivalent:
+
+| projio | any other project |
+|---|---|
+| config `.projio/manager.yml` | `.claude/manager.yml` |
+| `note_resolve(note_id=…)` to load a handoff | read the handoff file by its path |
+| handoff as a notio note (`note_create` of type handoff) | a file in `handoffs.dir` named `handoff-YYYYMMDD-HHMMSS-<slug>.md`, from `manager-setup/templates/handoff.md` |
+| incoming notes in `docs/log/issue`, `docs/log/idea` | `incoming.dirs`, often none: then skip round step 1 |
+| `projio sync` installs this skill into `.claude/skills/` | copy this skill's folder (and `manager-setup`) into `.claude/skills/` |
+| `skill_read("project-manager")` | read this file |
+| work sessions wrap with `session-wrap` | the session commits by path, writes a handoff from the template and sends the three-line report (below) |
+
+The helpers are Python 3.9+ stdlib only (PyYAML is used when present) and
+import nothing from projio.
 
 ## Two forms
 
@@ -57,8 +81,10 @@ restart, trust the files.
 ## A round
 
 Run one at the start, when an idle notice arrives, and when the user asks. The
-helpers are in this skill's folder (`.claude/skills/project-manager/` after
-`projio sync`); all are read-only except `round.py board`, which rewrites the
+helpers are in this skill's folder, the base directory Claude Code shows when
+the skill loads (`.claude/skills/project-manager/` after `projio sync` or a
+copy; a plugin's folder when installed as one; the commands below assume the
+first). All are read-only except `round.py board`, which rewrites the
 gitignored board.
 
 1. **Incoming:** `python3 .claude/skills/project-manager/incoming.py`. Notes
@@ -84,7 +110,7 @@ gitignored board.
 ## Board
 
 One gitignored markdown file per project, `board.path` in
-`.projio/manager.yml` (default `.scratch/<prefix>manager-board.md`). The
+the manager config (default `.scratch/<prefix>manager-board.md`). The
 manager rewrites it every round and after every event (a session started,
 wrapped or asked something; a decision made), and keeps it open in the side
 pane with `show_pane(pane="file", path=<board>)`. When `show_pane` does
@@ -155,7 +181,8 @@ Default to observer plus dispatcher.
   notify_when_idle=true)` and no message. Never poll.
 - **Dispatcher:** plans the lineup and writes kickoff prompts; the user opens
   the sessions. Each kickoff names the unit and item, the handoff to load by
-  `note_resolve(note_id=…)` (never `note_latest`, which races), the done-when,
+  `note_resolve(note_id=…)` (never `note_latest`, which races) or, without
+  projio, by its path, the done-when,
   and how to report back (the manager's name and its session id). Its first
   line is always ``Title this session `<prefix><unit> · <item>`.`` so the
   session renames itself before anything else; a standing manager is titled
@@ -283,7 +310,8 @@ write a manager handoff and ask the user to start a new manager:
   `status: consumed`;
 - sections: How to resume · What finished · Decisions the user made (don't
   re-ask) · Open, for the next manager · Kickoff snippet;
-- the kickoff loads the handoff by `note_resolve(note_id="<id>")`, titles the
+- the kickoff loads the handoff by `note_resolve(note_id="<id>")` (without
+  projio: by its path), titles the
   session `<prefix>manager`, and runs the adapter skill.
 
 ## Hard rules

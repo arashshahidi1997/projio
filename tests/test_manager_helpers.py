@@ -259,3 +259,140 @@ def test_board_skeleton_delegate_names_codes(repo: Path) -> None:
     _board(repo)
     text = (repo / ".scratch" / "demo-manager-board.md").read_text()
     assert "### <CODE> · <session title>" in text and "delegated <CODE>" in text and "<n>" not in text
+
+
+# ---- generic projects: no .projio, no notio, maybe no PyYAML ----
+
+SETUP = HELPERS.parent / "manager-setup"
+
+
+def _no_yaml(tmp: Path) -> dict:
+    """An environment in which `import yaml` fails, as in a project without PyYAML."""
+    fake = tmp / "noyaml"
+    fake.mkdir(exist_ok=True)
+    (fake / "yaml.py").write_text("raise ImportError('no PyYAML here')\n")
+    import os
+    return {**os.environ, "PYTHONPATH": str(fake)}
+
+
+def _run_env(repo: Path, env: dict, script: str, *args: str) -> str:
+    return subprocess.run([sys.executable, str(HELPERS / script), *args], cwd=repo, check=True,
+                          capture_output=True, text=True, env=env).stdout
+
+
+def _template_config(**fill: str) -> str:
+    text = (SETUP / "templates" / "manager.yml").read_text()
+    for k, v in fill.items():
+        text = text.replace("{{%s}}" % k, v)
+    assert "{{" not in text
+    return text
+
+
+@pytest.fixture
+def generic(tmp_path: Path) -> Path:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    _git(repo, "config", "user.email", "t@example.org")
+    _git(repo, "config", "user.name", "t")
+    (repo / "src").mkdir()
+    (repo / "src" / "a.py").write_text("x = 1\n")
+    _git(repo, "add", "src/a.py")
+    _git(repo, "commit", "-q", "-m", "feat: first")
+    return repo
+
+
+def _handoff(repo: Path, folder: str, ts: str, series: str, sha: str = "") -> None:
+    h = repo / folder / f"handoff-{ts}-setup.md"
+    h.parent.mkdir(parents=True, exist_ok=True)
+    h.write_text(f"---\ntitle: \"{series} handoff\"\nseries: {series}\nstatus: open\ngit_commit: {sha}\n---\n")
+
+
+def test_generic_layout_from_template_without_pyyaml(generic: Path, tmp_path: Path) -> None:
+    env = _no_yaml(tmp_path)
+    (generic / ".claude").mkdir()
+    (generic / ".claude" / "manager.yml").write_text(_template_config(prefix="gen-", handoffs_dir="docs/handoffs"))
+    (generic / ".gitignore").write_text(".scratch/\n")
+    sha = _git(generic, "rev-parse", "HEAD").strip()
+    _handoff(generic, "docs/handoffs", "20261118-120000", "manager", sha)
+    (generic / "src" / "a.py").write_text("x = 2\n")
+    _git(generic, "commit", "-q", "-am", "fix: after the watermark")
+
+    cfg = _run_env(generic, env, "round.py", "config")
+    assert ".claude/manager.yml (layout generic)" in cfg
+    assert "gen-manager" in cfg and "docs/handoffs" in cfg and "gitignored" in cfg and "NOT" not in cfg
+
+    out = _run_env(generic, env, "round.py")
+    assert "manager" in out.split("## since")[0]
+    since = out.split("## since")[1]
+    assert "manager handoff 20261118-120000" in since and "fix: after the watermark" in since
+    assert "[code]" in since
+
+    assert "no incoming note folders" in _run_env(generic, env, "incoming.py")
+
+    board = subprocess.run([sys.executable, str(HELPERS / "round.py"), "board"], cwd=generic, check=True,
+                           capture_output=True, text=True, env=env)
+    assert "not gitignored" not in board.stderr
+    text = (generic / ".scratch" / "gen-manager-board.md").read_text()
+    assert text.startswith("# gen-manager board") and "## Delegate" in text
+
+
+def test_generic_without_config_uses_defaults(generic: Path) -> None:
+    _handoff(generic, "docs/handoffs", "20261118-120000", "core")
+    (generic / "lib").mkdir()
+    (generic / "lib" / "b.py").write_text("y = 1\n")
+    cfg = _run(generic, "round.py", "config")
+    assert "none, defaults only (layout generic)" in cfg and "docs/handoffs" in cfg
+    out = _run(generic, "round.py")
+    assert "core" in out.split("## since")[0]
+    assert "lib" in out.split("## dirty")[1]               # units default to top-level folders
+    assert "no incoming note folders" in _run(generic, "incoming.py")
+    assert json.loads(_run(generic, "incoming.py", "--json"))["notes"] == []
+
+
+def test_generic_missing_handoff_folder(generic: Path) -> None:
+    out = _run(generic, "round.py", "handoffs")
+    assert "docs/handoffs not found" in out
+
+
+def test_manager_config_env_wins(generic: Path) -> None:
+    import os
+    (generic / ".claude").mkdir()
+    (generic / ".claude" / "manager.yml").write_text('prefix: "a-"\n')
+    (generic / "ops.json").write_text(json.dumps({"prefix": "b-", "handoffs": {"dir": "ops/handoffs"}}))
+    env = {**os.environ, "MANAGER_CONFIG": "ops.json"}
+    cfg = _run_env(generic, env, "round.py", "config")
+    assert "ops.json" in cfg and "'b-'" in cfg and "ops/handoffs" in cfg
+
+
+def test_projio_layout_same_without_pyyaml(repo: Path, tmp_path: Path) -> None:
+    _note(repo, "issue", "20261101-100000", "[from alpha] a bug")
+    with_yaml = _run(repo, "round.py", "config") + _run(repo, "incoming.py")
+    without = _run_env(repo, _no_yaml(tmp_path), "round.py", "config") + _run_env(repo, _no_yaml(tmp_path), "incoming.py")
+    assert with_yaml == without
+    assert ".projio/manager.yml (layout projio)" in with_yaml and "docs/log/handoff" in with_yaml
+
+
+@pytest.mark.parametrize("source", ["projio", "template"])
+def test_read_yaml_matches_pyyaml(source: str) -> None:
+    yaml = pytest.importorskip("yaml")
+    sys.path.insert(0, str(HELPERS))
+    try:
+        from _common import read_yaml
+    finally:
+        sys.path.pop(0)
+    if source == "projio":
+        text = (Path(__file__).resolve().parents[1] / ".projio" / "manager.yml").read_text()
+    else:
+        text = _template_config(prefix="gen-", handoffs_dir="docs/handoffs")
+    text += ("quoted: 'it''s' # a comment\nflow: {a: [1, 2], b: \"x, y\"}\nempty:\nnested:\n  - name: u\n"
+             "    paths: [p]\n  - plain\nflag: false\n")
+    assert read_yaml(text) == yaml.safe_load(text)
+
+
+def test_skill_folders_are_projio_free() -> None:
+    for folder in (HELPERS, SETUP):
+        for f in folder.rglob("*.py"):
+            assert not re.search(r"^\s*(from|import)\s+projio", f.read_text(), re.M), f
+    for t in ("manager.yml", "adapter.md", "handoff.md"):
+        assert (SETUP / "templates" / t).is_file()
