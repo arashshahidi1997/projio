@@ -121,8 +121,9 @@ BOARD_SECTIONS = [
      "As of {stamp}.\n\n- Running now: nothing yet.\n- Latest: nothing yet.\n- Waiting on you: nothing yet.\n"
      "- Next to start: nothing yet."),
     ("copy", "Delegate",
-     "Nothing to delegate. Kickoffs go here numbered, each with a tag line (**independent** or **depends on "
-     "<what>**) and a ```text block; say \"delegated <n>\" or \"delegated all\" once one is started."),
+     "Nothing to delegate. Each kickoff goes here under `### <CODE> · <session title>` (a short unique code, "
+     "e.g. SPD), with a tag line (**independent** or **depends on <CODE or what>**) and a ```text block; say "
+     "\"delegated <CODE>\" or \"delegated all\" once started."),
     ("decisions", "Decisions waiting for you", "_None._"),
     ("sessions", "Sessions, by state", "| Session | State | Notes |\n|---|---|---|"),
     ("waiting", "Waiting on others", "_None._"),

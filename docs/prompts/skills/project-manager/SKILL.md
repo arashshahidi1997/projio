@@ -71,8 +71,9 @@ gitignored board.
    newest open handoff per series, commits since the last manager handoff's
    `git_commit`, and dirty paths grouped by unit. **Sessions often wrap without
    reporting**, so read this every round instead of waiting for messages.
-3. **Sessions:** `ListAgents`. Give every session a state, and run the
-   collision guard.
+3. **Sessions:** `ListAgents`, plus the client's session list where there
+   is one (`list_sessions` in the desktop app): `ListAgents` can miss running
+   sessions. Give every session a state, and run the collision guard.
 4. **The adapter's readers** for the project's own units of work.
 5. **Update the board** (see Board): run `round.py board`, write the round's
    kickoffs, decisions, session states and waits into it, and open it in the
@@ -98,14 +99,16 @@ stay short and point to it. Sections, in order:
    running now, latest results, waiting on the user, next to start.
    `round.py board` sets the stamp and gives the "Updated" line the same one;
    the manager rewrites the lines below it every round.
-2. **Delegate:** kickoff prompts, numbered, each with a tag line under its
-   heading and the prompt in a ```` ```text ```` block. The tag is
-   **independent** or **depends on <what>**: another kickoff's shared files,
-   a session finishing, or the user's OK. Every prompt opens with its
-   ``Title this session `<prefix><unit> · <item>`.`` line (Levels,
-   Dispatcher). The user says "delegated <n>" or
-   "delegated all" once one is started; the manager removes it and tracks the
-   session.
+2. **Delegate:** kickoff prompts, each headed `### <CODE> · <session title>`,
+   then its tag line, then the prompt in a ```` ```text ```` block. The code
+   is 2-5 letters or digits, mnemonic where possible (`SPD`, `TO13`, `REO`),
+   unique on the board and never reused once retired. The tag is
+   **independent** or **depends on <what>**: another kickoff by its code
+   ("depends on REO"), a session finishing, or the user's OK. Every prompt
+   opens with its ``Title this session `<prefix><unit> · <item>`.`` line
+   (Levels, Dispatcher). The user says "delegated <CODE>[, <CODE>]" or
+   "delegated all" once started; the manager removes those kickoffs and
+   tracks the sessions.
 3. **Decisions waiting for you:** in plain words, as in Decisions below.
 4. **Sessions, by state:** a table of session · state (running / waiting /
    parked / done) · notes.
@@ -241,17 +244,26 @@ uncommitted paths) and that the machine has room for a batch run (`free -g`).
 
 ## Report-back protocol (work sessions, at wrap)
 
-When `ListAgents` shows `<prefix>manager`, the wrapping session sends it three
-lines with `SendMessage(to="<prefix>manager", message=…)`:
+Every wrap, the session sends the manager three lines with
+`SendMessage(to=<address>, message=…)`:
 
 1. unit · item → done / partial
 2. blockers, `→ manager` items, decisions for the user, in plain words
 3. the handoff id
 
-It is a report, not a request for approval. Across machines, names do not
-resolve: send to the session id the manager gave in the kickoff prompt. If no
-channel works, the session's commits and handoff are the report; the manager
-finds them in round step 2.
+The address, first that works:
+
+1. the manager's session id from the kickoff prompt (also the only way across
+   machines, where names do not resolve);
+2. `ListAgents`: the name `<prefix>manager`;
+3. the client's session list (`list_sessions` in the desktop app): the exact
+   title `<prefix>manager`, not archived, running; send to its session id
+   (`local_…`). `ListAgents` can miss a running manager, e.g. one with Remote
+   Control on.
+
+Never skip the report because `ListAgents` missed the manager. If no address
+works, the commits and handoff are the report; the manager reads them in
+round step 2. It is a report, not a request for approval.
 
 ## Process survey
 

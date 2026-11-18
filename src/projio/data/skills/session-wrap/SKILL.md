@@ -159,19 +159,22 @@ research findings belong in notio result/idea notes, not memory.
 
 ## 6. Tell the manager (if one runs)
 
-If `.projio/manager.yml` sets a `prefix` and `ListAgents` shows a session named
-`<prefix>manager`, send it three lines with
-`SendMessage(to="<prefix>manager", message=…)`:
+If `.projio/manager.yml` sets a `prefix`, send the manager three lines with
+`SendMessage(to=<address>, message=…)`, every wrap, a partial one included:
 
 1. unit · item → done / partial
 2. blockers, items left for the manager (lessons, cross-project notes, tool
    issues), decisions for the user, in plain words
 3. the handoff id
 
-Across machines, names do not resolve: use the session id the manager gave in
-your kickoff prompt. No manager running, or nothing to say: skip. It is a
-report, not a request for approval (the `project-manager` skill has the
-protocol).
+The address, first that works: the manager's session id from your kickoff
+prompt (the only way across machines); the name `<prefix>manager` in
+`ListAgents`; the client's session list (`list_sessions` in the desktop app),
+exact title `<prefix>manager`, not archived, running, sent to its `local_…`
+id. `ListAgents` can miss a running manager, so never skip the report on its
+word alone. If no manager session exists, the handoff is the report: the
+manager reads handoffs and commits every round. It is a report, not a request
+for approval (the `project-manager` skill has the protocol).
 
 ## 7. Report
 

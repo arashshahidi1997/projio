@@ -235,3 +235,27 @@ def test_board_whats_up_restamps_and_keeps_lines(repo: Path, stamp_line: str, ke
         stamped = next(ln for ln in whatsup.splitlines() if "As of " in ln)
         assert stamped.endswith("As of %s%s" % (as_of, kept_tail))
     assert "**depends on** 2 finishing" in text
+
+
+def test_board_keeps_kickoff_code_headings(repo: Path) -> None:
+    board = repo / ".scratch" / "demo-manager-board.md"
+    board.parent.mkdir()
+    delegate = ("Say \"delegated SPD\" (or several codes, or \"delegated all\") once started.\n\n"
+                "### SPD · demo-core · speedup\n\n**independent**\n\n```text\nTitle this session `demo-core · speedup`.\n```\n\n"
+                "### TO13 · demo-docs · tour\n\n**depends on SPD**\n\n```text\nTitle this session `demo-docs · tour`.\n"
+                "## not a heading\n```")
+    board.write_text("# demo-manager board\n\n## What's up\n\nAs of 2026-11-01 09:00.\n\n## Delegate\n\n" + delegate
+                     + "\n\n## Sync\n\n- none yet\n")
+    _board(repo)
+    first = board.read_text()
+    assert _headings(first) == ["What's up", "Delegate", "Decisions waiting for you", "Sessions, by state",
+                                "Waiting on others", "Sync"]
+    assert delegate in first
+    _board(repo)
+    assert board.read_text().count("### SPD · demo-core · speedup") == 1
+
+
+def test_board_skeleton_delegate_names_codes(repo: Path) -> None:
+    _board(repo)
+    text = (repo / ".scratch" / "demo-manager-board.md").read_text()
+    assert "### <CODE> · <session title>" in text and "delegated <CODE>" in text and "<n>" not in text
