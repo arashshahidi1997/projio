@@ -23,6 +23,7 @@ build/
 .projio/filters/
 .projio/indexio/index/
 .projio/indexio/jobs/
+.projio/pipeio/cache/
 .projio/render/compiled.bib
 .projio/render/pandoc-defaults.yaml
 .projio/servers.json
