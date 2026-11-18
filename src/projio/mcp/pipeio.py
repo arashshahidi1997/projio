@@ -533,6 +533,12 @@ def pipeio_docs_collect() -> JsonDict:
     **overview.md convention:** If a flow has ``docs/overview.md`` but no
     ``docs/index.md``, overview.md is used as the flow index. If both exist,
     both are collected as separate pages. The source tree is never modified.
+
+    **Links:** relative links in collected pages are fixed for their new
+    location (mod facets under ``mods/``, other flows, site pages under
+    ``docs/``). Links to files outside the site, or to a ``report.md`` /
+    ``changelog.md`` that was not collected, are reduced to their label and
+    listed in ``link_warnings``.
     """
     if not _pipeio_available():
         return _unavailable("pipeio_docs_collect")

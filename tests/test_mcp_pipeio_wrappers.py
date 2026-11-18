@@ -495,3 +495,35 @@ def test_target_paths_passes_snakefile_and_project_python() -> None:
         python_bin="pixi run python",
     )
     assert result == {"path": "p"}
+
+
+def test_docs_collect_fixes_links_and_reports_dropped_ones(tmp_path) -> None:
+    """pipeio_docs_collect re-points moved links and lists the ones it drops."""
+    import yaml
+
+    pytest.importorskip("pipeio.docs")
+    flow = tmp_path / "code" / "pipelines" / "alpha"
+    (flow / "docs" / "detect").mkdir(parents=True)
+    (flow / "Snakefile").write_text("")
+    (flow / "config.yml").write_text("output_dir: derivatives/alpha\n")
+    (flow / "docs" / "index.md").write_text(
+        "# alpha\n\n[theory](detect/theory.md) · [report](report.md) · "
+        "[meeting](../../../../docs/log/m1.md)\n"
+    )
+    (flow / "docs" / "detect" / "theory.md").write_text("# Theory\n")
+    (tmp_path / "docs" / "log").mkdir(parents=True)
+    (tmp_path / "docs" / "log" / "m1.md").write_text("# m1\n")
+    (tmp_path / ".projio" / "pipeio").mkdir(parents=True)
+    (tmp_path / ".projio" / "pipeio" / "registry.yml").write_text(yaml.safe_dump(
+        {"flows": {"alpha": {"name": "alpha", "code_path": "code/pipelines/alpha",
+                             "config_path": "code/pipelines/alpha/config.yml"}}}
+    ))
+    with mock.patch("projio.mcp.pipeio.get_project_root", return_value=tmp_path), \
+         mock.patch("pipeio.docs.export_dag"), mock.patch("pipeio.docs.export_notebooks"):
+        result = pipeio_docs_collect()
+    page = (tmp_path / "docs" / "pipelines" / "alpha" / "index.md").read_text()
+    assert "[theory](mods/detect/theory.md)" in page
+    assert "[meeting](../../log/m1.md)" in page
+    assert "· report ·" in page
+    assert len(result["link_warnings"]) == 1
+    assert "report.md" in result["link_warnings"][0]
