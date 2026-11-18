@@ -106,6 +106,12 @@ gitignored board.
    side pane. Chat gets a short status (Incoming · Sessions · What finished ·
    Waiting on the user · Proposed next) that points to the board. Then batch
    the decisions into `AskUserQuestion`.
+6. **Proposed next, completion first:** in the chat's Proposed next and the
+   board's kickoffs, rank work that makes existing things whole before
+   expansion: open bugs and issues, partial or stub notes, untested work,
+   unpushed or uncommitted work, then anything else. New features and ideas
+   are parked in the backlog (say where), not proposed as kickoffs, unless
+   the user asks for them. The `always-complete` skill holds the full rule.
 
 ## Board
 

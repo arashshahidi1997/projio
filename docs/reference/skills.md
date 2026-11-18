@@ -75,6 +75,7 @@ Skills also ship with installed packages that declare a `projio.skills` entry po
 
 | Skill | Purpose |
 |-------|---------|
+| `always-complete` | "Always complete, never finished": complete what exists before expanding; read-only completeness check of any project |
 | `session-wrap` | End-of-session boundary: commit coherent units, write a handoff note + kickoff prompt, update memory. Fork per-project with `projio skill new session-wrap --from-ecosystem session-wrap` |
 
 ## Skill shape
