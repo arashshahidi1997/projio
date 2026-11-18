@@ -1099,10 +1099,43 @@ def _detect_site_framework(root: Path) -> str:
     return "mkdocs"
 
 
-def _gitignore_entries_for_framework(site_framework: str) -> list[str]:
+def _configured_site_dirs(root: Path) -> list[str]:
+    """Site output dirs from ``site.output_dir`` and ``site.mkdocs.site_dir`` (default ``site``)."""
+    try:
+        from .config import get_nested, load_effective_config
+        cfg = load_effective_config(root)
+    except Exception:
+        return ["site"]
+    dirs = [
+        get_nested(cfg, "site", "output_dir", default="site"),
+        get_nested(cfg, "site", "mkdocs", "site_dir", default="site"),
+    ]
+    return [str(d) for d in dirs if d] or ["site"]
+
+
+def _anchored_dir(path: str) -> str | None:
+    """``_site`` -> ``/_site/``: a pattern that matches only at the repo root."""
+    clean = str(path).replace("\\", "/").strip()
+    if clean.startswith("/") or ":" in clean:
+        return None  # outside the repo: nothing to ignore here
+    clean = clean.strip("/")
+    while clean.startswith("./"):
+        clean = clean[2:]
+    if not clean or clean == "." or clean.startswith(".."):
+        return None
+    return f"/{clean}/"
+
+
+def _gitignore_entries_for_framework(site_framework: str, site_dirs: list[str] | None = None) -> list[str]:
+    """Entries for the managed block.
+
+    Patterns without an inner slash match at any depth, so root-only paths are
+    anchored with a leading ``/``. ``.snakemake/``, ``*.ipynb`` and
+    ``.ipynb_checkpoints/`` stay unanchored: they appear inside flow dirs.
+    """
     entries = [
         # Claude Code / MCP
-        ".mcp.json",
+        "/.mcp.json",
         ".claude/settings.json",
         ".claude/commands/",
         ".projio/servers.json",
@@ -1131,10 +1164,13 @@ def _gitignore_entries_for_framework(site_framework: str) -> list[str]:
         "docs/deliverables/reports/*/_freeze/",
         "docs/deliverables/reports/*/_files/",
         # site
-        ".projio/site/",
+        ".projio/site/indexio_chat_hook.py",  # generated; the rest of .projio/site/ is trackable
         ".projio.mkdocs.yml",
-        "site/",
     ]
+    for site_dir in ["site", *(site_dirs or [])]:
+        anchored = _anchored_dir(site_dir)
+        if anchored:
+            entries.append(anchored)
     if site_framework == "sphinx":
         entries.extend(["docs/_build/", "docs/_build/html/"])
     return entries
@@ -1148,7 +1184,7 @@ def _ensure_projio_gitignore(root: Path, *, site_framework: str, dry_run: bool =
     with ``dry_run``).
     """
     path = root / ".gitignore"
-    block_lines = [_GITIGNORE_BEGIN, *sorted(dict.fromkeys(_gitignore_entries_for_framework(site_framework))), _GITIGNORE_END]
+    block_lines = [_GITIGNORE_BEGIN, *sorted(dict.fromkeys(_gitignore_entries_for_framework(site_framework, _configured_site_dirs(root)))), _GITIGNORE_END]
     block = "\n".join(block_lines) + "\n"
     if path.exists():
         text = path.read_text(encoding="utf-8")

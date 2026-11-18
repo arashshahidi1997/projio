@@ -393,6 +393,24 @@ def test_sync_gitignore_refreshes_stale_block_only(tmp_path: Path) -> None:
     assert gi.read_text(encoding="utf-8") == text
 
 
+def test_sync_gitignore_anchors_old_bare_site_line(tmp_path: Path) -> None:
+    from projio.init import _GITIGNORE_BEGIN, _GITIGNORE_END
+
+    (tmp_path / ".projio").mkdir()
+    (tmp_path / ".projio" / "config.yml").write_text(
+        "site:\n  output_dir: _site\n  mkdocs:\n    site_dir: _site\n", encoding="utf-8",
+    )
+    gi = tmp_path / ".gitignore"
+    gi.write_text(f"{_GITIGNORE_BEGIN}\n.mcp.json\nsite/\n{_GITIGNORE_END}\n", encoding="utf-8")
+
+    assert _sync_gitignore(tmp_path) == "updated"
+    lines = gi.read_text(encoding="utf-8").splitlines()
+    assert "site/" not in lines
+    assert ".mcp.json" not in lines
+    assert {"/site/", "/_site/", "/.mcp.json"} <= set(lines)
+    assert ".projio/site/" not in lines  # only the generated chat hook is ignored there
+
+
 def test_sync_gitignore_appends_block_when_missing(tmp_path: Path) -> None:
     from projio.init import _GITIGNORE_BEGIN
 

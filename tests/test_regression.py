@@ -29,7 +29,7 @@ def test_existing_init_scaffolds_workspace(tmp_path: Path) -> None:
     assert "MKDOCS" in mk_text and "?=" in mk_text and "-m mkdocs" in mk_text
     gitignore_text = (tmp_path / ".gitignore").read_text(encoding="utf-8")
     assert "# >>> projio >>>" in gitignore_text
-    assert "site/" in gitignore_text
+    assert "\n/site/\n" in gitignore_text
 
 
 def test_init_does_not_overwrite_existing_makefile_without_force(tmp_path: Path) -> None:
@@ -109,7 +109,7 @@ def test_existing_gitignore_projio_section_is_updated_not_duplicated(tmp_path: P
     text = gitignore.read_text(encoding="utf-8")
     assert text.count("# >>> projio >>>") == 1
     assert "old-entry/" not in text
-    assert "site/" in text
+    assert "\n/site/\n" in text
 
 
 def test_init_detects_existing_sphinx_site(tmp_path: Path) -> None:

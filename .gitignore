@@ -16,7 +16,6 @@ build/
 .claude/settings.json
 .codex/config.toml
 .ipynb_checkpoints/
-.mcp.json
 .pipeio/runs.json
 .projio.mkdocs.yml
 .projio/biblio/logs/
@@ -27,12 +26,13 @@ build/
 .projio/render/compiled.bib
 .projio/render/pandoc-defaults.yaml
 .projio/servers.json
-.projio/site/
+.projio/site/indexio_chat_hook.py
 .snakemake/
 .vscode/mcp.json
+/.mcp.json
+/site/
 docs/deliverables/reports/*/_files/
 docs/deliverables/reports/*/_freeze/
-site/
 # <<< projio <<<
 
 # Exception: starter repos are templates whose .mcp.json /

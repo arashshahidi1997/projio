@@ -254,6 +254,17 @@ def test_gitignore_includes_quarto_report_caches() -> None:
     assert "docs/deliverables/reports/*/_files/" in entries
 
 
+def test_gitignore_root_only_entries_are_anchored() -> None:
+    """A bare ``site/`` matched every dir named site (pixecog's .projio/site/)."""
+    entries = _gitignore_entries_for_framework("mkdocs", ["_site", "./build/out/", "/abs", "../up"])
+    assert "site/" not in entries
+    assert ".mcp.json" not in entries
+    assert {"/site/", "/_site/", "/build/out/", "/.mcp.json"} <= set(entries)
+    assert not any("abs" in e or ".." in e for e in entries)
+    # these appear inside flow dirs, so they stay unanchored on purpose
+    assert {".snakemake/", "*.ipynb", ".ipynb_checkpoints/"} <= set(entries)
+
+
 def test_gitignore_tracks_generated_sub_navs() -> None:
     """Generated sub-nav mkdocs.yml files are tracked so a clean checkout builds."""
     assert not any(e.endswith("mkdocs.yml") and e.startswith("docs/")
