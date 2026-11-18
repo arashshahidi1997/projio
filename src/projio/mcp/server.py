@@ -1673,14 +1673,19 @@ def pipeio_target_paths_tool(
     member: str = "",
     entities: dict[str, str] | None = None,
     expand: bool = False,
+    snakefile: bool | None = None,
+    python_bin: str = "",
 ):
-    """Resolve output paths for a flow's registry entries.
+    """Resolve output paths for a flow's registry entries, as the flow's BidsPaths builds them.
     Three modes: (1) no group -> list groups/members/patterns,
-    (2) group+member+entities -> resolve single path,
-    (3) expand=True -> glob all matching paths filtered by entities."""
+    (2) group+member+entities -> resolve single path (open wildcards in missing_entities),
+    (3) expand=True -> glob all matching paths filtered by entities.
+    Families the Snakefile adds at runtime are read by loading it in the project env
+    (snakefile=None: only when group is not in config.yml; cached after the first ~30 s)."""
     return pipeio.pipeio_target_paths(
         flow=flow, group=group, member=member,
         entities=entities, expand=expand,
+        snakefile=snakefile, python_bin=python_bin,
     )
 
 

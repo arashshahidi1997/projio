@@ -475,3 +475,23 @@ class TestPipeioExceptionHandling:
         ):
             result = pipeio_dag_export(flow="f")
         assert "error" in result
+
+
+def test_target_paths_passes_snakefile_and_project_python() -> None:
+    """pipeio_target_paths forwards snakefile and resolves the project python."""
+    with mock.patch.multiple(
+        "projio.mcp.pipeio",
+        _pipeio_available=mock.MagicMock(return_value=True),
+        get_project_root=mock.MagicMock(return_value=Path("/fake/root")),
+        _resolve_python_cmd=mock.MagicMock(return_value=["pixi", "run", "python"]),
+    ), mock.patch(
+        "pipeio.mcp.mcp_target_paths", create=True, return_value={"path": "p"},
+    ) as m:
+        result = pipeio_target_paths(flow="f", group="g", member="m",
+                                     entities={"subject": "1"}, snakefile=True)
+    m.assert_called_once_with(
+        Path("/fake/root"), flow="f", group="g", member="m",
+        entities={"subject": "1"}, expand=False, snakefile=True,
+        python_bin="pixi run python",
+    )
+    assert result == {"path": "p"}

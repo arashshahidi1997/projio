@@ -1644,20 +1644,34 @@ def pipeio_target_paths(
     member: str = "",
     entities: dict[str, str] | None = None,
     expand: bool = False,
+    snakefile: bool | None = None,
+    python_bin: str = "",
 ) -> JsonDict:
     """Resolve output paths for a flow's registry entries.
 
+    Paths match what the flow's ``BidsPaths`` builds (bids root first, then
+    sub-/ses-, the Snakefile's bids spec), so they are valid snakemake targets.
+
     Three modes:
     - No group: list available groups and members with path patterns.
-    - group + member + entities: resolve a single concrete path.
+    - group + member + entities: resolve a single concrete path; open
+      wildcards are listed in ``missing_entities``.
     - expand=True: glob for all matching paths on disk, filtered by entities.
+
+    Families the Snakefile adds at runtime (not in config.yml) are found by
+    loading the Snakefile in the project env with input discovery stubbed
+    (about 30 s the first time, then cached until a flow file changes).
 
     Args:
         flow: Flow name (optional).
         group: Registry group name (e.g. "preproc").
         member: Registry member name (e.g. "cleaned").
-        entities: Wildcard entities (e.g. {"sub": "01", "ses": "04"}).
+        entities: Wildcard entities (e.g. {"subject": "01", "session": "04"}).
         expand: If True, enumerate all matching paths on disk.
+        snakefile: True = use the Snakefile's registry, False = config.yml
+            only, None (default) = Snakefile only when group is not in config.yml.
+        python_bin: Project Python with snakemake + snakebids. Empty =
+            auto-resolve from project config (e.g. ``pixi run python``).
     """
     if not _pipeio_available():
         return _unavailable("pipeio_target_paths")
@@ -1668,6 +1682,8 @@ def pipeio_target_paths(
             root, flow=flow or None,
             group=group, member=member,
             entities=entities, expand=expand,
+            snakefile=snakefile,
+            python_bin=python_bin or " ".join(_resolve_python_cmd()),
         ))
     except Exception as exc:
         return json_dict({"error": str(exc)})

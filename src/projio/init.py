@@ -1157,6 +1157,7 @@ def _gitignore_entries_for_framework(site_framework: str, site_dirs: list[str] |
         ".projio/filters/",
         # pipeio (run state, snakemake cache, jupytext-paired notebooks)
         ".pipeio/runs.json",
+        ".projio/pipeio/cache/",  # pipeio_target_paths: registries read from Snakefiles
         ".snakemake/",
         "*.ipynb",
         ".ipynb_checkpoints/",
