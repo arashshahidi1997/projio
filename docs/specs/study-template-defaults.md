@@ -1,6 +1,6 @@
 # Study template defaults: Quarto site, analysis threads
 
-**Status:** draft, decisions taken with the user on 2026-11-19. No code until the user approves this spec.
+**Status:** approved by the user on 2026-11-19 (decisions taken with the user the same day). Follow-up kickoffs in §9.
 **Origin:** idea [[idea-arash-20260411-173908-283692]] (study profiles), triage handoff
 [[handoff-arash-20261119-165657-000000]].
 **Related specs:** [quarto-reports.md](quarto-reports.md), [deliverables.md](deliverables.md),
