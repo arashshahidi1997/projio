@@ -109,7 +109,9 @@ every `{{…}}` placeholder; a placeholder with nothing to say becomes a short
    whose first line is ``Title this session `<prefix>manager`.``, then: read
    the first manager handoff (step 7) by path (or `note_resolve` in projio),
    load the `<prefix>manager` skill, run a round, stay open as observer and
-   dispatcher, the push rule. Fill What's up and Sync (this setup session's id).
+   dispatcher, the push rule. Write Delegate's **Recommended now** block
+   (`MGR`: start the standing manager) and fill What's up and Sync (this
+   setup session's id).
 
 7. **Write the first manager handoff** from `templates/handoff.md` (in
    projio: a notio note of type handoff) with `series: manager`,

@@ -112,6 +112,8 @@ gitignored board.
    unpushed or uncommitted work, then anything else. New features and ideas
    are parked in the backlog (say where), not proposed as kickoffs, unless
    the user asks for them. The `always-complete` skill holds the full rule.
+   The board's **Recommended now** block (Board, Delegate) carries this
+   ranking: the kickoffs to start next, in order, and what to hold.
 
 ## Board
 
@@ -131,7 +133,12 @@ stay short and point to it. Sections, in order:
    running now, latest results, waiting on the user, next to start.
    `round.py board` sets the stamp and gives the "Updated" line the same one;
    the manager rewrites the lines below it every round.
-2. **Delegate:** kickoff prompts, each headed `### <CODE> · <session title>`,
+2. **Delegate:** opens with **Recommended now**: the manager's pick of
+   which kickoffs to start next, in order, each with a one-line reason
+   (`<CODE>`: why now), then **Hold**: what waits and why. The order is the
+   completion-first ranking of round step 6. The manager keeps it current
+   every round and after every event; a kickoff that starts or retires
+   leaves it. Then the kickoff prompts, each headed `### <CODE> · <session title>`,
    then its tag line, then the prompt in a ```` ```text ```` block. The code
    is 2-5 letters or digits, mnemonic where possible (`SPD`, `TO13`, `REO`),
    unique on the board and never reused once retired. The tag is
@@ -154,7 +161,8 @@ stay short and point to it. Sections, in order:
 the first time. On every run it regenerates the blocks between
 `<!-- auto:… -->` markers (newest open handoff per series and uncommitted
 paths by unit under Sessions, `git log @{u}..` under Sync), stamps What's
-up and the "Updated" line with the current time, and keeps the
+up and the "Updated" line with the current time, puts a **Recommended
+now** placeholder on top of Delegate when the board has none, and keeps the
 hand-written text of every section, including sections it does not know and
 renamed headings. It warns when the board is not gitignored. Edit the
 hand-written parts directly; never edit inside the auto markers.

@@ -28,7 +28,9 @@ are in `{{config_path}}`.
 ## Board
 
 `{{board_path}}` (gitignored). Refresh with `round.py board`, open it with
-`show_pane(pane="file", path="{{board_path}}")`. Other managers in Sync:
+`show_pane(pane="file", path="{{board_path}}")`. Delegate opens with
+**Recommended now** (the kickoffs to start next, in order, each with its
+reason, then what to hold); keep it current every round. Other managers in Sync:
 {{other_managers}}.
 
 **Decisions (drill).** Record each answer, dated, in {{decision_place}}.

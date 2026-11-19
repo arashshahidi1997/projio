@@ -261,6 +261,46 @@ def test_board_skeleton_delegate_names_codes(repo: Path) -> None:
     assert "### <CODE> · <session title>" in text and "delegated <CODE>" in text and "<n>" not in text
 
 
+def _delegate(text: str) -> str:
+    return text.split("## Delegate")[1].split("\n## ")[0]
+
+
+def test_board_skeleton_delegate_opens_with_recommended_now(repo: Path) -> None:
+    _board(repo)
+    delegate = _delegate((repo / ".scratch" / "demo-manager-board.md").read_text())
+    assert delegate.strip().startswith("**Recommended now**")
+    assert "Hold" in delegate and delegate.index("Recommended now") < delegate.index("### <CODE>")
+
+
+def test_board_adds_recommended_now_once_and_keeps_hand_written(repo: Path) -> None:
+    board = repo / ".scratch" / "demo-manager-board.md"
+    board.parent.mkdir()
+    kickoff = "### SPD · demo-core · speedup\n\n**independent**\n\n```text\nTitle this session `demo-core · speedup`.\n```"
+    board.write_text("# demo-manager board\n\n## Delegate\n\n" + kickoff + "\n")
+    _board(repo)
+    delegate = _delegate(board.read_text())
+    assert delegate.strip().startswith("**Recommended now**") and kickoff in delegate
+    _board(repo)
+    assert board.read_text().count("Recommended now") == 1
+
+    picked = ("**Recommended now** (manager's pick, in order):\n1. SPD: open bug, small.\n"
+              "Hold: the backlog ideas, until SPD is done.")
+    board.write_text("# demo-manager board\n\n## Delegate\n\n" + picked + "\n\n" + kickoff + "\n")
+    _board(repo)
+    text = board.read_text()
+    assert _delegate(text).strip().startswith(picked)
+    assert text.count("Recommended now") == 1 and "none yet" not in _delegate(text)
+
+
+def test_skill_texts_name_recommended_now() -> None:
+    core = (HELPERS / "SKILL.md").read_text()
+    delegate = core.split("2. **Delegate:**")[1].split("\n3. ")[0]
+    assert "**Recommended now**" in delegate and "step 6" in delegate
+    assert "Recommended now" in core.split("6. **Proposed next")[1].split("\n## ")[0]
+    assert "Recommended now" in (SETUP / "templates" / "adapter.md").read_text()
+    assert "Recommended now" in (SETUP / "SKILL.md").read_text()
+
+
 # ---- generic projects: no .projio, no notio, maybe no PyYAML ----
 
 SETUP = HELPERS.parent / "manager-setup"

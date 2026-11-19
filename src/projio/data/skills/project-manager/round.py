@@ -20,6 +20,7 @@ Sections:
             The hand-written text of every section is kept; the blocks between `<!-- auto:… -->` markers
             (newest handoffs and dirty units under Sessions, unpushed commits under Sync) are regenerated.
             The "As of" line of What's up and the "Updated" line get the same stamp, the time of the rewrite.
+            Delegate gets a "Recommended now" placeholder on top when it has none; once written, it is kept.
             Warns when the board is not gitignored.
   config    the config file, layout (projio or generic) and resolved paths, and which of them exist
 """
@@ -128,7 +129,7 @@ BOARD_SECTIONS = [
      "As of {stamp}.\n\n- Running now: nothing yet.\n- Latest: nothing yet.\n- Waiting on you: nothing yet.\n"
      "- Next to start: nothing yet."),
     ("copy", "Delegate",
-     "Nothing to delegate. Each kickoff goes here under `### <CODE> · <session title>` (a short unique code, "
+     "{recommended}\n\nNothing to delegate. Each kickoff goes here under `### <CODE> · <session title>` (a short unique code, "
      "e.g. SPD), with a tag line (**independent** or **depends on <CODE or what>**) and a ```text block; say "
      "\"delegated <CODE>\" or \"delegated all\" once started."),
     ("decisions", "Decisions waiting for you", "_None._"),
@@ -137,6 +138,11 @@ BOARD_SECTIONS = [
     ("sync", "Sync", "This manager: {manager} · {host} · `?` (session id)\n\n"
                      "Other managers (`name · machine · session id · last contact`):\n\n- none yet"),
 ]
+# Delegate opens with the manager's pick; added on top when a board's Delegate has none, kept once hand-written.
+RECOMMENDED = ("**Recommended now** (the manager's pick, in order): none yet. One line per kickoff to start next, "
+               "`<CODE>`: why now (completion first: bugs, partial or untested work, uncommitted or unpushed work, "
+               "then the rest); then Hold: what waits and why.")
+HAS_RECOMMENDED = re.compile(r"recommended now", re.I)
 STRUCTURE = re.compile(r"^(\s*[-*|]|\s*\d+\.|```|###)", re.M)  # content beyond a placeholder sentence
 # The stamp line of What's up: "As of <date time>" or a stale "As of this afternoon", optionally in *…* or _…_.
 AS_OF = re.compile(r"^([*_]*\s*)As of (?:\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?|[^.(*_\n]*[^.(*_\n\s])", re.M)
@@ -209,7 +215,8 @@ def write_board(cfg: dict, rows: list[dict]) -> str:
         with open(path, encoding="utf-8") as fh:
             old = fh.read()
     preamble, sections = parse_board(old)
-    defaults = {k: (h, d.format(manager=manager, host=host, stamp=now)) for k, h, d in BOARD_SECTIONS}
+    defaults = {k: (h, d.format(manager=manager, host=host, stamp=now, recommended=RECOMMENDED))
+                for k, h, d in BOARD_SECTIONS}
     known: dict = {k: [] for k in defaults}
     after: dict = {None: []}  # unknown sections, by the known key they followed
     last = None
@@ -224,6 +231,9 @@ def write_board(cfg: dict, rows: list[dict]) -> str:
         real = [e for e in entries if STRUCTURE.search(e[1])]
         known[key] = real or entries[:1] or [defaults[key]]
     known["whatsup"] = [(h, stamp_whatsup(t, now)) for h, t in known["whatsup"]]
+    if not any(HAS_RECOMMENDED.search(t) for _, t in known["copy"]):
+        h, t = known["copy"][0]
+        known["copy"][0] = (h, RECOMMENDED + ("\n\n" + t if t.strip() else ""))
     auto = {
         "sessions": [_auto("handoffs", "Newest open handoff per series", handoff_lines(rows)),
                      _auto("dirty", "Uncommitted, by unit", dirty_lines(cfg))],
