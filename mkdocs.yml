@@ -105,6 +105,7 @@ nav:
       - Agent Interface Layers: specs/agent-interface-layers.md
       - Skills Evolution (proposal): specs/skills-evolution.md
       - Deliverables: specs/deliverables.md
+      - Study Template Defaults (draft): specs/study-template-defaults.md
       - Research Orchestration (Questio):
           - specs/research-orchestration/design.md
           - Loop Mechanisms: specs/research-orchestration/loop-mechanisms.md
