@@ -211,6 +211,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     p_skill_list = skill_sub.add_parser("list", help="List available skills.")
+    p_skill_export = skill_sub.add_parser(
+        "export", help="Export the shared portable skills as a light Claude Code marketplace.",
+    )
+    p_skill_export.add_argument("--marketplace", required=True, metavar="DIR",
+                                help="Directory to write (e.g. a projio-plugins working copy), outside projio.")
     p_skill_usage = skill_sub.add_parser(
         "usage", help="How often each skill is used, from this project's Claude Code transcripts (read-only).",
     )
@@ -534,6 +539,13 @@ def main(argv: Iterable[str] | None = None) -> None:
             from .skill_usage import print_usage
             raise SystemExit(print_usage(args.root, since=args.since, unused=args.unused,
                                          as_json=args.json, transcripts=args.transcripts))
+        if args.skill_command == "export":
+            from .marketplace import export_marketplace
+            result = export_marketplace(args.marketplace, root=args.root)
+            for plugin, skills in result["plugins"].items():
+                print(f"[OK] {plugin}: {', '.join(skills)}")
+            print(f"[OK] wrote {result['dest']}")
+            return
         from .skills import skill_new, skill_list
         if args.skill_command == "new":
             skill_new(args.root, args.name, from_ecosystem=args.from_ecosystem)

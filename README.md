@@ -29,10 +29,10 @@ Conda is also supported. See [CLAUDE.md](CLAUDE.md) for the `make dev` / `make t
 
 ### Skills without projio
 
-Some of projio's Claude Code skills (a project manager session, its setup, a session wrap and the "always complete, never finished" check) work in any git project. Install them as a plugin, no projio needed:
+Some of projio's Claude Code skills (a project manager session, its setup, a session wrap and the "always complete, never finished" check) work in any git project. Install them as a plugin from the light [projio-plugins](https://github.com/arashshahidi1997/projio-plugins) repository, no projio needed:
 
 ```text
-/plugin marketplace add arashshahidi1997/projio
+/plugin marketplace add arashshahidi1997/projio-plugins
 /plugin install projio-workflow@projio
 ```
 
