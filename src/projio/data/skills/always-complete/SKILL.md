@@ -10,6 +10,7 @@ description: >
 metadata:
   short-description: Complete what exists before expanding; read-only completeness check
   tags: [workflow, philosophy, completeness, planning, backlog]
+  portable: true
 ---
 
 # Always complete, never finished

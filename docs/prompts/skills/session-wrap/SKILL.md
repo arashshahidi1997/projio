@@ -1,7 +1,7 @@
 ---
 name: session-wrap
 description: >
-  End-of-session routine for any projio project: commit this session's coherent
+  End-of-session routine for any git project, projio or not: commit this session's coherent
   code/docs (without sweeping in other sessions' WIP or regenerated derivative
   data), run the right verification gates, write a handoff note plus a
   ready-to-paste kickoff prompt, and update cross-session memory so the next
@@ -10,9 +10,11 @@ description: >
 metadata:
   short-description: Clean session boundary, commit, handoff note, kickoff prompt
   tags: [session, handoff, commit, workflow]
+  portable: true
   tooling:
     mcp:
       - server: projio
+        optional: true
         tools:
           - git_status
           - datalad_status
@@ -34,14 +36,24 @@ verify gates matter) depend on the project.
 
 This is the generic ecosystem version. A project with unusual structure (a daemon
 that mutates the tree, an MCP rooted at a different repo, a bespoke handoff
-mechanism) should fork this into a tailored local copy:
+mechanism) should fork this into a tailored local copy: in projio,
+`projio skill new session-wrap --from-ecosystem session-wrap` drops an editable
+copy under `.projio/skills/session-wrap/` which overrides this one; elsewhere,
+copy this folder into `.claude/skills/` and edit it to encode the project's quirks.
 
-```
-projio skill new session-wrap --from-ecosystem session-wrap
-```
+## projio or not
 
-That drops an editable copy under `.projio/skills/session-wrap/` which overrides
-this one; edit it to encode the project's quirks.
+The steps name projio's MCP tools. Without projio (no projio MCP server), use the
+generic equivalent:
+
+| projio | any other project |
+|---|---|
+| `project_context()`, `ecosystem_status()` | read the README and the build files |
+| `git_status()`, `datalad_status()` | `git status --short`; `datalad status` only if `datalad` is installed and the repo is a dataset |
+| `runtime_conventions()`, `site_build()` | the project's own test and docs commands (README, Makefile, `pixi.toml`, `package.json`) |
+| `note_types()` + `note_create(...)` handoff | a file in the manager config's handoff folder (`.claude/manager.yml`), else `docs/log/handoff/`, named `handoff-YYYYMMDD-HHMMSS-<slug>.md`, from `manager-setup/templates/handoff.md` when that skill is installed |
+| `note_resolve(note_id=…)` in the kickoff | the handoff file's path |
+| manager config `.projio/manager.yml` | `.claude/manager.yml` |
 
 ## 0. Read the ground truth first
 
@@ -101,8 +113,8 @@ still in flight (the poll command and how to check).
 - Stage **explicit paths only — NEVER `git add -A` / `git add .`**. A blanket add
   scoops up other sessions' WIP and any subdataset data.
 - One commit per coherent change (e.g. one per flow or feature), with clear
-  conventional-commit subjects. End every commit body with:
-  `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
+  conventional-commit subjects. End every commit body with the attribution
+  lines the harness gives (e.g. `Co-Authored-By: Claude …`).
 - **Commit by explicit path too:** `git commit -m "…" -- <your paths>`, never a
   bare `git commit` of the whole index (sessions share the checkout's index, so a
   peer's staged file would be swept in). Afterwards check `git show --stat HEAD`.
@@ -159,7 +171,7 @@ research findings belong in notio result/idea notes, not memory.
 
 ## 6. Tell the manager (if one runs)
 
-If `.projio/manager.yml` sets a `prefix`, send the manager three lines with
+If the manager config (`.projio/manager.yml` or `.claude/manager.yml`) sets a `prefix`, send the manager three lines with
 `SendMessage(to=<address>, message=…)`, every wrap, a partial one included:
 
 1. unit · item → done / partial

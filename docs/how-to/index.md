@@ -10,3 +10,4 @@ Task-oriented guides that help you solve a specific problem.
 - [Build the documentation site](site.md) — generate and serve the MkDocs site
 - [Build a Quarto report](build-a-report.md) — scaffold and render an executable deliverable report
 - [Presentio cross-project imports](presentio-cross-project.md) — pull deck sections from another project
+- [Use projio's skills without projio](skills-without-projio.md): install the portable skills as a Claude Code plugin in any git project

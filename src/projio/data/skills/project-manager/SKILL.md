@@ -12,9 +12,11 @@ description: >
 metadata:
   short-description: Manager core - incoming notes, session states, board, handoffs, decisions, restart
   tags: [manager, orchestration, sessions, handoff, workflow]
+  portable: true
   tooling:
     mcp:
       - server: projio
+        optional: true
         tools:
           - note_resolve
           - note_read

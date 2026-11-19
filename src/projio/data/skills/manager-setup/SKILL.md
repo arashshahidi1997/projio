@@ -11,6 +11,7 @@ description: >
 metadata:
   short-description: Set up the project-manager adapter, board and first kickoff in any project
   tags: [manager, orchestration, setup, adapter]
+  portable: true
 ---
 
 # manager-setup

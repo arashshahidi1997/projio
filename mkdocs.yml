@@ -71,6 +71,7 @@ nav:
       - Set Up A Dev Environment: how-to/dev-environment.md
       - Build A Quarto Report: how-to/build-a-report.md
       - Presentio Cross-Project Imports: how-to/presentio-cross-project.md
+      - Use Skills Without projio: how-to/skills-without-projio.md
   - Explanation:
       - explanation/index.md
       - Ecosystem: explanation/ecosystem.md

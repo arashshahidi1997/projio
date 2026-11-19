@@ -1,0 +1,21 @@
+{
+  "name": "projio",
+  "owner": {"name": "Arash Shahidi"},
+  "metadata": {"description": "projio's portable Claude Code skills: they need git only, not projio. Versioned with projio."},
+  "plugins": [
+    {
+      "name": "projio-workflow",
+      "source": "./",
+      "strict": false,
+      "version": "0.1.3",
+      "description": "A standing manager session for any git project (incoming notes, session states, board, handoffs), its setup, a session wrap that commits by path and writes a handoff, and the 'always complete, never finished' check. Needs git and Python 3.9+, not projio.",
+      "author": {"name": "Arash Shahidi"},
+      "homepage": "https://arashshahidi1997.github.io/projio/",
+      "repository": "https://github.com/arashshahidi1997/projio",
+      "license": "MIT",
+      "keywords": ["manager", "orchestration", "sessions", "handoff", "workflow"],
+      "skills": ["./src/projio/data/skills/project-manager", "./src/projio/data/skills/manager-setup", "./src/projio/data/skills/session-wrap", "./src/projio/data/skills/always-complete"],
+      "mcpServers": {}
+    }
+  ]
+}

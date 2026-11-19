@@ -27,6 +27,17 @@ pixi run docs                  # build the docs site
 
 Conda is also supported. See [CLAUDE.md](CLAUDE.md) for the `make dev` / `make test` path and the `code.runner: conda` project-level fallback.
 
+### Skills without projio
+
+Some of projio's Claude Code skills (a project manager session, its setup, a session wrap and the "always complete, never finished" check) work in any git project. Install them as a plugin, no projio needed:
+
+```text
+/plugin marketplace add arashshahidi1997/projio
+/plugin install projio-workflow@projio
+```
+
+Updates arrive with projio releases: `/plugin marketplace update projio`, then update the plugin. See [Use projio's skills without projio](https://arashshahidi1997.github.io/projio/how-to/skills-without-projio/).
+
 ## Quick start
 
 ```bash
