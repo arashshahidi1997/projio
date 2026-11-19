@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+## 0.2.0 — 2026-11-19
+
+### Added
+- **Skills as Claude Code skills**: `projio sync` writes every discovered skill into `.claude/skills/<name>/` with its description (a generated, read-only copy); `projio sync --check` reports drift and lints skill text; skills read env and run commands from the project; per-project `skills.disabled`; `projio skills usage` reports skill use from transcripts.
+- **Package skills**: skills shipped by installed packages are discovered (the `projio.skills` entry point, e.g. biblio's).
+- **Plugin marketplace**: the portable skills are shared as the `projio-workflow` plugin, versioned with projio, and exported as the light `projio-plugins` marketplace.
+- **New ecosystem skills**: `project-manager` (core, with `incoming`, `round` and `procs` helpers and the manager board), `manager-setup` (any git project), `always-complete`, `literature-audit`, `projio-remotes`; `session-wrap` commits by path and reports to a running manager.
+- **pixi as the environment runner** (`code.runner: pixi | conda | none`, auto-detected); conda kept as legacy compatibility.
+- **CLI-first tasks**: `projio tasks`; no generated Makefile or Taskfile.
+- **MCP**: `PROJIO_MCP_TOOLS` selects a reduced tool set per server entry; `pipeio_nb_open` (headless marimo server); existing projio/worklog server entries are pointed at the current runtime.
+- **biblio group per the agent-interface spec**: `paper_lookup` and `biblio_job`; 34 biblio tools deprecated for one release (their descriptions name the replacement).
+- `questio: {enabled: false}` turns off questio's plan pages; deliverables indexes are their own sync step.
+
+### Changed
+- Extras floors raised to the current releases: `indexio>=0.1.2`, `biblio-tools>=0.4.1`, `notio>=0.2.0`, `codio-tools>=0.2.0`, `pipeio>=0.2.0` (`projio[all]` installed packages months old).
+- `fastmcp>=2.0,<4` (tested on fastmcp 3; fastmcp 4 is untested).
+
+### Fixed
+- `projio sync` refreshes the managed `.gitignore` block, and root-only entries are anchored.
+- `projio sync`: multi-file pandoc defaults handled and render errors no longer abort sync; mkdocs `!include` only for sub-sites that exist.
+- `corpus_list` counts without fetching all metadata.
+- `note_create` / `note_update` accept YAML or dict fields (dates kept as strings) and return the note id.
+- `pipeio_nb_publish` runs marimo in the project env.
+
 ## 0.1.3 — 2026-08-16
 
 <!-- Detailed change descriptions live in docs/log/commit/ notes.
