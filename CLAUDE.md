@@ -144,6 +144,8 @@ Projects organize code in three tiers with a promotion model (notebooks → scri
 
 `projio sync` auto-discovers `code/lib/*/` and registers in codio with `role=core`, `kind=internal`. It also detects `code/utils/` and sets `code.project_utils` in config. The `project_context()` MCP tool returns the active code tier configuration.
 
+Managed mirrors (third-party clones codio keeps for code reference) live in `.projio/codio/mirrors/`, gitignored and never committed; `repos.yml` keeps `url` + pinned `ref`, and `codio mirror sync` restores them on a fresh clone (`--update` pulls and re-pins).
+
 Codio's five-layer architecture: physical code → catalog (with `role: core|shared|external`) → project profile → curated notes → MCP query tools. See `docs/specs/pipeio/code-tiers.md` for the full spec.
 
 ### Bibliography Architecture

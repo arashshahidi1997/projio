@@ -5,84 +5,98 @@ repositories:
     storage: managed
     local_path: .projio/codio/mirrors/snakemake--snakemake
     default_branch: main
+    ref: f40c2af097998ba3cf72c80d133222bdb545a65f
   ourresearch--openalex-api-tutorials:
     url: https://github.com/ourresearch/openalex-api-tutorials
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/ourresearch--openalex-api-tutorials
     default_branch: main
+    ref: 1988d22c5499d6a1f68d85ef2902b600b555aaa5
   ourresearch--openalex-elastic-api:
     url: https://github.com/ourresearch/openalex-elastic-api
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/ourresearch--openalex-elastic-api
     default_branch: master
+    ref: 0301ff10cd11d495cf559563b20a28b1bd451e90
   ourresearch--openalex-docs:
     url: https://github.com/ourresearch/openalex-docs
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/ourresearch--openalex-docs
     default_branch: main
+    ref: 9a97b3dc550e046018a40b4df7924d455a918a1f
   ourresearch--openalex-documentation-scripts:
     url: https://github.com/ourresearch/openalex-documentation-scripts
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/ourresearch--openalex-documentation-scripts
     default_branch: main
+    ref: 6eb823cb893a55719b01753e82cb34bbe8bc0d94
   ourresearch--openalex-concept-tagging:
     url: https://github.com/ourresearch/openalex-concept-tagging
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/ourresearch--openalex-concept-tagging
     default_branch: main
+    ref: 49fd88916c80d75e7e889533b0458fa8a58bd730
   urschrei--pyzotero:
     url: https://github.com/urschrei/pyzotero
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/urschrei--pyzotero
     default_branch: main
+    ref: 39c6d2a3ac3309942ce6db5d8d8077ac21c6ea17
   zotero--zotero-schema:
     url: https://github.com/zotero/zotero-schema
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/zotero--zotero-schema
     default_branch: master
+    ref: 62e983a2e575fe9b9a3677ad7c9772080b67a1e4
   zotero--translators:
     url: https://github.com/zotero/translators
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/zotero--translators
     default_branch: master
+    ref: cfc69de47e1e1fb88122cbbba6c30f56d6ed63fe
   grobidorg--grobid:
     url: https://github.com/grobidOrg/grobid
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/grobidorg--grobid
     default_branch: master
+    ref: c929ca914658faaae8ea53ef853f892b1de097a9
   grobidorg--grobid-client-python:
     url: https://github.com/grobidOrg/grobid-client-python
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/grobidorg--grobid-client-python
     default_branch: master
+    ref: 2b0a245f095de0eac4d2079a2c0b73a3ff071afd
   kermitt2--biblio-glutton:
     url: https://github.com/kermitt2/biblio-glutton
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/kermitt2--biblio-glutton
     default_branch: master
+    ref: acda234c54b96889fabcfef401adb8185e92aabe
   ourresearch--oadoi:
     url: https://github.com/ourresearch/oadoi
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/ourresearch--oadoi
     default_branch: master
+    ref: 90d0dd9ad72b6bdf60861bd82e87dded49850225
   ourresearch--openalex-gui:
     url: https://github.com/ourresearch/openalex-gui
     hosting: github
     storage: managed
     local_path: .projio/codio/mirrors/ourresearch--openalex-gui
     default_branch: master
+    ref: c6e968328354484c01223b6e6d6dd59839b9eab9
   marimo-team--marimo:
     url: https://github.com/marimo-team/marimo
     hosting: github
