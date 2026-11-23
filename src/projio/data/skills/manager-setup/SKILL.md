@@ -91,8 +91,11 @@ every `{{…}}` placeholder; a placeholder with nothing to say becomes a short
 
 5. **Gitignore the board and install the core.**
    - Add the board's folder (`.scratch/`) to `.gitignore` unless
-     `git check-ignore -q <board>` already passes. In projio, outside the
-     `# >>> projio >>>` block (sync rewrites that block).
+     `git check-ignore -q <board>` already passes. In projio, `projio sync`
+     puts `/.scratch/` in the `# >>> projio >>>` block; never edit that block
+     by hand (sync rewrites it). `.scratch/` is the recommended home for all
+     scratch (drafts, reports, viewable outputs), since the Claude app's file
+     pane opens only files inside the project; it is never required.
    - projio layout with `projio` on PATH: `projio sync` (copies the core,
      this skill and the adapter into `.claude/skills/`). It also copies other
      skills; tell the user if other sessions have uncommitted skills.

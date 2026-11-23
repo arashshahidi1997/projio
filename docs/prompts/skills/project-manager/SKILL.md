@@ -131,7 +131,9 @@ gitignored board.
 ## Board
 
 One gitignored markdown file per project, `board.path` in
-the manager config (default `.scratch/<prefix>manager-board.md`). The
+the manager config (default `.scratch/<prefix>manager-board.md`; `.scratch/`
+at the project root is where all scratch goes, because the app's file pane
+opens only files inside the project). The
 manager rewrites it every round and after every event (a session started,
 wrapped or asked something; a decision made), and keeps it open in the side
 pane with `show_pane(pane="file", path=<board>)`. When `show_pane` does

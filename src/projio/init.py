@@ -1139,6 +1139,8 @@ def _gitignore_entries_for_framework(site_framework: str, site_dirs: list[str] |
         ".claude/settings.json",
         ".claude/commands/",
         ".projio/servers.json",
+        # scratch: drafts, reports, boards, viewable outputs (the app's file pane opens only in-project files)
+        "/.scratch/",
         # Codex
         ".codex/config.toml",
         # VS Code / Copilot MCP
@@ -2096,6 +2098,14 @@ and `runtime_conventions()` to see the project's commands and environments.
     if rows:
         table_header = "| Intent | MCP tool | Do NOT |\n|--------|----------|--------|\n"
         sections.append("## Agent tool routing\n\n" + table_header + "\n".join(rows) + "\n")
+
+    sections.append("""\
+## Scratch files
+
+Drafts, reports, correction lists, viewable HTML/PNG outputs and manager boards go
+in `.scratch/` at the project root (gitignored), not `/tmp` or a personal scratch
+folder: the Claude app's file pane opens only files inside the project.
+""")
 
     # Workflow guidance
     if has_biblio or has_codio or has_indexio:

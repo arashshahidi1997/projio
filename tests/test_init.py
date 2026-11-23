@@ -254,6 +254,13 @@ def test_gitignore_includes_quarto_report_caches() -> None:
     assert "docs/deliverables/reports/*/_files/" in entries
 
 
+def test_gitignore_includes_scratch_and_claude_md_says_where_scratch_goes(tmp_path: Path) -> None:
+    from projio.init import _generate_claude_md
+    assert "/.scratch/" in _gitignore_entries_for_framework("mkdocs")
+    assert "`.scratch/`" in _generate_claude_md(tmp_path)
+    assert not (tmp_path / ".scratch").exists()
+
+
 def test_gitignore_root_only_entries_are_anchored() -> None:
     """A bare ``site/`` matched every dir named site (pixecog's .projio/site/)."""
     entries = _gitignore_entries_for_framework("mkdocs", ["_site", "./build/out/", "/abs", "../up"])
