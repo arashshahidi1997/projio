@@ -182,8 +182,9 @@ If the manager config (`.projio/manager.yml` or `.claude/manager.yml`) sets a `p
 The address, first that works: the manager's exact name `<prefix>manager`
 (managers keep Remote Control on, so the name reaches them across machines;
 add the short `[ref]` only when two sessions share the name); on the same
-machine, its `local_…` id from your kickoff prompt or from the client's
-session list (`list_sessions` in the desktop app: exact title
+machine, its `local_…` id from your kickoff prompt, from the app's note
+when the manager started this session itself (nested under it), or from the
+client's session list (`list_sessions` in the desktop app: exact title
 `<prefix>manager`, not archived, running). A `local_…` id does not cross
 machines. `ListAgents` can miss a running manager, so never skip the report
 on its word alone. Do not turn this session's Remote Control on or off
@@ -200,7 +201,9 @@ State: the commits made, the handoff note path (from `note_create`), that memory
 was updated, and any background runs left polling. **End by surfacing the minimal
 kickoff snippet itself** (the literal one or two lines pointing at this handoff's
 path/id) in a copy-paste block, so the user drops it straight into a fresh
-session with no scrolling back to find it.
+session with no scrolling back to find it. Where a standing manager runs, the
+same snippet can go on its board as a kickoff; the manager then starts the
+session itself on the user's go where the client has `start_session`.
 
 ## Guardrails
 

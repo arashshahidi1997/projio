@@ -28,6 +28,13 @@ are in `{{config_path}}`.
 - Opener: {{opener}}. Wrap: {{wrap}}, ending with the three-line report to
   `{{prefix}}manager`.
 - Working copy: `{{repo}}`.
+- Starting sessions: on the user's go for a kickoff, the manager starts it
+  with `start_session` where the client has it (the core's Levels,
+  Dispatcher): nested, fresh, the kickoff as the prompt, sharing `{{repo}}`
+  with the "touch only your files, commit by path, switch no branch" line.
+  Without the tool, the user pastes the kickoff.
+- Sidebar: the manager files itself in the section `managers` (the core's
+  Start).
 
 ## Board
 

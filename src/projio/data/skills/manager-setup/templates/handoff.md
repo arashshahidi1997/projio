@@ -27,5 +27,5 @@ refs: []
 
 ## Kickoff snippet
 ```text
-Title this session `{{prefix}}manager`. Turn this session's Remote Control on if it is off and tell me in one line. Read the handoff {{handoffs_dir}}/handoff-{{timestamp}}-<slug>.md, then load the {{prefix}}manager skill (it loads the project-manager core) and run a round. Stay open as observer and dispatcher; decisions to me through AskUserQuestion; commit by path; {{push_rule}}.
+Title this session `{{prefix}}manager`. Turn this session's Remote Control on if it is off and tell me in one line. File this session in the sidebar section `managers` where the app has one and tell me in one line. Read the handoff {{handoffs_dir}}/handoff-{{timestamp}}-<slug>.md, then load the {{prefix}}manager skill (it loads the project-manager core) and run a round. Stay open as observer and dispatcher (start a kickoff's session yourself with start_session on my go where the app has it); decisions to me through AskUserQuestion; commit by path; {{push_rule}}.
 ```

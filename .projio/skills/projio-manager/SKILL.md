@@ -21,6 +21,13 @@ specific to projio. Machine keys are in `.projio/manager.yml`.
 - Standing manager: `projio-manager`.
 - Work sessions: `projio-<unit> · <CODE> · <item>`, for example `projio-core · PLUG · light marketplace`
   or `projio-core · skill sync drift`. Units are those in `.projio/manager.yml`.
+- Starting sessions: on the user's go, the manager starts a kickoff with
+  `start_session` (the core's Levels, Dispatcher): nested, fresh,
+  `use_worktree=false` on `/storage2/arash/projects/projio` with the "touch
+  only your files, commit by path, switch no branch" line; first trial
+  SCRT, decided 2026-11-24. Without the tool, the user pastes the kickoff.
+- Sidebar: the manager files itself in the section `managers` (the core's
+  Start; decided 2026-11-24).
 - Opener: `projio-orient` plus the issue or idea notes by id
   (`note_resolve(note_id=…)`). Wrap: `session-wrap`, which ends with the
   three-line report to `projio-manager` when it runs.

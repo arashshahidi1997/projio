@@ -132,7 +132,7 @@ BOARD_SECTIONS = [
      "{recommended}\n\nNothing to delegate. Each kickoff goes here under `### <CODE> · <session title>` (a short unique code, "
      "e.g. SPD; the title carries it too: `<prefix><unit> · <CODE> · <item>`, the prompt's first line "
      "Title this session `…`.), with a tag line (**independent** or **depends on <CODE or what>**) and a ```text block; say "
-     "\"delegated <CODE>\" or \"delegated all\" once started."),
+     "\"delegated <CODE>\" or \"delegated all\" once started (by you, or by the manager on your go)."),
     ("decisions", "Decisions waiting for you", "_None._"),
     ("sessions", "Sessions, by state", "| Session | State | Notes |\n|---|---|---|"),
     ("waiting", "Waiting on others", "_None._"),

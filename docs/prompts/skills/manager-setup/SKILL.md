@@ -114,7 +114,9 @@ every `{{…}}` placeholder; a placeholder with nothing to say becomes a short
    standing manager's title carries no code), then: turn this session's
    Remote Control on if it is off (`set_remote_control(session_id="self",
    enabled=true)`; the app may show an approval card) and say so in one line,
-   unless the user said otherwise; read the first manager handoff (step 7) by
+   unless the user said otherwise; file itself in the sidebar section
+   `managers` where the client has one (the core's Start) and say so in one
+   line; read the first manager handoff (step 7) by
    path (or `note_resolve` in projio), load the `<prefix>manager` skill, run a
    round, stay open as observer and dispatcher, the push rule. Write Delegate's **Recommended now** block
    (`MGR`: start the standing manager) and fill What's up and Sync (this
@@ -134,7 +136,9 @@ every `{{…}}` placeholder; a placeholder with nothing to say becomes a short
    No push unless the user's push rule says so.
 
 9. **Report**: the board path (open it with `show_pane`), the kickoff code to
-   start, and anything left for the user.
+   start, and anything left for the user. Where the client has
+   `start_session`, offer to start the `MGR` kickoff on the user's go (the
+   core's Levels, Dispatcher); otherwise the user pastes it.
 
 ## Packaging (for projects without projio)
 
@@ -153,6 +157,11 @@ Claude Code shows when the skill loads.
   to the core.
 - Every kickoff's first line is ``Title this session `<…>`.``; a work
   session's title carries the kickoff code, `<prefix><unit> · <CODE> · <item>`.
+- The standing manager starts a kickoff's session itself only on the user's
+  go and where the client has `start_session` (nested under it, as the
+  core's Levels, Dispatcher says); otherwise the user pastes the kickoff.
+- The standing manager files itself in the sidebar section `managers` where
+  the client has one.
 - The standing manager keeps Remote Control on and messages other machines
   by exact session name (the core's Messaging); a `[from <project>]` note
   only when an end has Remote Control off or the send fails.
