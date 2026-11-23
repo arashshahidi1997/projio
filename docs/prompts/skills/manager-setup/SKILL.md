@@ -107,10 +107,13 @@ every `{{…}}` placeholder; a placeholder with nothing to say becomes a short
    `python3 .claude/skills/project-manager/round.py board`, then under
    Delegate add the kickoff that starts the standing manager, coded (e.g.
    `MGR`), tagged **independent**, its prompt in a ```` ```text ```` block
-   whose first line is ``Title this session `<prefix>manager`.``, then: read
-   the first manager handoff (step 7) by path (or `note_resolve` in projio),
-   load the `<prefix>manager` skill, run a round, stay open as observer and
-   dispatcher, the push rule. Write Delegate's **Recommended now** block
+   whose first line is ``Title this session `<prefix>manager`.`` (the
+   standing manager's title carries no code), then: turn this session's
+   Remote Control on if it is off (`set_remote_control(session_id="self",
+   enabled=true)`; the app may show an approval card) and say so in one line,
+   unless the user said otherwise; read the first manager handoff (step 7) by
+   path (or `note_resolve` in projio), load the `<prefix>manager` skill, run a
+   round, stay open as observer and dispatcher, the push rule. Write Delegate's **Recommended now** block
    (`MGR`: start the standing manager) and fill What's up and Sync (this
    setup session's id).
 
@@ -145,5 +148,9 @@ Claude Code shows when the skill loads.
 - Never touch another session's uncommitted files; commit by path.
 - No core rules in the adapter: it names the project's specifics and points
   to the core.
-- Every kickoff's first line is ``Title this session `<…>`.``
+- Every kickoff's first line is ``Title this session `<…>`.``; a work
+  session's title carries the kickoff code, `<prefix><unit> · <CODE> · <item>`.
+- The standing manager keeps Remote Control on and messages other machines
+  by exact session name (the core's Messaging); a `[from <project>]` note
+  only when an end has Remote Control off or the send fails.
 - Push only by the push rule the user gave.

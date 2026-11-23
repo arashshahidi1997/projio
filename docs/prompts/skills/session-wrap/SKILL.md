@@ -179,14 +179,20 @@ If the manager config (`.projio/manager.yml` or `.claude/manager.yml`) sets a `p
    issues), decisions for the user, in plain words
 3. the handoff id
 
-The address, first that works: the manager's session id from your kickoff
-prompt (the only way across machines); the name `<prefix>manager` in
-`ListAgents`; the client's session list (`list_sessions` in the desktop app),
-exact title `<prefix>manager`, not archived, running, sent to its `local_…`
-id. `ListAgents` can miss a running manager, so never skip the report on its
-word alone. If no manager session exists, the handoff is the report: the
-manager reads handoffs and commits every round. It is a report, not a request
-for approval (the `project-manager` skill has the protocol).
+The address, first that works: the manager's exact name `<prefix>manager`
+(managers keep Remote Control on, so the name reaches them across machines;
+add the short `[ref]` only when two sessions share the name); on the same
+machine, its `local_…` id from your kickoff prompt or from the client's
+session list (`list_sessions` in the desktop app: exact title
+`<prefix>manager`, not archived, running). A `local_…` id does not cross
+machines. `ListAgents` can miss a running manager, so never skip the report
+on its word alone. Do not turn this session's Remote Control on or off
+unless the user asks. Only if the manager's Remote Control is off or the send
+fails, file a note in the manager's project titled `[from <project>] …` (a
+file in its handoff or inbox folder when it has no worklog). If no manager
+session exists, the handoff is the report: the manager reads handoffs and
+commits every round. It is a report, not a request for approval (the
+`project-manager` skill has the protocol).
 
 ## 7. Report
 

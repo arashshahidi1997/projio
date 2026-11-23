@@ -130,13 +130,15 @@ BOARD_SECTIONS = [
      "- Next to start: nothing yet."),
     ("copy", "Delegate",
      "{recommended}\n\nNothing to delegate. Each kickoff goes here under `### <CODE> · <session title>` (a short unique code, "
-     "e.g. SPD), with a tag line (**independent** or **depends on <CODE or what>**) and a ```text block; say "
+     "e.g. SPD; the title carries it too: `<prefix><unit> · <CODE> · <item>`, the prompt's first line "
+     "Title this session `…`.), with a tag line (**independent** or **depends on <CODE or what>**) and a ```text block; say "
      "\"delegated <CODE>\" or \"delegated all\" once started."),
     ("decisions", "Decisions waiting for you", "_None._"),
     ("sessions", "Sessions, by state", "| Session | State | Notes |\n|---|---|---|"),
     ("waiting", "Waiting on others", "_None._"),
     ("sync", "Sync", "This manager: {manager} · {host} · `?` (session id)\n\n"
-                     "Other managers (`name · machine · session id · last contact`):\n\n- none yet"),
+                     "Other managers (`name · machine · session id · last contact`; the exact name is the address across "
+                     "machines, the id on the same machine only):\n\n- none yet"),
 ]
 # Delegate opens with the manager's pick; added on top when a board's Delegate has none, kept once hand-written.
 RECOMMENDED = ("**Recommended now** (the manager's pick, in order): none yet. One line per kickoff to start next, "

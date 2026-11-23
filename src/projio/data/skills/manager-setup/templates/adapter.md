@@ -19,8 +19,12 @@ are in `{{config_path}}`.
 ## Names
 
 - Standing manager: `{{prefix}}manager`.
-- Work sessions: `{{prefix}}<unit> · <item>`, for example `{{prefix}}{{example_unit}} · {{example_item}}`.
-  Units are those in `{{config_path}}`.
+- Work sessions: `{{prefix}}<unit> · <CODE> · <item>`, for example
+  `{{prefix}}{{example_unit}} · {{example_code}} · {{example_item}}`; the code is
+  the kickoff's on the board. Units are those in `{{config_path}}`.
+- Messaging: the standing manager keeps Remote Control on (the core's Start
+  and Messaging); other machines are reached by exact session name, by a
+  `[from <project>]` note only when that fails.
 - Opener: {{opener}}. Wrap: {{wrap}}, ending with the three-line report to
   `{{prefix}}manager`.
 - Working copy: `{{repo}}`.

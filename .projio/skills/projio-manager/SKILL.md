@@ -19,7 +19,7 @@ specific to projio. Machine keys are in `.projio/manager.yml`.
 ## Names
 
 - Standing manager: `projio-manager`.
-- Work sessions: `projio-<unit> · <item>`, for example `projio-biblio · docling slim`
+- Work sessions: `projio-<unit> · <CODE> · <item>`, for example `projio-core · PLUG · light marketplace`
   or `projio-core · skill sync drift`. Units are those in `.projio/manager.yml`.
 - Opener: `projio-orient` plus the issue or idea notes by id
   (`note_resolve(note_id=…)`). Wrap: `session-wrap`, which ends with the
@@ -35,7 +35,7 @@ managers in Sync: pix-manager (gamma2), lit-manager and worklog-manager (laptop)
 **Decisions (drill).** Record each answer, dated, in the issue or idea note it
 concerns (a `Decision (YYYY-MM-DD)` line); a release decision goes in the
 package's newest handoff. Relay it to the session that owns the note.
-**Reporting up** goes to worklog-manager (laptop, by session id from Sync),
+**Reporting up** goes to worklog-manager (laptop, by exact name; Remote Control on at both ends),
 only with a `decide` / `needs` / `blocked` first line.
 
 ## Units of work and where their state lives

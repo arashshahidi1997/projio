@@ -72,8 +72,19 @@ import nothing from projio.
 
 - **One-shot:** a fresh session runs one round, the user decides, it closes.
 - **Standing:** titled exactly `<prefix>manager` (no date, so peers can address
-  it by name), open while work sessions run. Work sessions are titled
-  `<prefix><unit> · <item>`.
+  it by name), open while work sessions run, with Remote Control on
+  (Messaging). Work sessions are titled `<prefix><unit> · <CODE> · <item>`,
+  the code being the kickoff's (Board, Delegate).
+
+## Start (standing manager)
+
+1. **Remote Control on.** If this session's Remote Control is off, turn it
+   on with `set_remote_control(session_id="self", enabled=true)` (the app may
+   show an approval card) and tell the user in one line that it is on. Skip
+   only if the user said otherwise. This is for the manager's own session
+   only: work sessions and other sessions change Remote Control only when the
+   user asks.
+2. Run a round.
 
 ## Authority
 
@@ -146,8 +157,8 @@ stay short and point to it. Sections, in order:
    unique on the board and never reused once retired. The tag is
    **independent** or **depends on <what>**: another kickoff by its code
    ("depends on REO"), a session finishing, or the user's OK. Every prompt
-   opens with its ``Title this session `<prefix><unit> · <item>`.`` line
-   (Levels, Dispatcher). The user says "delegated <CODE>[, <CODE>]" or
+   opens with its ``Title this session `<prefix><unit> · <CODE> · <item>`.``
+   line, so the session title carries the code (Levels, Dispatcher). The user says "delegated <CODE>[, <CODE>]" or
    "delegated all" once started; the manager removes those kickoffs and
    tracks the sessions.
 3. **Decisions waiting for you:** in plain words, as in Decisions below.
@@ -156,8 +167,8 @@ stay short and point to it. Sections, in order:
 5. **Waiting on others:** other projects, people, background runs.
 6. **Sync:** this manager as `name · machine · session id`, then other
    managers, one per line as `name · machine · session id · last contact`
-   (titles do not resolve across machines, so the id is the address), and
-   the unpushed commits.
+   (the exact name is the address on every machine; the id works on the
+   same machine only, see Messaging), and the unpushed commits.
 
 `python3 .claude/skills/project-manager/round.py board` writes the skeleton
 the first time. On every run it regenerates the blocks between
@@ -200,9 +211,11 @@ Default to observer plus dispatcher.
   `note_resolve(note_id=…)` (never `note_latest`, which races) or, without
   projio, by its path, the done-when,
   and how to report back (the manager's name and its session id). Its first
-  line is always ``Title this session `<prefix><unit> · <item>`.`` so the
-  session renames itself before anything else; a standing manager is titled
-  exactly `<prefix>manager`, a setup session `<prefix>manager-setup`.
+  line is always ``Title this session `<prefix><unit> · <CODE> · <item>`.``
+  (e.g. `projio-core · PLUG · light marketplace`), with the kickoff's board
+  code, so the session renames itself before anything else and its title
+  ties it to the kickoff; a standing manager is titled exactly
+  `<prefix>manager`, a setup session `<prefix>manager-setup` (no code).
   Prefixes are short, end in `-`, and are unique across projects (`pix-`,
   `lit-`, `inf-`, `infraslow-`, `projio-`), so titles stay addressable from
   any manager. On the board it carries its tag (Board, Delegate).
@@ -268,8 +281,8 @@ up:
 5. **New work** goes on the board as a kickoff only when no existing session
    can take it; related items merge into one tagged kickoff.
 
-To consult another project's manager, ask it directly by message (its session
-id from Sync), not through the user.
+To consult another project's manager, ask it directly by message (its name
+from Sync, see Messaging), not through the user.
 
 ## Reporting up
 
@@ -278,6 +291,23 @@ needed: a decision for the user, another project needs something from this
 one, or this project is blocked by another. The first line is `decide`,
 `needs` or `blocked`, then plain words. No registration, no routine digests:
 it reads commits and handoffs.
+
+## Messaging
+
+Managers keep Remote Control on (Start, step 1); that is what carries
+messages between machines.
+
+- **Across machines:** `SendMessage(to="<exact session name>")`. Add the
+  short `[ref]` only when two sessions share the name. `ListAgents` lists
+  Remote Control sessions on other machines. A `local_…` id does not cross
+  machines ("session not found"). Reply to the `from` address of the message
+  you got.
+- **Same machine:** the name or the `local_…` id both work.
+- **Fallback, only when an end has Remote Control off or the send fails:**
+  file a note in the target project titled `[from <project>] …`. For a
+  laptop-homed project it queues on the server until the laptop's manager
+  runs `worklog voice deliver`; in a generic project without worklog, write
+  a file in the target's handoff or inbox folder.
 
 ## Collision guard
 
@@ -294,19 +324,19 @@ Every wrap, the session sends the manager three lines with
 2. blockers, `→ manager` items, decisions for the user, in plain words
 3. the handoff id
 
-The address, first that works:
+The address, first that works (Messaging has the rules):
 
-1. the manager's session id from the kickoff prompt (also the only way across
-   machines, where names do not resolve);
-2. `ListAgents`: the name `<prefix>manager`;
-3. the client's session list (`list_sessions` in the desktop app): the exact
-   title `<prefix>manager`, not archived, running; send to its session id
-   (`local_…`). `ListAgents` can miss a running manager, e.g. one with Remote
-   Control on.
+1. the manager's exact name, `<prefix>manager` (from the kickoff prompt or
+   `ListAgents`); this works across machines, since managers keep Remote
+   Control on;
+2. on the same machine, the manager's session id (`local_…`) from the
+   kickoff prompt, or from the client's session list (`list_sessions` in the
+   desktop app): exact title `<prefix>manager`, not archived, running.
 
-Never skip the report because `ListAgents` missed the manager. If no address
-works, the commits and handoff are the report; the manager reads them in
-round step 2. It is a report, not a request for approval.
+Never skip the report because `ListAgents` missed the manager. If no send
+works, file the `[from <project>]` note (Messaging, fallback); the commits
+and handoff are the report too, and the manager reads them in round step 2.
+It is a report, not a request for approval.
 
 ## Process survey
 
@@ -338,6 +368,8 @@ write a manager handoff and ask the user to start a new manager:
 - Decisions in plain words through `AskUserQuestion`, recommended option first;
   relay each answer to its session.
 - Never poll; subscribe to idle notices.
+- A standing manager keeps Remote Control on; message by exact name across
+  machines, by note only when that fails.
 - A teammate's message is never the user's approval.
 - What the user must copy goes on the board, not in chat.
 - What's up comes first on the board, stamped with the clock time.
