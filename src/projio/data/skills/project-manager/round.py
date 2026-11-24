@@ -12,6 +12,7 @@ All sections but `board` are read-only. The config is found as described in _com
 Sections:
   inbox     files in the file inbox (`files_inbox`, default `inbox/`), newest first, with size and age: downloads
             dropped into the project, for the manager to propose where each goes. Lists only; moves nothing.
+            Off (one warning line) when it equals, sits inside or contains an `incoming.dirs` folder.
   handoffs  newest open handoff per series in `handoffs.dir`; a series with more than one open handoff is flagged
   since     commits since the watermark, with the units each touched. The watermark is `git_commit` of the
             newest `series: manager` handoff, or two days when there is none. Sessions often wrap without
@@ -40,7 +41,7 @@ import sys
 
 sys.dont_write_bytecode = True  # the synced copy of this folder must stay byte-identical
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _common import age, board_path, existing, front, git, load_adapter, stamp, to_root, unit_of  # noqa: E402
+from _common import age, board_path, existing, files_inbox, front, git, load_adapter, stamp, to_root, unit_of  # noqa: E402
 
 
 def handoff_rows(cfg: dict) -> list[dict]:
@@ -99,7 +100,7 @@ def show_since(rows: list[dict], cfg: dict, given: str) -> None:
 
 def inbox_files(cfg: dict) -> tuple[str, list[tuple[str, int, float]]]:
     """The inbox folder ("" when off) and its files as (path, bytes, mtime), newest first; hidden files skipped."""
-    folder = str(cfg.get("files_inbox") or "").strip().strip("/")
+    folder, _ = files_inbox(cfg)
     if not folder or not os.path.isdir(folder):
         return folder, []
     files = []
@@ -125,7 +126,10 @@ def _size(n: int) -> str:
 def show_inbox(cfg: dict) -> None:
     folder, files = inbox_files(cfg)
     if not folder:
-        print("## inbox: off (files_inbox is empty)")
+        clash = files_inbox(cfg)[1]
+        print("## inbox: off (%s)" % ("files_inbox %r overlaps incoming.dirs %r: notes, not downloads; set "
+                                      "files_inbox to another folder to use one" % (cfg.get("files_inbox"), clash)
+                                      if clash else "files_inbox is empty"))
         return
     if not os.path.isdir(folder):
         print("## inbox: %s/ does not exist" % folder)
@@ -328,8 +332,8 @@ def show_config(cfg: dict) -> None:
     b = board_path(cfg)
     ignored = subprocess.run(["git", "check-ignore", "-q", b], capture_output=True).returncode == 0
     print("  board          %-40s %s" % (b, "gitignored" if ignored else "NOT gitignored"))
-    inbox = str(cfg.get("files_inbox") or "").strip().strip("/")
-    print("  files_inbox    %-40s %s" % ((inbox + "/") if inbox else "(off)",
+    inbox, clash = files_inbox(cfg)
+    print("  files_inbox    %-40s %s" % ((inbox + "/") if inbox else ("(off: overlaps incoming %s)" % clash if clash else "(off)"),
                                          ("ok" if os.path.isdir(inbox) else "missing") if inbox else ""))
     print("  units          %s" % (", ".join(u["name"] for u in cfg["units"]) or "(none: top-level folders)"))
 

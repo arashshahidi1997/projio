@@ -21,5 +21,6 @@ units:                                  # group paths so two sessions in one uni
   - {name: code, paths: [src, tests]}
   - {name: docs, paths: [docs, README.md]}
 files_inbox: inbox                      # downloads dropped into the project (gitignored); `round.py` lists them, the manager proposes where each goes
+                                        # off when it equals, sits inside or contains an incoming.dirs folder (notes, not downloads): pick another name or false
 procs:
   protect: ["^SCREEN", "^tmux"]         # process groups the housekeeping survey never proposes to kill

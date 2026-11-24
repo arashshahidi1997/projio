@@ -226,6 +226,24 @@ def read_yaml(text: str):
     return _block(lines, 0, lines[0][0])[0] if lines else {}
 
 
+def _norm_rel(path: str) -> str:
+    clean = str(path).replace("\\", "/").strip().strip("/")
+    return os.path.normpath(clean).replace(os.sep, "/") if clean else ""
+
+
+def files_inbox(cfg: dict) -> tuple[str, str]:
+    """The file inbox folder ("" when off) and, when it is off because of one, the `incoming.dirs` entry it
+    overlaps (equals, sits inside or contains): committed incoming notes are never sorted as downloads."""
+    folder = _norm_rel(cfg.get("files_inbox") or "")
+    if not folder:
+        return "", ""
+    for d in (cfg.get("incoming") or {}).get("dirs") or []:
+        nd = _norm_rel(d)
+        if nd and (folder == nd or folder.startswith(nd + "/") or nd.startswith(folder + "/")):
+            return "", str(d)
+    return folder, ""
+
+
 def board_path(cfg: dict) -> str:
     """The manager board's path, relative to the repo root (`board.path`, or a bare string under `board`)."""
     b = cfg.get("board")

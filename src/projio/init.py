@@ -1183,13 +1183,22 @@ _MANAGER_CONFIGS = (".projio/manager.yml", ".claude/manager.yml")
 DEFAULT_FILES_INBOX = "inbox"
 
 
-def files_inbox(root: Path) -> str:
-    """The file inbox folder: ``files_inbox`` in the manager config, default ``inbox``.
+def _norm_rel(path: str) -> str:
+    """``./inbox/`` -> ``inbox``: a relative folder path in one form, for comparing."""
+    import posixpath
 
-    One source: the manager config the project-manager helpers read (the first of
-    ``.projio/manager.yml`` and ``.claude/manager.yml`` that exists). An empty or
-    false value turns the inbox off ("").
-    """
+    clean = str(path).replace("\\", "/").strip().strip("/")
+    return posixpath.normpath(clean) if clean else ""
+
+
+def _overlaps(a: str, b: str) -> bool:
+    """True when folder ``a`` equals ``b``, sits inside it, or contains it."""
+    a, b = _norm_rel(a), _norm_rel(b)
+    return bool(a and b) and (a == b or a.startswith(b + "/") or b.startswith(a + "/"))
+
+
+def _manager_config(root: Path) -> dict:
+    """The manager config (first of ``.projio/manager.yml``, ``.claude/manager.yml``), or {}."""
     for rel in _MANAGER_CONFIGS:
         path = Path(root) / rel
         if not path.is_file():
@@ -1199,12 +1208,37 @@ def files_inbox(root: Path) -> str:
 
             data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         except Exception:
-            return DEFAULT_FILES_INBOX
-        if isinstance(data, dict) and "files_inbox" in data:
-            value = data["files_inbox"]
-            return str(value).strip() if value else ""
-        return DEFAULT_FILES_INBOX
-    return DEFAULT_FILES_INBOX
+            return {}
+        return data if isinstance(data, dict) else {}
+    return {}
+
+
+def files_inbox(root: Path, *, warn: bool = False) -> str:
+    """The file inbox folder: ``files_inbox`` in the manager config, default ``inbox``.
+
+    One source: the manager config the project-manager helpers read (the first of
+    ``.projio/manager.yml`` and ``.claude/manager.yml`` that exists). An empty or
+    false value turns the inbox off (""). So does an inbox that equals, sits
+    inside or contains one of the config's ``incoming.dirs`` (committed notes
+    from other projects must not be gitignored or sorted as downloads); with
+    ``warn`` that case prints one line.
+    """
+    data = _manager_config(root)
+    if "files_inbox" in data:
+        value = data["files_inbox"]
+        name = str(value).strip() if value else ""
+    else:
+        name = DEFAULT_FILES_INBOX
+    if not name:
+        return ""
+    incoming = data.get("incoming") if isinstance(data.get("incoming"), dict) else {}
+    for d in incoming.get("dirs") or []:
+        if _overlaps(name, str(d)):
+            if warn:
+                print(f"[!] files_inbox {name!r} overlaps incoming.dirs {str(d)!r}: file inbox off "
+                      "(set files_inbox to another folder to use one)")
+            return ""
+    return name
 
 
 def _ensure_files_inbox(root: Path, *, dry_run: bool = False) -> str:
@@ -1213,7 +1247,7 @@ def _ensure_files_inbox(root: Path, *, dry_run: bool = False) -> str:
     Returns ``"created"``, ``"exists"``, ``"off"`` (no inbox configured or the
     name points outside the repo) or ``"would_create"`` with ``dry_run``.
     """
-    name = files_inbox(root)
+    name = files_inbox(root, warn=True)
     anchored = _anchored_dir(name) if name else None
     if not anchored:
         return "off"
@@ -1235,7 +1269,8 @@ def _ensure_projio_gitignore(root: Path, *, site_framework: str, dry_run: bool =
     """
     path = root / ".gitignore"
     entries = _gitignore_entries_for_framework(site_framework, _configured_site_dirs(root))
-    inbox = _anchored_dir(files_inbox(root)) if files_inbox(root) else None
+    inbox_name = files_inbox(root)
+    inbox = _anchored_dir(inbox_name) if inbox_name else None
     if inbox:
         entries.append(inbox)  # file inbox: downloads dropped here for the manager to sort
     block_lines = [_GITIGNORE_BEGIN, *sorted(dict.fromkeys(entries)), _GITIGNORE_END]
@@ -1963,6 +1998,8 @@ def _generate_claude_md(root: Path) -> str:
     has_pipeio = packages.get("pipeio", {}).get("enabled", False)
     has_indexio = packages.get("indexio", {}).get("enabled", False)
     has_figio = packages.get("figio", {}).get("enabled", False)
+    # notio.present is deprecated (docs/specs/notio/slim.md §7): its tools are opt-in.
+    has_present = packages.get("present", {}).get("enabled", False)
 
     sections: list[str] = []
 
@@ -2030,22 +2067,24 @@ and `runtime_conventions()` to see the project's commands and environments.
         rows.append("| Update note metadata | `note_update(path, fields)` | Edit frontmatter directly |")
         rows.append("| See note types | `note_types()` | Read notio.toml directly |")
         rows.append("| Rebuild note indexes | `notio_reindex(note_type?)` | Regenerate index.md manually |")
-        # Presentio (notio.present subpackage): presentation decks
-        rows.append("| Scaffold a presentation deck | `present_init(name, format?, template?)` | Create deck.yml by hand |")
-        rows.append("| List decks | `present_list()` | Walk docs/deliverables/presentations/ manually |")
-        rows.append("| Deck status (sections, figures, citations) | `present_status(name)` | Inspect files manually |")
-        rows.append("| Rich deck dashboard | `present_overview(name)` | Compile stats manually |")
-        rows.append("| Assemble deck markdown | `present_assemble(name)` | Concatenate sections manually |")
-        rows.append("| Build deck via marp-cli | `present_build(name, format?)` | Run `marp` in terminal |")
-        rows.append("| Validate deck | `present_validate(name)` | Grep citekeys / figure ids manually |")
-        rows.append("| Section-drafting context | `present_section_context(name, section)` | Multiple reads manually |")
-        rows.append("| Insert figio figure into section | `present_figure_insert(name, section, figure_id)` | Edit markdown directly |")
-        rows.append("| Cite check (bib + docling) | `present_cite_check(name)` | Cross-ref manually |")
-        rows.append("| Diff vs last assembled.md | `present_diff(name)` | Run `diff` in terminal |")
-        rows.append("| Import section from another project | `present_section_import(name, from_project, source_deck, section)` | Copy files manually |")
-        rows.append("| Refresh imported section | `present_refresh_import(name, section)` | Re-copy manually |")
-        rows.append("| Freeze imported section | `present_freeze_import(name, section?)` | Edit deck.yml manually |")
-        rows.append("| Seed deck from a paper (LLM) | `present_seed_from_paper(name, citekey)` | Run `biblio present` in terminal |")
+        rows.append("| Build a slide deck or talk | skill `quarto-talks` (Quarto reveal.js) | `present_*` tools (deprecated, opt-in) |")
+        # Presentio (notio.present subpackage): deprecated, opt-in via packages.yml `present`
+        if has_present:
+            rows.append("| Scaffold a presentation deck | `present_init(name, format?, template?)` | Create deck.yml by hand |")
+            rows.append("| List decks | `present_list()` | Walk docs/deliverables/presentations/ manually |")
+            rows.append("| Deck status (sections, figures, citations) | `present_status(name)` | Inspect files manually |")
+            rows.append("| Rich deck dashboard | `present_overview(name)` | Compile stats manually |")
+            rows.append("| Assemble deck markdown | `present_assemble(name)` | Concatenate sections manually |")
+            rows.append("| Build deck via marp-cli | `present_build(name, format?)` | Run `marp` in terminal |")
+            rows.append("| Validate deck | `present_validate(name)` | Grep citekeys / figure ids manually |")
+            rows.append("| Section-drafting context | `present_section_context(name, section)` | Multiple reads manually |")
+            rows.append("| Insert figio figure into section | `present_figure_insert(name, section, figure_id)` | Edit markdown directly |")
+            rows.append("| Cite check (bib + docling) | `present_cite_check(name)` | Cross-ref manually |")
+            rows.append("| Diff vs last assembled.md | `present_diff(name)` | Run `diff` in terminal |")
+            rows.append("| Import section from another project | `present_section_import(name, from_project, source_deck, section)` | Copy files manually |")
+            rows.append("| Refresh imported section | `present_refresh_import(name, section)` | Re-copy manually |")
+            rows.append("| Freeze imported section | `present_freeze_import(name, section?)` | Edit deck.yml manually |")
+            rows.append("| Seed deck from a paper (LLM) | `present_seed_from_paper(name, citekey)` | Run `biblio present` in terminal |")
 
     if has_codio:
         rows.append("| Add a library | `codio_add_urls(urls)` | Edit YAML registry files |")

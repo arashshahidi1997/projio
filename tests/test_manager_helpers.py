@@ -458,3 +458,15 @@ def test_round_inbox_with_and_without_folder(repo: Path) -> None:
 
     (repo / ".projio" / "manager.yml").write_text('prefix: "demo-"\nfiles_inbox: ""\n')
     assert "## inbox: off" in _run(repo, "round.py", "inbox")
+
+
+@pytest.mark.parametrize("dirs", ["[inbox]", "[inbox/notes]"])
+def test_round_inbox_off_when_it_overlaps_incoming(repo: Path, dirs: str) -> None:
+    (repo / ".projio" / "manager.yml").write_text(f'prefix: "demo-"\nincoming:\n  dirs: {dirs}\n')
+    (repo / "inbox" / "notes").mkdir(parents=True)
+    (repo / "inbox" / "notes" / "issue-x.md").write_text("---\nstatus: open\n---\n")
+    out = _run(repo, "round.py")
+    section = out.split("## inbox")[1].split("\n## ")[0]
+    assert section.startswith(": off (") and "overlaps incoming.dirs" in section
+    assert "issue-x.md" not in section
+    assert "off: overlaps incoming" in _run(repo, "round.py", "config")

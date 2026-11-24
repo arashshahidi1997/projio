@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import yaml
 
 from projio.sync import (
@@ -455,3 +456,29 @@ def test_files_inbox_folder_is_created_idempotently(tmp_path: Path) -> None:
     assert (tmp_path / "downloads").is_dir()
     (tmp_path / ".claude" / "manager.yml").write_text("files_inbox: ../outside\n", encoding="utf-8")
     assert _ensure_files_inbox(tmp_path) == "off"
+
+
+@pytest.mark.parametrize("dirs", ["[inbox]", "[inbox/notes]", "[./inbox/]"])
+def test_files_inbox_off_when_it_overlaps_incoming_dirs(tmp_path: Path, capsys, dirs: str) -> None:
+    from projio.init import _ensure_files_inbox, files_inbox
+
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "manager.yml").write_text(f"incoming:\n  dirs: {dirs}\n", encoding="utf-8")
+    assert files_inbox(tmp_path) == ""
+    _sync_gitignore(tmp_path)
+    assert "/inbox/" not in (tmp_path / ".gitignore").read_text(encoding="utf-8").splitlines()
+    assert _ensure_files_inbox(tmp_path) == "off"
+    assert not (tmp_path / "inbox").exists()
+    warned = [line for line in capsys.readouterr().out.splitlines() if "overlaps incoming.dirs" in line]
+    assert len(warned) == 1
+
+
+def test_files_inbox_kept_when_incoming_dirs_elsewhere(tmp_path: Path) -> None:
+    from projio.init import _ensure_files_inbox, files_inbox
+
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "manager.yml").write_text("incoming:\n  dirs: [inboxes, docs/inbox]\n", encoding="utf-8")
+    assert files_inbox(tmp_path) == "inbox"
+    _sync_gitignore(tmp_path)
+    assert "/inbox/" in (tmp_path / ".gitignore").read_text(encoding="utf-8").splitlines()
+    assert _ensure_files_inbox(tmp_path) == "created"

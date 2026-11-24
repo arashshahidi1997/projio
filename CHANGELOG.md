@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- **projio-workflow 0.3.1**: the file inbox is off (one warning line) when `files_inbox` equals, sits inside or contains an `incoming.dirs` folder, so committed incoming notes in a folder named `inbox/` are neither gitignored nor listed as downloads.
+
 ### Changed
 - **projio-workflow 0.3.0**: the plugin is versioned on its own (a release is a version bump, `projio skills export`, a push), so a manager-core update ships without a projio release. The `project-manager` core gains a Core updates section: each project's manager applies an update in its own project, reloads and confirms in one line; the owning project ships and announces it. It also adds the file inbox: `files_inbox` in the manager config (default `inbox`), listed first by `round.py` with a proposed move per file (nothing moves without the user's word, never into another project); `projio init` and `projio sync` create the folder and add it to the managed .gitignore block. 0.3.0 also carries the manager starting kickoffs with `start_session`, the `managers` sidebar section and `.scratch/` as the board's home.
 

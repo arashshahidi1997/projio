@@ -124,7 +124,11 @@ gitignored board.
    bibliography's intake, data to its folder, a draft to its deliverable; or
    delete), in one `AskUserQuestion` batch. Move only what the user approves,
    only within this project. A file meant for another project is reported to
-   the user, never moved there.
+   the user, never moved there. An inbox that equals, sits inside or
+   contains an `incoming.dirs` folder is off (committed notes are not
+   downloads): `round.py` says so in one line, and projio's init and sync
+   neither create nor gitignore it. Set `files_inbox` to another folder, or
+   `false`, to silence it.
 2. **What changed:** `python3 .claude/skills/project-manager/round.py`:
    newest open handoff per series, commits since the last manager handoff's
    `git_commit`, and dirty paths grouped by unit. **Sessions often wrap without
