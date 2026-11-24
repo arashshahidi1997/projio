@@ -33,9 +33,9 @@ projio step to its plain equivalent.
 
 ## Updates
 
-The plugin is versioned with projio, and Claude Code installs a plugin version
-once and keeps it. A new projio release bumps the version; to get it, refresh the
-marketplace and update the plugin:
+The plugin has its own version, and Claude Code installs a plugin version
+once and keeps it. A plugin release bumps the version (no projio release is
+needed); to get it, refresh the marketplace and update the plugin:
 
 ```text
 /plugin marketplace update projio
@@ -45,6 +45,11 @@ then update `projio-workflow` from the `/plugin` menu (Installed tab). To get
 updates at startup, turn on auto-update for the `projio` marketplace in the
 `/plugin` menu (Marketplaces tab); it is off by default for marketplaces other
 than Anthropic's.
+
+From a shell, the same is `claude plugin marketplace update projio` and
+`claude plugin update projio-workflow@projio`, once per machine. A running
+manager session then reloads the `project-manager` skill: the project-manager
+core's "Core updates" section has the whole protocol, receiving and shipping.
 
 ## For maintainers
 
@@ -57,7 +62,7 @@ local marketplace from a projio checkout (`/plugin marketplace add
 
 A skill is shared when it carries `metadata.portable: true` in its frontmatter.
 `tests/test_marketplace.py` checks that the manifest lists exactly those skills,
-that the version matches `pyproject.toml`, and that a portable skill requires no
+that each plugin has a version of its own (`X.Y.Z`), and that a portable skill requires no
 projio MCP tool (its `tooling.mcp` entries are `optional: true`), runs no
 `projio` command in a code block and has helpers that import only the standard
 library.
@@ -72,7 +77,7 @@ claude plugin validate ../projio-plugins
 The export replaces `plugins/` as a whole, copies each skill folder unchanged
 (helpers and templates included) to `plugins/<plugin>/skills/<name>/`, and
 writes `.claude-plugin/marketplace.json` (each plugin's `source` is
-`./plugins/<plugin>`, its version projio's) and a README. The marketplace keeps
+`./plugins/<plugin>`, its version the source manifest's) and a README. The marketplace keeps
 the name `projio`, so plugin ids stay `projio-workflow@projio`. The test also
 checks that the export holds exactly the source skills, byte for byte, and
 nothing else.

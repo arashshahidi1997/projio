@@ -6,7 +6,6 @@ import ast
 import json
 import re
 import sys
-import tomllib
 from pathlib import Path
 
 import yaml
@@ -29,12 +28,13 @@ def _shipped() -> list[Path]:
     return [ROOT / p for plugin in _market()["plugins"] for p in plugin["skills"]]
 
 
-def test_plugins_are_versioned_with_projio():
-    version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
+def test_plugins_have_their_own_version():
+    # A plugin release (bump, export, push) is independent of projio's: a core
+    # update reaches every manager without waiting for a projio release.
     market = _market()
     assert market["name"] == "projio"
     for plugin in market["plugins"]:
-        assert plugin["version"] == version, plugin["name"]
+        assert re.fullmatch(r"\d+\.\d+\.\d+", plugin["version"]), plugin["name"]
         assert plugin["source"] == "./" and plugin["strict"] is False
         # the repo root is the plugin root: keep its .mcp.json (the projio server) out
         assert plugin["mcpServers"] == {}

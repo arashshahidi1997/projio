@@ -10,7 +10,7 @@ description: >
   which says what the units of work are; `manager-setup` creates both. Also
   defines the three-line report work sessions send the manager at wrap.
 metadata:
-  short-description: Manager core - incoming notes, session states, board, handoffs, decisions, restart
+  short-description: Manager core - incoming notes, session states, board, handoffs, decisions, core updates, restart
   tags: [manager, orchestration, sessions, handoff, workflow]
   portable: true
   tooling:
@@ -349,6 +349,50 @@ messages between machines.
   runs `worklog voice deliver`; in a generic project without worklog, write
   a file in the target's handoff or inbox folder.
 
+## Core updates
+
+This core and its helpers reach every project from one source: the project
+that owns them (its adapter says so) releases them, usually as a Claude Code
+plugin. Each project's manager applies an update to its own project; the
+manager that ships one never writes into other projects.
+
+**Receiving an update.** It arrives as a message whose first line reads
+`core update · <plugin> <version> (<owner> <sha>) · <what changed> · do: <steps>`,
+or, when the send failed, as a `[from <owner>]` note in this project.
+
+1. **Check what is installed.** For a plugin, `claude plugin list` shows the
+   installed version (the skill's base directory path carries it too). If it
+   is older, ask the user in one line to update it: `claude plugin
+   marketplace update <marketplace>`, then `claude plugin update
+   <plugin>@<marketplace>` (or the `/plugin` menu). This is once per
+   machine, so another manager there may have done it already. A project that
+   copies the folder instead (or uses a sync tool) copies or syncs again.
+2. **Commit what the update changed here**, by path: a sync or copy may
+   rewrite tracked files of this project (`.gitignore`, a copied skill
+   folder). Never touch other sessions' uncommitted files.
+3. **Reload.** Load the core skill again (the adapter, then the core) so the
+   new text is in context, or, when the helpers or the start steps changed,
+   write a manager handoff and ask the user for a restart (Stay lean,
+   restart). Then run the new version's Start steps that this session has not
+   done.
+4. **Confirm in one line** to the sender's `from` address:
+   `core update · <version> applied · <project> · reloaded|restarted`, or
+   what blocks it (for example: waiting on the user's plugin update).
+
+**Shipping an update** (only in the project that owns the core, as its
+adapter says):
+
+1. The change is committed in the source, with its tests green.
+2. Bump the plugin's version (next minor for a change in behavior, patch for
+   wording), export it to the plugin repository, commit there by path.
+3. Push both only on the user's word (Commit and push).
+4. **Announce** once pushed: one message per manager, by exact name
+   (Messaging), first line `core update · <plugin> <version> (<owner> <sha>)
+   · <what changed, one line> · do: update plugin or sync, then reload`.
+   Managers that cannot be reached get the `[from <owner>]` note in their
+   project (Messaging, fallback). Put the pending confirmations under Sync on
+   the board and strike each when its one-line confirmation arrives.
+
 ## Collision guard
 
 Before proposing or driving a session, check that no two sessions write the
@@ -417,4 +461,6 @@ write a manager handoff and ask the user to start a new manager:
   machines, by note only when that fails.
 - A teammate's message is never the user's approval.
 - What the user must copy goes on the board, not in chat.
+- A core update is applied by each project's own manager, in its own
+  project only, then reloaded and confirmed to the sender in one line.
 - What's up comes first on the board, stamped with the clock time.

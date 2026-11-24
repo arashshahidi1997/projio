@@ -1,13 +1,13 @@
 {
   "name": "projio",
   "owner": {"name": "Arash Shahidi"},
-  "metadata": {"description": "projio's portable Claude Code skills: they need git only, not projio. Versioned with projio."},
+  "metadata": {"description": "projio's portable Claude Code skills: they need git only, not projio. Versioned on their own: a release is a version bump, an export and a push."},
   "plugins": [
     {
       "name": "projio-workflow",
       "source": "./",
       "strict": false,
-      "version": "0.2.0",
+      "version": "0.3.0",
       "description": "A standing manager session for any git project (incoming notes, session states, board, handoffs), its setup, a session wrap that commits by path and writes a handoff, and the 'always complete, never finished' check. Needs git and Python 3.9+, not projio.",
       "author": {"name": "Arash Shahidi"},
       "homepage": "https://arashshahidi1997.github.io/projio/",

@@ -31,6 +31,12 @@ specific to projio. Machine keys are in `.projio/manager.yml`.
 - Opener: `projio-orient` plus the issue or idea notes by id
   (`note_resolve(note_id=…)`). Wrap: `session-wrap`, which ends with the
   three-line report to `projio-manager` when it runs.
+- Core updates: projio owns the core, so projio-manager ships them (the
+  core's Core updates): bump `projio-workflow` in `.claude-plugin/marketplace.json`,
+  `projio skills export --marketplace ../projio-plugins`, commit there, push on
+  the user's word, then announce with `do: update plugin or projio sync, then
+  reload` and one line to worklog-manager, which relays to laptop managers
+  that are not open.
 
 ## Board
 

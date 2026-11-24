@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Changed
+- **projio-workflow 0.3.0**: the plugin is versioned on its own (a release is a version bump, `projio skills export`, a push), so a manager-core update ships without a projio release. The `project-manager` core gains a Core updates section: each project's manager applies an update in its own project, reloads and confirms in one line; the owning project ships and announces it. 0.3.0 also carries the manager starting kickoffs with `start_session`, the `managers` sidebar section and `.scratch/` as the board's home.
+
 ## 0.2.0 — 2026-11-19
 
 ### Added

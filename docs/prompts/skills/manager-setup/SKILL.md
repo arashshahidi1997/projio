@@ -99,6 +99,8 @@ every `{{…}}` placeholder; a placeholder with nothing to say becomes a short
    - projio layout with `projio` on PATH: `projio sync` (copies the core,
      this skill and the adapter into `.claude/skills/`). It also copies other
      skills; tell the user if other sessions have uncommitted skills.
+   - Installed as a plugin (the core and this skill from one marketplace):
+     nothing to copy; the plugin's skill folders are used as they are.
    - Otherwise: copy the core's folder next to this one,
      `cp -r <this skill's folder>/../project-manager .claude/skills/` (and
      this skill's folder, so the project can redo the setup). The helpers are
@@ -148,6 +150,14 @@ helpers import nothing from projio. To ship them as a Claude Code plugin, a
 repo with `.claude-plugin/plugin.json` and the two folders under `skills/`
 works; the helpers are then run from the plugin's folder, the base directory
 Claude Code shows when the skill loads.
+
+**Updates.** However the core was installed, a new manager gets updates the
+same way as every other: the manager of the project that owns the core
+announces each release by message, and this project's manager applies it,
+reloads and confirms (the core's Core updates). Put the owning project's
+manager in the board's Sync so its messages are recognized; a plugin install
+is the simplest to keep current (`claude plugin update <plugin>@<marketplace>`,
+once per machine).
 
 ## Hard rules
 
