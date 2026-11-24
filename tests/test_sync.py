@@ -419,3 +419,39 @@ def test_sync_gitignore_appends_block_when_missing(tmp_path: Path) -> None:
     assert _sync_gitignore(tmp_path) == "updated"
     text = gi.read_text(encoding="utf-8")
     assert text.startswith("secrets.env\n\n" + _GITIGNORE_BEGIN)
+
+
+def test_sync_gitignore_adds_files_inbox_default_and_configured(tmp_path: Path) -> None:
+    assert _sync_gitignore(tmp_path) == "created"
+    assert "/inbox/" in (tmp_path / ".gitignore").read_text(encoding="utf-8").splitlines()
+
+    (tmp_path / ".projio").mkdir()
+    (tmp_path / ".projio" / "manager.yml").write_text("prefix: x-\nfiles_inbox: drop\n", encoding="utf-8")
+    assert _sync_gitignore(tmp_path) == "updated"
+    lines = (tmp_path / ".gitignore").read_text(encoding="utf-8").splitlines()
+    assert "/drop/" in lines and "/inbox/" not in lines
+
+    (tmp_path / ".projio" / "manager.yml").write_text("files_inbox: ''\n", encoding="utf-8")
+    _sync_gitignore(tmp_path)
+    lines = (tmp_path / ".gitignore").read_text(encoding="utf-8").splitlines()
+    assert "/drop/" not in lines and "/inbox/" not in lines
+
+
+def test_files_inbox_folder_is_created_idempotently(tmp_path: Path) -> None:
+    from projio.init import _ensure_files_inbox, files_inbox
+
+    assert files_inbox(tmp_path) == "inbox"
+    assert _ensure_files_inbox(tmp_path, dry_run=True) == "would_create"
+    assert not (tmp_path / "inbox").exists()
+    assert _ensure_files_inbox(tmp_path) == "created"
+    kept = tmp_path / "inbox" / "paper.pdf"
+    kept.write_bytes(b"%PDF")
+    assert _ensure_files_inbox(tmp_path) == "exists"
+    assert kept.read_bytes() == b"%PDF"
+
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "manager.yml").write_text("files_inbox: downloads\n", encoding="utf-8")
+    assert _ensure_files_inbox(tmp_path) == "created"
+    assert (tmp_path / "downloads").is_dir()
+    (tmp_path / ".claude" / "manager.yml").write_text("files_inbox: ../outside\n", encoding="utf-8")
+    assert _ensure_files_inbox(tmp_path) == "off"

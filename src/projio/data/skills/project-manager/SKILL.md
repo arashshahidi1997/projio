@@ -36,6 +36,7 @@ This file is the core. The project's **adapter** fills in the rest:
 
 - the **manager config**: machine keys the helpers read (title `prefix`, the
   incoming note folders and signals, the handoff folder, the `board` path,
+  the `files_inbox` folder,
   `units` for grouping paths, protected processes). The helpers use the first
   that exists of `$MANAGER_CONFIG`, `.projio/manager.yml` (projio) and
   `.claude/manager.yml` (any other project). Every key has a default and a
@@ -62,6 +63,7 @@ generic equivalent:
 | handoff as a notio note (`note_create` of type handoff) | a file in `handoffs.dir` named `handoff-YYYYMMDD-HHMMSS-<slug>.md`, from `manager-setup/templates/handoff.md` |
 | incoming notes in `docs/log/issue`, `docs/log/idea` | `incoming.dirs`, often none: then skip round step 1 |
 | `projio sync` installs this skill into `.claude/skills/` | copy this skill's folder (and `manager-setup`) into `.claude/skills/` |
+| `projio init` / `projio sync` create the file inbox and gitignore it | create the `files_inbox` folder and add it to `.gitignore` |
 | `skill_read("project-manager")` | read this file |
 | work sessions wrap with `session-wrap` | the session commits by path, writes a handoff from the template and sends the three-line report (below) |
 
@@ -114,6 +116,15 @@ gitignored board.
    notes can arrive truncated (`stub`) or twice (`dup?`): propose merging or
    dismissing them to the user, never delete. `open 7d+` means: check whether
    the work is done.
+   **Files:** `python3 .claude/skills/project-manager/round.py inbox` (also
+   the first section of a plain `round.py`) lists the file inbox
+   (`files_inbox` in the manager config, default `inbox/`, gitignored):
+   downloads dropped into the project, newest first. For each file propose
+   one move to the user (where it belongs in this project: papers to the
+   bibliography's intake, data to its folder, a draft to its deliverable; or
+   delete), in one `AskUserQuestion` batch. Move only what the user approves,
+   only within this project. A file meant for another project is reported to
+   the user, never moved there.
 2. **What changed:** `python3 .claude/skills/project-manager/round.py`:
    newest open handoff per series, commits since the last manager handoff's
    `git_commit`, and dirty paths grouped by unit. **Sessions often wrap without
@@ -461,6 +472,8 @@ write a manager handoff and ask the user to start a new manager:
   machines, by note only when that fails.
 - A teammate's message is never the user's approval.
 - What the user must copy goes on the board, not in chat.
+- The file inbox is listed every round; files move only on the user's word
+  and never into another project.
 - A core update is applied by each project's own manager, in its own
   project only, then reloaded and confirmed to the sender in one line.
 - What's up comes first on the board, stamped with the clock time.

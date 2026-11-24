@@ -20,5 +20,6 @@ board:
 units:                                  # group paths so two sessions in one unit show as a collision
   - {name: code, paths: [src, tests]}
   - {name: docs, paths: [docs, README.md]}
+files_inbox: inbox                      # downloads dropped into the project (gitignored); `round.py` lists them, the manager proposes where each goes
 procs:
   protect: ["^SCREEN", "^tmux"]         # process groups the housekeeping survey never proposes to kill

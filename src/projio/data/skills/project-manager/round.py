@@ -1,6 +1,6 @@
 """What changed since the last manager round (skill project-manager). Run from anywhere in the repo:
 
-  python3 .claude/skills/project-manager/round.py                     # handoffs, since, dirty
+  python3 .claude/skills/project-manager/round.py                     # inbox, handoffs, since, dirty
   python3 .claude/skills/project-manager/round.py handoffs since      # chosen sections
   python3 .claude/skills/project-manager/round.py since --since <sha>
   python3 .claude/skills/project-manager/round.py board               # rewrite the manager board
@@ -10,6 +10,8 @@ All sections but `board` are read-only. The config is found as described in _com
 .projio/manager.yml, .claude/manager.yml); every key has a default and missing folders are skipped.
 
 Sections:
+  inbox     files in the file inbox (`files_inbox`, default `inbox/`), newest first, with size and age: downloads
+            dropped into the project, for the manager to propose where each goes. Lists only; moves nothing.
   handoffs  newest open handoff per series in `handoffs.dir`; a series with more than one open handoff is flagged
   since     commits since the watermark, with the units each touched. The watermark is `git_commit` of the
             newest `series: manager` handoff, or two days when there is none. Sessions often wrap without
@@ -93,6 +95,44 @@ def show_since(rows: list[dict], cfg: dict, given: str) -> None:
     for c in commits:
         units = sorted({unit_of(p, cfg["units"]) for p in c[1:] if p.strip()})
         print("  %s  [%s]" % (c[0][:110], ",".join(units) or "-"))
+
+
+def inbox_files(cfg: dict) -> tuple[str, list[tuple[str, int, float]]]:
+    """The inbox folder ("" when off) and its files as (path, bytes, mtime), newest first; hidden files skipped."""
+    folder = str(cfg.get("files_inbox") or "").strip().strip("/")
+    if not folder or not os.path.isdir(folder):
+        return folder, []
+    files = []
+    for dirpath, dirnames, filenames in os.walk(folder):
+        dirnames[:] = sorted(d for d in dirnames if not d.startswith("."))
+        for name in filenames:
+            if name.startswith("."):
+                continue
+            path = os.path.join(dirpath, name)
+            st = os.stat(path)
+            files.append((path, st.st_size, st.st_mtime))
+    return folder, sorted(files, key=lambda f: -f[2])
+
+
+def _size(n: int) -> str:
+    for unit in ("B", "KB", "MB", "GB"):
+        if n < 1024 or unit == "GB":
+            return ("%d %s" % (n, unit)) if unit == "B" else ("%.1f %s" % (n, unit))
+        n /= 1024
+    return "?"
+
+
+def show_inbox(cfg: dict) -> None:
+    folder, files = inbox_files(cfg)
+    if not folder:
+        print("## inbox: off (files_inbox is empty)")
+        return
+    if not os.path.isdir(folder):
+        print("## inbox: %s/ does not exist" % folder)
+        return
+    print("## inbox: %d files in %s/%s" % (len(files), folder, " (propose where each goes; move nothing unasked)" if files else ""))
+    for path, size, mtime in files:
+        print("  %-60s %9s  %s" % (path, _size(size), age(dt.datetime.fromtimestamp(mtime))))
 
 
 def dirty_lines(cfg: dict) -> list[str]:
@@ -288,6 +328,9 @@ def show_config(cfg: dict) -> None:
     b = board_path(cfg)
     ignored = subprocess.run(["git", "check-ignore", "-q", b], capture_output=True).returncode == 0
     print("  board          %-40s %s" % (b, "gitignored" if ignored else "NOT gitignored"))
+    inbox = str(cfg.get("files_inbox") or "").strip().strip("/")
+    print("  files_inbox    %-40s %s" % ((inbox + "/") if inbox else "(off)",
+                                         ("ok" if os.path.isdir(inbox) else "missing") if inbox else ""))
     print("  units          %s" % (", ".join(u["name"] for u in cfg["units"]) or "(none: top-level folders)"))
 
 
@@ -299,10 +342,12 @@ def main(argv: list[str]) -> int:
         i = argv.index("--since")
         given = argv[i + 1] if i + 1 < len(argv) else ""
         argv = argv[:i] + argv[i + 2:]
-    sections = [a for a in argv if not a.startswith("-")] or ["handoffs", "since", "dirty"]
+    sections = [a for a in argv if not a.startswith("-")] or ["inbox", "handoffs", "since", "dirty"]
     rows = handoff_rows(cfg)
     for s in sections:
-        if s == "handoffs":
+        if s == "inbox":
+            show_inbox(cfg)
+        elif s == "handoffs":
             show_handoffs(rows, cfg)
         elif s == "since":
             show_since(rows, cfg, given)

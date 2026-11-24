@@ -1179,6 +1179,53 @@ def _gitignore_entries_for_framework(site_framework: str, site_dirs: list[str] |
     return entries
 
 
+_MANAGER_CONFIGS = (".projio/manager.yml", ".claude/manager.yml")
+DEFAULT_FILES_INBOX = "inbox"
+
+
+def files_inbox(root: Path) -> str:
+    """The file inbox folder: ``files_inbox`` in the manager config, default ``inbox``.
+
+    One source: the manager config the project-manager helpers read (the first of
+    ``.projio/manager.yml`` and ``.claude/manager.yml`` that exists). An empty or
+    false value turns the inbox off ("").
+    """
+    for rel in _MANAGER_CONFIGS:
+        path = Path(root) / rel
+        if not path.is_file():
+            continue
+        try:
+            import yaml
+
+            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            return DEFAULT_FILES_INBOX
+        if isinstance(data, dict) and "files_inbox" in data:
+            value = data["files_inbox"]
+            return str(value).strip() if value else ""
+        return DEFAULT_FILES_INBOX
+    return DEFAULT_FILES_INBOX
+
+
+def _ensure_files_inbox(root: Path, *, dry_run: bool = False) -> str:
+    """Create the file inbox folder if missing. Never touches what is in it.
+
+    Returns ``"created"``, ``"exists"``, ``"off"`` (no inbox configured or the
+    name points outside the repo) or ``"would_create"`` with ``dry_run``.
+    """
+    name = files_inbox(root)
+    anchored = _anchored_dir(name) if name else None
+    if not anchored:
+        return "off"
+    path = Path(root) / anchored.strip("/")
+    if path.is_dir():
+        return "exists"
+    if dry_run:
+        return "would_create"
+    path.mkdir(parents=True, exist_ok=True)
+    return "created"
+
+
 def _ensure_projio_gitignore(root: Path, *, site_framework: str, dry_run: bool = False, quiet: bool = False) -> str:
     """Write or refresh the managed ``# >>> projio >>>`` block in ``.gitignore``.
 
@@ -1187,7 +1234,11 @@ def _ensure_projio_gitignore(root: Path, *, site_framework: str, dry_run: bool =
     with ``dry_run``).
     """
     path = root / ".gitignore"
-    block_lines = [_GITIGNORE_BEGIN, *sorted(dict.fromkeys(_gitignore_entries_for_framework(site_framework, _configured_site_dirs(root)))), _GITIGNORE_END]
+    entries = _gitignore_entries_for_framework(site_framework, _configured_site_dirs(root))
+    inbox = _anchored_dir(files_inbox(root)) if files_inbox(root) else None
+    if inbox:
+        entries.append(inbox)  # file inbox: downloads dropped here for the manager to sort
+    block_lines = [_GITIGNORE_BEGIN, *sorted(dict.fromkeys(entries)), _GITIGNORE_END]
     block = "\n".join(block_lines) + "\n"
     if path.exists():
         text = path.read_text(encoding="utf-8")
@@ -1362,6 +1413,7 @@ def _scaffold_base(root: Path, *, kind: str, force: bool, vscode: bool, github_p
         # cli (default): operate via the projio CLI; scaffold pixi.toml so project envs work.
         _ensure_pixi_scaffold(root)
     _ensure_projio_gitignore(root, site_framework=site_framework)
+    _ensure_files_inbox(root)
     if vscode:
         _ensure_vscode_settings(root)
     if github_pages:

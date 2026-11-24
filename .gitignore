@@ -32,6 +32,7 @@ build/
 .vscode/mcp.json
 /.mcp.json
 /.scratch/
+/inbox/
 /site/
 docs/deliverables/reports/*/_files/
 docs/deliverables/reports/*/_freeze/

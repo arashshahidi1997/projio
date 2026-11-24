@@ -1429,6 +1429,10 @@ def sync_workspace(root: str | Path, *, dry_run: bool = False, index: bool | Non
         print(f"{prefix}[~] .gitignore: projio managed block refreshed (lines outside it untouched)")
     else:
         print("[=] .gitignore: projio managed block up to date")
+    from projio.init import _ensure_files_inbox, files_inbox
+    inbox_action = _ensure_files_inbox(root_path, dry_run=dry_run)
+    if inbox_action in ("created", "would_create"):
+        print(f"{prefix}[+] {files_inbox(root_path)}/: file inbox created (gitignored)")
 
     # 11. Write .claude/skills/<name>/ (native Claude Code skills) from discovered skills
     cmd_action = _sync_claude_skills(root_path, dry_run=dry_run)

@@ -436,3 +436,25 @@ def test_skill_folders_are_projio_free() -> None:
             assert not re.search(r"^\s*(from|import)\s+projio", f.read_text(), re.M), f
     for t in ("manager.yml", "adapter.md", "handoff.md"):
         assert (SETUP / "templates" / t).is_file()
+
+
+def test_round_inbox_with_and_without_folder(repo: Path) -> None:
+    out = _run(repo, "round.py", "inbox")
+    assert "## inbox: inbox/ does not exist" in out
+    assert "files_inbox    inbox/" in _run(repo, "round.py", "config")
+
+    inbox = repo / "inbox"
+    (inbox / "sub").mkdir(parents=True)
+    (inbox / "paper.pdf").write_bytes(b"%PDF" * 300)
+    (inbox / "sub" / "data.csv").write_text("a,b\n")
+    (inbox / ".hidden").write_text("x")
+    out = _run(repo, "round.py")
+    assert out.index("## inbox") < out.index("## since")       # first in a default round
+    section = out.split("## inbox")[1].split("\n## ")[0]
+    assert "2 files in inbox/" in section
+    assert "inbox/paper.pdf" in section and "1.2 KB" in section
+    assert "inbox/sub/data.csv" in section and ".hidden" not in section
+    assert sorted(p.name for p in inbox.rglob("*")) == [".hidden", "data.csv", "paper.pdf", "sub"]  # nothing moved
+
+    (repo / ".projio" / "manager.yml").write_text('prefix: "demo-"\nfiles_inbox: ""\n')
+    assert "## inbox: off" in _run(repo, "round.py", "inbox")

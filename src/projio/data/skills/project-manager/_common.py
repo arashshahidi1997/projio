@@ -40,6 +40,7 @@ PROJIO_DEFAULTS: dict = {
     "board": {"path": ""},  # empty: .scratch/<prefix>manager-board.md
     "units": [],
     "procs": {"protect": []},
+    "files_inbox": "inbox",  # downloads dropped into the project; the manager proposes where each goes
 }
 
 # any other project: git and a handoff folder are enough

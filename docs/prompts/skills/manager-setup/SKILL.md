@@ -89,11 +89,13 @@ every `{{…}}` placeholder; a placeholder with nothing to say becomes a short
    core rules** (states, levels, commit and push, decisions, report-back). The
    frontmatter `description` says when to use it.
 
-5. **Gitignore the board and install the core.**
-   - Add the board's folder (`.scratch/`) to `.gitignore` unless
-     `git check-ignore -q <board>` already passes. In projio, `projio sync`
-     puts `/.scratch/` in the `# >>> projio >>>` block; never edit that block
-     by hand (sync rewrites it). `.scratch/` is the recommended home for all
+5. **Gitignore the board and the inbox, install the core.**
+   - Add the board's folder (`.scratch/`) and the file inbox (`files_inbox`,
+     default `inbox/`; create that folder) to `.gitignore` unless
+     `git check-ignore -q` already passes for them. In projio, `projio init`
+     and `projio sync` put `/.scratch/` and the inbox in the `# >>> projio >>>`
+     block and create the inbox folder; never edit that block by hand (sync
+     rewrites it). `.scratch/` is the recommended home for all
      scratch (drafts, reports, viewable outputs), since the Claude app's file
      pane opens only files inside the project; it is never required.
    - projio layout with `projio` on PATH: `projio sync` (copies the core,
@@ -106,7 +108,8 @@ every `{{…}}` placeholder; a placeholder with nothing to say becomes a short
      this skill's folder, so the project can redo the setup). The helpers are
      stdlib Python 3.9+; PyYAML is optional.
    - Check: `python3 .claude/skills/project-manager/round.py config` names
-     the config, the layout, the folders found and "gitignored" for the board.
+     the config, the layout, the folders found (the inbox among them) and
+     "gitignored" for the board.
 
 6. **Create the board and the first kickoff.**
    `python3 .claude/skills/project-manager/round.py board`, then under
