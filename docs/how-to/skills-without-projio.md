@@ -6,7 +6,7 @@ its MCP server or its packages. They need git and Python 3.9 or later.
 
 | Plugin | Skills | What they do |
 |---|---|---|
-| `projio-workflow` | `project-manager`, `manager-setup`, `session-wrap`, `always-complete` | A standing manager session that tracks incoming notes, running sessions, handoffs and what to start next; its setup in a new project; a session wrap that commits by path and writes a handoff; and the "always complete, never finished" check |
+| `projio-workflow` | `project-manager`, `manager-setup`, `session-wrap`, `always-complete`, `analysis-orientation`, `analysis-log` | A standing manager session that tracks incoming notes, running sessions, handoffs and what to start next; its setup in a new project; a session wrap that commits by path and writes a handoff; the "always complete, never finished" check; and analysis threads: where a thread stands and which open questions to take next (read-only), and result notes with the thread's state doc and hypothesis registry |
 
 ## Install
 
@@ -26,9 +26,11 @@ from projio. Adding the projio repository itself also works, but Claude Code
 clones it with all its submodules, which is slow and can time out.
 
 Then, in a project, ask for "set up a manager" (`manager-setup`), "wrap up"
-(`session-wrap`) or type `/always-complete`. Without projio the skills use plain
+(`session-wrap`), type `/always-complete`, or ask "where does `<thread>` stand"
+(`analysis-orientation`) and "record this finding" (`analysis-log`). Without projio the skills use plain
 files: the manager config is `.claude/manager.yml` and handoffs are Markdown files
-in the handoff folder. Each skill has a "projio or not" table that maps every
+in the handoff folder; analysis threads live in `docs/analysis/` and notes in
+`docs/log/`. The manager and wrap skills have a "projio or not" table that maps every
 projio step to its plain equivalent.
 
 ## Updates

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- **projio-workflow 0.4.0**: two analysis-thread skills (docs/specs/study-template-defaults.md §5.2, §5.3), ported from pixecog and portable (git and the docs folder only). `analysis-orientation` (read-only): THREAD (where a thread stands, from its state doc `docs/analysis/<thread>/index.md`, with the notes and commits since its `state_as_of` watermark), NEXT (open O items across threads, ranked) and OVERVIEW, with the stdlib helper `threads.py`. `analysis-log`: RECORD (result note plus finding ID), SEED (new state doc; `docs/analysis/index.md` and `hypotheses.md` when missing) and UPDATE, with templates for the state doc, the thread index, the hypothesis registry and a result note.
+
 ### Deprecated
 - **notio.present (decks)**: deprecated (docs/specs/notio/slim.md §7, 2026-11-24) and removed after the next notio release. The 15 `present_*` MCP tools are opt-in: they load only when `.projio/packages.yml` has `present: {enabled: true}` or `PROJIO_MCP_TOOLS` names `present` (or a `present_*` tool). Their descriptions, the generated agent instructions, the `literature-presentation` and `progress-report-deck` skills and the presentio docs point to Quarto reveal.js and the `quarto-talks` skill. `toolset.OPT_IN` is the general switch for opt-in groups.
 

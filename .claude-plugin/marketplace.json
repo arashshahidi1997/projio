@@ -7,14 +7,14 @@
       "name": "projio-workflow",
       "source": "./",
       "strict": false,
-      "version": "0.3.1",
-      "description": "A standing manager session for any git project (incoming notes, session states, board, handoffs), its setup, a session wrap that commits by path and writes a handoff, and the 'always complete, never finished' check. Needs git and Python 3.9+, not projio.",
+      "version": "0.4.0",
+      "description": "A standing manager session for any git project (incoming notes, session states, board, handoffs), its setup, a session wrap that commits by path and writes a handoff, the 'always complete, never finished' check, and analysis threads (where a thread stands and what to work on next; result notes and the thread's state doc). Needs git and Python 3.9+, not projio.",
       "author": {"name": "Arash Shahidi"},
       "homepage": "https://arashshahidi1997.github.io/projio/",
       "repository": "https://github.com/arashshahidi1997/projio",
       "license": "MIT",
-      "keywords": ["manager", "orchestration", "sessions", "handoff", "workflow"],
-      "skills": ["./src/projio/data/skills/project-manager", "./src/projio/data/skills/manager-setup", "./src/projio/data/skills/session-wrap", "./src/projio/data/skills/always-complete"],
+      "keywords": ["manager", "orchestration", "sessions", "handoff", "workflow", "analysis"],
+      "skills": ["./src/projio/data/skills/project-manager", "./src/projio/data/skills/manager-setup", "./src/projio/data/skills/session-wrap", "./src/projio/data/skills/always-complete", "./src/projio/data/skills/analysis-orientation", "./src/projio/data/skills/analysis-log"],
       "mcpServers": {}
     }
   ]
