@@ -1,5 +1,11 @@
 # Presentio: Decks as Iteratable Artifacts
 
+!!! warning "Deprecated (2026-11-24)"
+    `notio.present` is deprecated and is removed after the next notio release
+    ([notio slim spec §7](../specs/notio/slim.md)). The `present_*` MCP tools are opt-in: set
+    `present: {enabled: true}` in `.projio/packages.yml`, or name `present` in `PROJIO_MCP_TOOLS`.
+    Write new decks as Quarto reveal.js (`format: revealjs`) with the `quarto-talks` skill.
+
 ## The problem
 
 Research presentations — journal clubs, conference talks, lab meetings, progress reports, thesis defenses — were a gap in the projio ecosystem. Before presentio, the only slide tooling was a single-paper LLM-backed Marp generator in biblio (`biblio present`). It was one-shot, paper-scoped, not exposed via projio's MCP server, and couldn't pull figures from figio or reuse content across projects.

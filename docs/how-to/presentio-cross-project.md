@@ -1,5 +1,11 @@
 # Import a deck section from another project
 
+!!! warning "Deprecated (2026-11-24)"
+    `notio.present` is deprecated and is removed after the next notio release
+    ([notio slim spec §7](../specs/notio/slim.md)). The `present_*` MCP tools are opt-in: set
+    `present: {enabled: true}` in `.projio/packages.yml`, or name `present` in `PROJIO_MCP_TOOLS`.
+    Write new decks as Quarto reveal.js (`format: revealjs`) with the `quarto-talks` skill.
+
 Pull a section from another project's presentio deck into the current project's deck. This is the projio-slides-inside-pixecog-talk use case.
 
 ## Prerequisites

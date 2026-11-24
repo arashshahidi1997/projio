@@ -1,14 +1,15 @@
 ---
 name: literature-presentation
 description: >
+  Deprecated: for a new deck use the quarto-talks skill (Quarto reveal.js).
   Build a presentation deck that frames a scientific article's background —
   motivation, prior work, methods landscape, open questions — using the
   projio bibliography and presentio tools. The goal is an iteration loop,
   not one-shot generation: scaffold → outline → draft slides one at a
   time with human review → cite-check → build.
 metadata:
-  short-description: Build a literature-background deck slide-by-slide
-  tags: [presentio, presentation, literature, iteration]
+  short-description: (deprecated, use quarto-talks) Build a literature-background deck slide-by-slide
+  tags: [deprecated, presentio, presentation, literature, iteration]
   tooling:
     mcp:
       - server: projio
@@ -35,6 +36,14 @@ metadata:
 ---
 
 # Literature Presentation
+
+> **Deprecated (2026-11-24).** This skill drives `notio.present` through the `present_*` MCP tools.
+> `notio.present` is deprecated and removed after the next notio release; the `present_*` tools are
+> opt-in (`present: {enabled: true}` in `.projio/packages.yml`, or `present` in `PROJIO_MCP_TOOLS`).
+> For a new deck, use the `quarto-talks` skill: a Quarto reveal.js talk (`format: revealjs`) that
+> cites from `.projio/render/compiled.bib`. The iteration loop below (outline, one section at a time with human review, cite-check)
+> carries over unchanged to a `.qmd` deck.
+> Use this skill only to finish a deck that already lives under `docs/deliverables/presentations/`.
 
 Build a presentation deck that grounds an article in its literature
 context. Work section-by-section with human review at each stage —

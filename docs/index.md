@@ -89,7 +89,7 @@ The **engineering vs. science** split is deliberate — see the [delegation mode
 |-----------|------|------|
 | **questio** (in projio core) | Research questions, hypothesis tracking, prior art, binding of questions to results and deliverables | [questio](explanation/questio.md) |
 | **notio/manuscript** | Section assembly, citation checking, figure insertion, pandoc → PDF/LaTeX | [site](https://arashshahidi1997.github.io/notio/) |
-| **notio/present** | Slide decks from reusable sections — reveal.js and Marp backends, cross-project section import | [presentio](explanation/presentio.md) |
+| **notio/present** | Deprecated (removed after the next notio release; decks are Quarto reveal.js). Slide decks from reusable sections — reveal.js and Marp backends, cross-project section import | [presentio](explanation/presentio.md) |
 | **deliverables** | Narrative artifacts for external audiences: reports, decks, posters — bind questions and results into a story | [deliverables](specs/deliverables.md) |
 
 ## Which subpackage do I need?
@@ -104,7 +104,7 @@ The **engineering vs. science** split is deliberate — see the [delegation mode
 | Build a figure from a declarative spec | figio |
 | Track a research question and bind results to it | questio |
 | Assemble a manuscript for submission | notio/manuscript |
-| Build a slide deck or reveal.js talk | notio/present |
+| Build a slide deck or reveal.js talk | Quarto reveal.js (`quarto-talks` skill); notio/present is deprecated |
 
 ## Key capabilities
 

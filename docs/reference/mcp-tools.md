@@ -112,7 +112,14 @@ what replaces it.
 
 `manuscript_figure_insert` appends or prepends a `![](fig/<figure_id>.*)` reference at the specified position in a section file.
 
-## Presentation tools (via notio.present)
+## Presentation tools (via notio.present, deprecated)
+
+!!! warning "Deprecated (2026-11-24)"
+    `notio.present` is deprecated and is removed after the next notio release
+    ([notio slim spec §7](../specs/notio/slim.md)). The `present_*` MCP tools are opt-in: set
+    `present: {enabled: true}` in `.projio/packages.yml`, or name `present` in `PROJIO_MCP_TOOLS`.
+    Write new decks as Quarto reveal.js (`format: revealjs`) with the `quarto-talks` skill.
+
 
 Presentio treats presentation decks as first-class projio artifacts, parallel to manuscripts: a YAML spec + ordered section tree + dual-backend renderer (Marp or reveal.js via pandoc). Decks live under `docs/deliverables/presentations/<name>/` and are iterated section-by-section rather than one-shot-generated.
 

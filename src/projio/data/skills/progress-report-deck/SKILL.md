@@ -1,6 +1,7 @@
 ---
 name: progress-report-deck
 description: >
+  Deprecated: for a new deck use the quarto-talks skill (Quarto reveal.js).
   Build a recurring progress-report presentation (weekly, monthly,
   milestone) by orchestrating across projects via worklog and drafting
   the deck in presentio. Worklog supplies the cross-project briefing
@@ -8,8 +9,8 @@ description: >
   artifact itself. The loop is human-in-the-loop: propose outline from
   worklog data → human approves → draft sections one at a time.
 metadata:
-  short-description: Worklog-sourced progress deck, iterated section-by-section
-  tags: [presentio, progress-report, worklog, cross-project]
+  short-description: (deprecated, use quarto-talks) Worklog-sourced progress deck, iterated section-by-section
+  tags: [deprecated, presentio, progress-report, worklog, cross-project]
   tooling:
     mcp:
       - server: projio
@@ -37,6 +38,14 @@ metadata:
 ---
 
 # Progress Report Deck
+
+> **Deprecated (2026-11-24).** This skill drives `notio.present` through the `present_*` MCP tools.
+> `notio.present` is deprecated and removed after the next notio release; the `present_*` tools are
+> opt-in (`present: {enabled: true}` in `.projio/packages.yml`, or `present` in `PROJIO_MCP_TOOLS`).
+> For a new deck, use the `quarto-talks` skill: a Quarto reveal.js talk (`format: revealjs`) that
+> cites from `.projio/render/compiled.bib`. The worklog briefing steps below still apply; draft the sections into
+> the `.qmd` instead of `present_*` sections.
+> Use this skill only to finish a deck that already lives under `docs/deliverables/presentations/`.
 
 Assemble a progress-report deck from worklog data. The deck lives in
 one specific project (usually your active "writing" project or a

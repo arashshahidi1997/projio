@@ -63,8 +63,8 @@ The portable skills (marked `metadata.portable: true`) are also shared as a Clau
 
 | Skill | Purpose |
 |-------|---------|
-| `literature-presentation` | Build a multi-paper literature-background deck section-by-section |
-| `progress-report-deck` | Worklog-sourced cross-project progress report, drafted iteratively |
+| `literature-presentation` | Deprecated: use `quarto-talks`. Build a multi-paper literature-background deck section-by-section |
+| `progress-report-deck` | Deprecated: use `quarto-talks`. Worklog-sourced cross-project progress report, drafted iteratively |
 
 ### Issue handling
 
@@ -97,6 +97,13 @@ metadata:
 ```
 
 ## Presentation skills in detail
+
+!!! warning "Deprecated (2026-11-24)"
+    `notio.present` is deprecated and is removed after the next notio release
+    ([notio slim spec §7](../specs/notio/slim.md)). The `present_*` MCP tools are opt-in: set
+    `present: {enabled: true}` in `.projio/packages.yml`, or name `present` in `PROJIO_MCP_TOOLS`.
+    Write new decks as Quarto reveal.js (`format: revealjs`) with the `quarto-talks` skill.
+
 
 ### literature-presentation
 

@@ -1,6 +1,6 @@
 # Presentio Design Spec
 
-**Status:** Draft
+**Status:** Deprecated (2026-11-24): `notio.present` is removed after the next notio release; decks are Quarto reveal.js. See [notio slim §7](../notio/slim.md).
 **Date:** 2026-04-13
 **Package:** TBD — either `notio.present` (subpackage, mirrors `notio.manuscript`) or standalone `packages/presentio/`
 **Working name:** presentio

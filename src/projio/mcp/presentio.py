@@ -1,5 +1,9 @@
 """MCP tools: presentation deck scaffolding, assembly, rendering, iteration.
 
+Deprecated (2026-11-24, docs/specs/notio/slim.md §7): ``notio.present`` is removed after the
+next notio release. The ``present_*`` tools are opt-in (``present`` in ``.projio/packages.yml`` or
+``PROJIO_MCP_TOOLS``); new decks are Quarto reveal.js, written with the ``quarto-talks`` skill.
+
 Mirrors :mod:`projio.mcp.manuscripto`.
 
 **Phase 1** — scaffolding + Marp build:

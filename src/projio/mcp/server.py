@@ -682,7 +682,7 @@ def present_init_tool(
     template: str = "lab-meeting",
     title: str = "",
 ):
-    """Scaffold a new presentation deck under docs/deliverables/presentations/<name>/.
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Scaffold a new presentation deck under docs/deliverables/presentations/<name>/.
     Format is 'marp' (phase 1) or 'revealjs' (phase 3). Template is one of
     lab-meeting, journal-club, conference-talk, progress-report."""
     return presentio.present_init(name=name, format=format, template=template, title=title)
@@ -690,31 +690,31 @@ def present_init_tool(
 
 @server.tool("present_list")
 def present_list_tool():
-    """List all decks under docs/deliverables/presentations/."""
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. List all decks under docs/deliverables/presentations/."""
     return presentio.present_list()
 
 
 @server.tool("present_status")
 def present_status_tool(name: str):
-    """Show deck section state, figures, bibliography inheritance, last build."""
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Show deck section state, figures, bibliography inheritance, last build."""
     return presentio.present_status(name=name)
 
 
 @server.tool("present_assemble")
 def present_assemble_tool(name: str):
-    """Generate assembled markdown without calling marp-cli."""
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Generate assembled markdown without calling marp-cli."""
     return presentio.present_assemble(name=name)
 
 
 @server.tool("present_build")
 def present_build_tool(name: str, format: str = ""):
-    """Build a deck via marp-cli. format is html, pdf, or pptx; defaults to html."""
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Build a deck via marp-cli. format is html, pdf, or pptx; defaults to html."""
     return presentio.present_build(name=name, format=format or None)
 
 
 @server.tool("present_validate")
 def present_validate_tool(name: str):
-    """Validate deck sections, figures, citations, and marp-cli availability."""
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Validate deck sections, figures, citations, and marp-cli availability."""
     return presentio.present_validate(name=name)
 
 
@@ -726,7 +726,7 @@ def present_seed_from_paper_tool(
     model: str = "sonnet",
     force: bool = False,
 ):
-    """Scaffold a deck and seed its first section from a paper citekey via
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Scaffold a deck and seed its first section from a paper citekey via
     biblio.present (LLM-backed). Use as a starting point for iteration, not
     as a finished deck."""
     return presentio.present_seed_from_paper(
@@ -736,7 +736,7 @@ def present_seed_from_paper_tool(
 
 @server.tool("present_section_context")
 def present_section_context_tool(name: str, section: str):
-    """One-call context for drafting a slide section: body, citations,
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. One-call context for drafting a slide section: body, citations,
     figures, RAG hits, related notes."""
     return presentio.present_section_context(name=name, section=section)
 
@@ -748,7 +748,7 @@ def present_figure_insert_tool(
     figure_id: str,
     position: str = "end",
 ):
-    """Insert a figio figure reference into a deck section and register
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Insert a figio figure reference into a deck section and register
     it under deck.yml figures: if new."""
     return presentio.present_figure_insert(
         name=name, section=section, figure_id=figure_id, position=position
@@ -757,21 +757,21 @@ def present_figure_insert_tool(
 
 @server.tool("present_cite_check")
 def present_cite_check_tool(name: str):
-    """Cross-check deck citations against the inherited bibliography
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Cross-check deck citations against the inherited bibliography
     and report docling fulltext availability per citekey."""
     return presentio.present_cite_check(name=name)
 
 
 @server.tool("present_overview")
 def present_overview_tool(name: str):
-    """Rich deck dashboard: per-section stats, missing/stale citations
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Rich deck dashboard: per-section stats, missing/stale citations
     and figures, slide count estimate, last-built outputs."""
     return presentio.present_overview(name=name)
 
 
 @server.tool("present_diff")
 def present_diff_tool(name: str):
-    """Compare current section content against the last assembled.md —
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Compare current section content against the last assembled.md —
     per-section word deltas, citation drift, figure-ref drift, unified diff."""
     return presentio.present_diff(name=name)
 
@@ -786,7 +786,7 @@ def present_section_import_tool(
     order: int = 0,
     mode: str = "reference",
 ):
-    """Import a section from another project's deck via worklog.
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Import a section from another project's deck via worklog.
     Fetches the remote section, caches it under docs/deliverables/presentations/<name>/imports/,
     registers it in deck.yml with import metadata. mode is 'reference' (can be
     refreshed) or 'freeze' (locked)."""
@@ -803,14 +803,14 @@ def present_section_import_tool(
 
 @server.tool("present_refresh_import")
 def present_refresh_import_tool(name: str, section: str):
-    """Re-fetch a previously imported section from its source project.
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Re-fetch a previously imported section from its source project.
     Only works on reference-mode imports; frozen imports are skipped."""
     return presentio.present_refresh_import(name=name, section=section)
 
 
 @server.tool("present_freeze_import")
 def present_freeze_import_tool(name: str, section: str = ""):
-    """Lock an imported section against future refreshes. Empty section
+    """Deprecated (notio.present; removed after the next notio release): write a Quarto reveal.js deck with the quarto-talks skill instead. Lock an imported section against future refreshes. Empty section
     freezes all imports in the deck."""
     return presentio.present_freeze_import(name=name, section=section)
 

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Deprecated
+- **notio.present (decks)**: deprecated (docs/specs/notio/slim.md §7, 2026-11-24) and removed after the next notio release. The 15 `present_*` MCP tools are opt-in: they load only when `.projio/packages.yml` has `present: {enabled: true}` or `PROJIO_MCP_TOOLS` names `present` (or a `present_*` tool). Their descriptions, the generated agent instructions, the `literature-presentation` and `progress-report-deck` skills and the presentio docs point to Quarto reveal.js and the `quarto-talks` skill. `toolset.OPT_IN` is the general switch for opt-in groups.
+
 ### Fixed
 - **projio-workflow 0.3.1**: the file inbox is off (one warning line) when `files_inbox` equals, sits inside or contains an `incoming.dirs` folder, so committed incoming notes in a folder named `inbox/` are neither gitignored nor listed as downloads.
 

@@ -1,5 +1,11 @@
 # Presentio: Iterating a Deck Section-by-Section
 
+!!! warning "Deprecated (2026-11-24)"
+    `notio.present` is deprecated and is removed after the next notio release
+    ([notio slim spec §7](../specs/notio/slim.md)). The `present_*` MCP tools are opt-in: set
+    `present: {enabled: true}` in `.projio/packages.yml`, or name `present` in `PROJIO_MCP_TOOLS`.
+    Write new decks as Quarto reveal.js (`format: revealjs`) with the `quarto-talks` skill.
+
 This tutorial walks through building a research presentation deck from scratch with presentio. The workflow is deliberately **iterative**, not one-shot: you scaffold a deck, draft sections one at a time with the agent as a collaborator, and build Marp or reveal.js output from the same source files.
 
 By the end, you will have a minimal deck that:
