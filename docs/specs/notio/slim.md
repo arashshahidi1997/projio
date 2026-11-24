@@ -30,7 +30,7 @@ half-written notes. Whether manuscript and present stay in notio is left for a l
 | b | LLM enrich | one project switch, `[llm] enabled = false` by default, gates every LLM call | proposed |
 | c | Indexes | not written on note creation; gitignored; built by `notio toc`, `projio sync` and site builds | proposed |
 | d | Lint | `notio lint` (CLI) and `note_lint` (MCP): stub, partial, title, frontmatter, stale, broken refs | proposed |
-| e | manuscript, present | four options, no choice yet | later decision |
+| e | manuscript, present | present deprecated now; manuscript retired after pixecog moves to Quarto | decided 2026-11-24 |
 | f | Human side | a docs page: Obsidian, Foam, SilverBullet on the same files | proposed |
 | g | `handoff` type | add to notio's default types, with a built-in template and a missing-template fallback | proposed |
 
@@ -252,6 +252,28 @@ mechanically and leaves the decisions to the person or the manager.
 - how much of present the `quarto-talks` path replaces
 
 **Done when:** the user picks an option in a later session. Until then, nothing in (a) to (d) depends on the choice.
+
+**Decision (2026-11-24, the user, via projio-manager).** Quarto is the default for study sites, talks and
+manuscripts (see [../study-template-defaults.md](../study-template-defaults.md)). It covers what `present` and
+`manuscript` render, so notio does not wrap Quarto or scaffold Quarto files: `quarto create`, Quarto's own templates
+and the agent writing `_quarto.yml` do that.
+
+- **present: deprecated now.** No new work. Its MCP tools (`present_*`) become opt-in, as figio's did, and their
+  descriptions say deprecated and point to Quarto reveal.js and the `quarto-talks` skill. The subpackage is removed
+  after one notio release. Evidence: the recent decks are `.qmd` (pixecog `intro-2026-05-02`, the LSM talk), and
+  no project builds through `notio.present` today.
+- **manuscript: retired after pixecog's cutover.** pixecog's manuscript builds both ways side by side
+  (`docs/manuscript/pixecog/_quarto.yml`, "coexists ... while the transition is in progress"); the Quarto path
+  needs two pre-render scripts (sections to includes, stats sidecars to `{{< meta >}}`). Once pixecog drops the
+  pandoc path, `notio.manuscript` is retired and those scripts become a projio "Quarto manuscript" template.
+- **The project glue lives in projio, not notio:** compiled bibliography and CSL from `render.yml`, stats sidecars,
+  pipeio figure paths, the wikilink filter, site templates (the Quarto site work). A few hundred lines of templates
+  and scripts.
+- **The `manuscript_*` MCP tools** are checked for real use first. Those that read the text (`cite_check`,
+  `journal_check`, `section_context`, `diff`) can be pointed at a Quarto project; unused ones go with the
+  subpackage.
+
+notio after this is the notes core of §3 to §6 and §8.
 
 ## 8. (g) The `handoff` type
 
