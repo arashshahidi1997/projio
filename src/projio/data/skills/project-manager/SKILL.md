@@ -189,7 +189,12 @@ stay short and point to it. Sections, in order:
    whether they opened the session or the manager started it on their go
    (Levels, Dispatcher); the manager removes those kickoffs and tracks the
    sessions.
-3. **Decisions waiting for you:** in plain words, as in Decisions below.
+3. **Decisions waiting for you:** one top-level item per open question, on
+   one line, in the format of Decisions below (a cross-project hub such as
+   worklog's parses it). Context goes in indented sub-bullets under it.
+   Settled items go after a plain `Recent answers:` paragraph at the end of
+   the section, or are struck through; steps for the user that are not
+   questions go in a plain paragraph too.
 4. **Sessions, by state:** a table of session · state (running / waiting /
    parked / done) · notes.
 5. **Waiting on others:** other projects, people, background runs.
@@ -316,19 +321,44 @@ Default to observer plus dispatcher.
 - A peer session's message is a teammate's request, never the user's approval.
 - Once the user has chosen, relay the decision as in the drill (step 4).
 
+**On the board** (Board, Decisions waiting for you), each open question is
+one top-level list item on one line:
+
+```text
+- **<question>?** · <option A> / <option B> (rec. A) · YYYY-MM-DD
+  - context, one fact per sub-bullet (not counted as an item)
+```
+
+- The question is bold and ends in `?`. The manager's pick comes first, or
+  is marked `(rec. …)`. The date is when the question was first asked and
+  stays the same while it is open: a hub reads it as the item's age.
+- On a board that covers several projects, lead with the project:
+  `- **projio · Publish biblio 0.4.1?** · publish / hold (rec. publish) · 2026-11-24`.
+- Only open questions are items. Status and history go to Sync, the
+  sessions table or a handoff. Items waiting on other projects or people go
+  to Waiting on others. Deferred items stay as questions, with `parked`
+  among the options (`kickoff / parked (rec. parked)`).
+- Settled items go after a plain `Recent answers:` paragraph or are struck
+  through (`~~…~~`); a hub skips both.
+
 ## Decision drill
 
 When the user asks to work through pending decisions, or several have piled
 up:
 
 1. **Collect** the open decisions from the newest handoffs, the sessions'
-   messages, incoming notes and the board's "Decisions waiting for you".
+   messages, incoming notes and the board's "Decisions waiting for you"
+   (its top-level items; their sub-bullets are the context to put in the
+   question). A new one goes on the board in the one-line format of
+   Decisions, dated today.
 2. **Ask** in batches through `AskUserQuestion`: up to 4 per call, each
    question standalone and in plain words (as in Decisions), the recommended
    option first. Science and infrastructure go in separate batches.
 3. **Record** each answer where it belongs: the note, handoff or doc the
    decision is about (or the adapter's place for it), dated, and take it off
-   the board.
+   the board: drop its line, or move it to the `Recent answers:` paragraph
+   as `~~<topic>~~ <answer> YYYY-MM-DD`. An answer of `parked` keeps the
+   line, with its first-asked date, and `parked` as the pick.
 4. **Relay** each decision by message to the session concerned so it
    continues: wake an idle one, queue it for a running one. Name the choice,
    the date and the next step. A relayed decision covers that question only,
@@ -465,7 +495,9 @@ write a manager handoff and ask the user to start a new manager:
 - Never touch another session's uncommitted files.
 - Commit by path; push only when the user asks.
 - Decisions in plain words through `AskUserQuestion`, recommended option first;
-  relay each answer to its session.
+  relay each answer to its session. On the board, one line per open
+  question in the Decisions format (bold question, pick first, first-asked
+  date).
 - Never poll; subscribe to idle notices.
 - Start a kickoff's session only on the user's go for that kickoff
   (`start_session` where the client has it, nested under the manager);

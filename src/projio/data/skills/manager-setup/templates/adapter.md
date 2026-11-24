@@ -44,8 +44,11 @@ are in `{{config_path}}`.
 reason, then what to hold); keep it current every round. Other managers in Sync:
 {{other_managers}}.
 
-**Decisions (drill).** Record each answer, dated, in {{decision_place}}.
-Relay it to the session concerned.
+**Decisions.** On the board, one line per open question (the core's
+Decisions): `- **<question>?** · <option A> / <option B> (rec. A) · YYYY-MM-DD`,
+dated when first asked, context in sub-bullets, settled items after
+`Recent answers:`. **Drill:** record each answer, dated, in
+{{decision_place}}. Relay it to the session concerned.
 
 ## Units of work and where their state lives
 

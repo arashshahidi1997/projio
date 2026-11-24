@@ -177,7 +177,10 @@ BOARD_SECTIONS = [
      "e.g. SPD; the title carries it too: `<prefix><unit> · <CODE> · <item>`, the prompt's first line "
      "Title this session `…`.), with a tag line (**independent** or **depends on <CODE or what>**) and a ```text block; say "
      "\"delegated <CODE>\" or \"delegated all\" once started (by you, or by the manager on your go)."),
-    ("decisions", "Decisions waiting for you", "_None._"),
+    ("decisions", "Decisions waiting for you",
+     "None open. One line per open question: `- **<question>?** · <option A> / <option B> (rec. A) · YYYY-MM-DD` "
+     "(the date it was first asked), context in indented sub-bullets; settled items after a plain "
+     "\"Recent answers:\" paragraph or struck through."),
     ("sessions", "Sessions, by state", "| Session | State | Notes |\n|---|---|---|"),
     ("waiting", "Waiting on others", "_None._"),
     ("sync", "Sync", "This manager: {manager} · {host} · `?` (session id)\n\n"

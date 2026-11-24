@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Changed
+- **projio-workflow 0.5.0**: a manager board's `## Decisions waiting for you` uses one line per open question, the format worklog's cross-project hub parses (adopted 2026-11-24): `- **<question>?** · <option A> / <option B> (rec. A) · YYYY-MM-DD`, with the date first asked, the project first on cross-project boards, context in indented sub-bullets, settled items after a plain `Recent answers:` paragraph or struck through, waits under Waiting on others, deferred items kept with `parked` as an option. In the `project-manager` core (Board, Decisions, Decision drill, Hard rules), the `round.py board` skeleton and the `manager-setup` adapter template.
+
 ### Added
 - **projio-workflow 0.4.0**: two analysis-thread skills (docs/specs/study-template-defaults.md §5.2, §5.3), ported from pixecog and portable (git and the docs folder only). `analysis-orientation` (read-only): THREAD (where a thread stands, from its state doc `docs/analysis/<thread>/index.md`, with the notes and commits since its `state_as_of` watermark), NEXT (open O items across threads, ranked) and OVERVIEW, with the stdlib helper `threads.py`. `analysis-log`: RECORD (result note plus finding ID), SEED (new state doc; `docs/analysis/index.md` and `hypotheses.md` when missing) and UPDATE, with templates for the state doc, the thread index, the hypothesis registry and a result note.
 
