@@ -112,7 +112,7 @@ what replaces it.
 
 `manuscript_figure_insert` appends or prepends a `![](fig/<figure_id>.*)` reference at the specified position in a section file.
 
-## Presentation tools (via notio.present, deprecated)
+## Presentation tools (via notio.present)
 
 !!! warning "Deprecated (2026-11-24)"
     `notio.present` is deprecated and is removed after the next notio release
