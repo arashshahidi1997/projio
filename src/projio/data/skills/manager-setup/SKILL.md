@@ -127,6 +127,11 @@ every `{{…}}` placeholder; a placeholder with nothing to say becomes a short
    round, stay open as observer and dispatcher, the push rule. Write Delegate's **Recommended now** block
    (`MGR`: start the standing manager) and fill What's up and Sync (names
    only, never a session id: the core's Messaging).
+   Kickoffs may instead be files (the core's Board, Kickoffs as data):
+   `round.py kickoff new MGR --item "standing manager"`, fill the body, set
+   `title: "<prefix>manager"`, and `round.py board` renders Delegate from
+   it. A hand-written Delegate is fine too; a board without kickoff files
+   works as before.
 
 7. **Write the first manager handoff** from `templates/handoff.md` (in
    projio: a notio note of type handoff) with `series: manager`,

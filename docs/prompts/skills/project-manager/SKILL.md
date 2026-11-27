@@ -192,7 +192,8 @@ stay short and point to it. Sections, in order:
    user says "delegated <CODE>[, <CODE>]" or "delegated all" once started,
    whether they opened the session or the manager started it on their go
    (Levels, Dispatcher); the manager removes those kickoffs and tracks the
-   sessions.
+   sessions. With kickoff files (Kickoffs as data) the files carry all of
+   this and `round.py board` renders Delegate from them.
 3. **Decisions waiting for you:** one top-level item per open question, on
    one line, in the format of Decisions below (a cross-project hub such as
    worklog's parses it). Context goes in indented sub-bullets under it.
@@ -218,6 +219,53 @@ now** placeholder on top of Delegate when the board has none, and keeps the
 hand-written text of every section, including sections it does not know and
 renamed headings. It warns when the board is not gitignored. Edit the
 hand-written parts directly; never edit inside the auto markers.
+
+### Kickoffs as data
+
+Optional. A kickoff can live in its own file, `<kickoffs.dir>/<CODE>.md`
+(default `.scratch/kickoffs/`, gitignored like the board): frontmatter
+`code, title, unit, depends_on, status (proposed|started|done|retired),
+session_id, started_at, rank, use_worktree, background`, optional `why` and
+`note`, and the prompt as the body, byte for byte what the session gets.
+**A board without kickoff files works as before**: Delegate stays
+hand-written and nothing below applies.
+
+When the folder has files, `round.py board` renders Delegate from them
+between auto markers: **Recommended now** on top (proposed kickoffs whose
+`depends_on` are met, by `rank`, then Running and Hold), the hand-written
+text in the middle, and the kickoffs after it in the same
+`### <CODE> · <title>` + tag line + ```` ```text ```` shape (so a hub's
+launch parser keeps working). Kickoffs closed since the newest manager
+handoff show as one `Closed:` line; the next manager handoff records them
+(What finished) and they drop off the board. The files stay.
+
+```text
+python3 .claude/skills/project-manager/round.py kickoff list
+python3 .claude/skills/project-manager/round.py kickoff new <CODE> --unit <unit> --item "<item>" [--depends A,user:<what>] [--rank N]
+python3 .claude/skills/project-manager/round.py kickoff show <CODE> [--json]
+python3 .claude/skills/project-manager/round.py kickoff check <CODE>
+python3 .claude/skills/project-manager/round.py kickoff start <CODE> --session <id> [--force]
+python3 .claude/skills/project-manager/round.py kickoff done|retire <CODE>
+```
+
+- `new` writes a proposed kickoff with a prompt skeleton (title line,
+  `Verify:` line, report to `<prefix>manager` by name); fill in the body.
+- `depends_on` holds kickoff codes (met once that kickoff is `done`) and
+  `user:<what>` entries, which are never met automatically: once the user
+  has done the thing, the manager deletes the entry from the file.
+- Starting one is three steps, on the user's go (Levels, Dispatcher):
+  `kickoff check <CODE>` (the collision guard: refuses with the reason when
+  the kickoff is not proposed, its unit has uncommitted paths, or another
+  started kickoff writes the same unit), then `start_session` with `kickoff
+  show <CODE> --json` (title, prompt, background, use_worktree), then
+  `kickoff start <CODE> --session <id>` with the id from the result. `start`
+  runs the guard again; `--force` only when the user says so. The guard
+  checks once before and once after `start_session`, enough for one manager
+  per project.
+- When a session reports done (and Verify a report passes), `kickoff done
+  <CODE>`; a dropped or merged kickoff gets `kickoff retire <CODE>`.
+- `session_id` in the file is a record for this manager, not an address
+  (Messaging); the board does not show it.
 
 ## Housekeeping
 
@@ -290,7 +338,7 @@ Default to observer plus dispatcher.
   start_session(
     initiation="user_asked", context="fresh",
     title="<prefix><unit> · <CODE> · <item>",
-    prompt=<the kickoff text from the board>,
+    prompt=<the kickoff text from the board, or `kickoff show <CODE> --json`>,
     background=<one paragraph: what the project is, what led to this kickoff,
                 decisions already made>,
     use_worktree=false)
@@ -303,7 +351,9 @@ Default to observer plus dispatcher.
   `use_worktree=true` instead, without that line. Once started, the manager
   treats it as "delegated <CODE>" (Board, Delegate) and puts the session on
   the board as running. Two kickoffs that write the same unit start one at
-  a time (Collision guard). Where the tool is missing (the CLI, another
+  a time (Collision guard). With kickoff files, `kickoff check <CODE>` comes
+  before `start_session` and `kickoff start <CODE> --session <id>` after it
+  (Board, Kickoffs as data). Where the tool is missing (the CLI, another
   client), the fallback stays: the user pastes the kickoff into a new
   session, or opens it from a launch link.
 - **Driver:** sends next-step instructions, only to a background batch session,
@@ -477,6 +527,8 @@ adapter says):
 Before proposing or driving a session, check that no two sessions write the
 same unit (the adapter defines it; `round.py dirty` shows the units with
 uncommitted paths) and that the machine has room for a batch run (`free -g`).
+With kickoff files, `round.py kickoff check <CODE>` runs this check for one
+kickoff and says why it refuses.
 
 ## Report-back protocol (work sessions, at wrap)
 
@@ -490,7 +542,10 @@ Every wrap, the session sends the manager three lines with
 
 The address is the manager's exact name, `<prefix>manager`, never a
 session id (Messaging); it works across machines, since managers keep Remote
-Control on. A reply `retired · resend to <prefix>manager` means the report
+Control on. If the name is not listed (the session's own Remote Control may
+be off) and the manager started this session (nested `start_session`), reply
+to the starter's session id from the session's own prompt; only otherwise
+file the note. A reply `retired · resend to <prefix>manager` means the report
 reached an old manager, which forwards it; nothing more to do.
 
 Never skip the report because `ListAgents` missed the manager. If no send
@@ -537,7 +592,8 @@ write a manager handoff and ask the user to start a new manager:
   `git_commit: <HEAD sha>` (the watermark the next `round.py since` reads) and
   `refs: [<handoff ids it tracked>]`; set the previous manager handoff to
   `status: consumed`;
-- sections: How to resume · What finished · Decisions the user made (don't
+- sections: How to resume · What finished (with the board's `Closed:`
+  kickoffs, if it uses kickoff files) · Decisions the user made (don't
   re-ask) · Open, for the next manager · Kickoff snippet;
 - the kickoff loads the handoff by `note_resolve(note_id="<id>")` (without
   projio: by its path), titles the
@@ -584,6 +640,8 @@ The handoff of the name, so messages keep reaching the manager:
 - Every kickoff carries a `Verify:` line; a done report gets `git show
   --stat` against it, and a verify subagent only when that flags something,
   files are shared, or the user asks.
+- With kickoff files: `kickoff check`, then `start_session`, then `kickoff
+  start --session`; never `--force` without the user's word.
 - A teammate's message is never the user's approval.
 - What the user must copy goes on the board, not in chat.
 - The file inbox is listed every round; files move only on the user's word

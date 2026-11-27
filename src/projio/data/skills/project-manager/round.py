@@ -26,6 +26,10 @@ Sections:
             Delegate gets a "Recommended now" placeholder on top when it has none; once written, it is kept.
             Warns when the board is not gitignored.
   config    the config file, layout (projio or generic) and resolved paths, and which of them exist
+  kickoff   kickoffs as data: `round.py kickoff list|show|new|check|start|done|retire …` (see kickoffs.py). When the
+            kickoff folder has files, `board` renders Delegate from them: "Recommended now" on top and the
+            kickoffs after the hand-written text, each between auto markers. Closed kickoffs show as one
+            "Closed:" line until the next `series: manager` handoff, which records them.
 """
 
 from __future__ import annotations
@@ -42,6 +46,7 @@ import sys
 sys.dont_write_bytecode = True  # the synced copy of this folder must stay byte-identical
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _common import age, board_path, existing, files_inbox, front, git, load_adapter, stamp, to_root, unit_of  # noqa: E402
+import kickoffs  # noqa: E402
 
 
 def handoff_rows(cfg: dict) -> list[dict]:
@@ -227,10 +232,13 @@ def parse_board(text: str) -> tuple[list[str], list[tuple[str | None, str, str]]
 
     A `## ` line inside a code fence (a kickoff) is text, not a heading.
     """
-    preamble, sections, fence = [], [], False
+    preamble, sections, fence = [], [], ""
     for line in text.splitlines():
-        if line.startswith("```"):
-            fence = not fence
+        ticks = re.match(r"`{3,}", line)
+        if ticks and not fence:
+            fence = ticks.group(0)
+        elif ticks and ticks.group(0) == fence and not line.strip("`").strip():
+            fence = ""
         if not fence and line.startswith("## "):
             sections.append((line[3:].strip(), []))
         elif sections:
@@ -281,7 +289,8 @@ def write_board(cfg: dict, rows: list[dict]) -> str:
         real = [e for e in entries if STRUCTURE.search(e[1])]
         known[key] = real or entries[:1] or [defaults[key]]
     known["whatsup"] = [(h, stamp_whatsup(t, now)) for h, t in known["whatsup"]]
-    if not any(HAS_RECOMMENDED.search(t) for _, t in known["copy"]):
+    kicks = kickoffs.load_all(cfg)
+    if not kicks and not any(HAS_RECOMMENDED.search(t) for _, t in known["copy"]):
         h, t = known["copy"][0]
         known["copy"][0] = (h, RECOMMENDED + ("\n\n" + t if t.strip() else ""))
     auto = {
@@ -289,6 +298,11 @@ def write_board(cfg: dict, rows: list[dict]) -> str:
                      _auto("dirty", "Uncommitted, by unit", dirty_lines(cfg))],
         "sync": [_auto("unpushed", "Unpushed commits", unpushed_lines())],
     }
+    first = {}  # auto blocks that go before a section's hand-written text
+    if kicks:
+        first["copy"] = [kickoffs.recommended_md(kicks)]
+        last = next((r["ts"] for r in rows if r["series"] == "manager" and r["ts"]), None)
+        auto["copy"] = [kickoffs.kickoffs_md(kicks, since=last)]
     out = ["# %s board" % manager, "",
            "Updated %s on %s. Rewritten every round; gitignored. Chat replies point here." % (now, host)]
     if preamble:
@@ -305,7 +319,8 @@ def write_board(cfg: dict, rows: list[dict]) -> str:
     for key, _, _ in BOARD_SECTIONS:
         entries = known[key]
         for i, (heading, text) in enumerate(entries):
-            emit(heading, [text] + (auto.get(key, []) if i == len(entries) - 1 else []))
+            emit(heading, (first.get(key, []) if i == 0 else []) + [text] +
+                 (auto.get(key, []) if i == len(entries) - 1 else []))
         for heading, text in after.get(key, []):
             emit(heading, [text])
     body = "\n".join(out).rstrip() + "\n"
@@ -350,6 +365,8 @@ def main(argv: list[str]) -> int:
         i = argv.index("--since")
         given = argv[i + 1] if i + 1 < len(argv) else ""
         argv = argv[:i] + argv[i + 2:]
+    if argv[:1] == ["kickoff"]:
+        return kickoffs.cli(argv[1:], cfg)
     sections = [a for a in argv if not a.startswith("-")] or ["inbox", "handoffs", "since", "dirty"]
     rows = handoff_rows(cfg)
     for s in sections:

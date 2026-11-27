@@ -17,6 +17,9 @@ handoffs:
   dir: {{handoffs_dir}}                 # one file per handoff: handoff-YYYYMMDD-HHMMSS-<slug>.md
 board:
   path: .scratch/{{prefix}}manager-board.md   # gitignored; `round.py board` rewrites it
+kickoffs:
+  dir: .scratch/kickoffs                # optional, gitignored: one <CODE>.md per kickoff (`round.py kickoff …`);
+                                        # when it has files, `round.py board` renders Delegate from them; empty folder: as before
 units:                                  # group paths so two sessions in one unit show as a collision
   - {name: code, paths: [src, tests]}
   - {name: docs, paths: [docs, README.md]}

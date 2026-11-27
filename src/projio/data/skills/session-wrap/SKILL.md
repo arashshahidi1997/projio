@@ -186,9 +186,12 @@ and across machines; add the short `[ref]` only when two sessions share the
 name). A reply `retired · resend to <prefix>manager` means an old manager
 got it and forwarded it; nothing more to do. `ListAgents` can miss a running
 manager, so never skip the report on its word alone. Do not turn this session's Remote Control on or off
-unless the user asks. Only if the manager's Remote Control is off or the send
-fails, file a note in the manager's project titled `[from <project>] …` (a
-file in its handoff or inbox folder when it has no worklog). If no manager
+unless the user asks. Send by name first. If the name is not listed (this
+session's own Remote Control may be off) and the manager started this
+session (nested `start_session`), reply to the starter's session id given in
+this session's prompt. Only otherwise, file a note in the manager's project
+titled `[from <project>] …` (a file in its handoff or inbox folder when it
+has no worklog). If no manager
 session exists, the handoff is the report: the manager reads handoffs and
 commits every round. It is a report, not a request for approval (the
 `project-manager` skill has the protocol).

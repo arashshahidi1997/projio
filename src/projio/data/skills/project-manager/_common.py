@@ -38,6 +38,7 @@ PROJIO_DEFAULTS: dict = {
     },
     "handoffs": {"dir": "docs/log/handoff"},
     "board": {"path": ""},  # empty: .scratch/<prefix>manager-board.md
+    "kickoffs": {"dir": ""},  # empty: .scratch/kickoffs (one <CODE>.md per kickoff; see kickoffs.py)
     "units": [],
     "procs": {"protect": []},
     "files_inbox": "inbox",  # downloads dropped into the project; the manager proposes where each goes
@@ -249,6 +250,13 @@ def board_path(cfg: dict) -> str:
     b = cfg.get("board")
     path = b if isinstance(b, str) else (b or {}).get("path", "")
     return path or ".scratch/%smanager-board.md" % cfg.get("prefix", "")
+
+
+def kickoffs_dir(cfg: dict) -> str:
+    """The kickoff files' folder, relative to the repo root (`kickoffs.dir`, default `.scratch/kickoffs`)."""
+    k = cfg.get("kickoffs")
+    path = k if isinstance(k, str) else (k or {}).get("dir", "")
+    return path or ".scratch/kickoffs"
 
 
 def front(text: str) -> tuple[dict, str]:

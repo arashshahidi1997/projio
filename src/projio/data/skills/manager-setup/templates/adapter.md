@@ -37,7 +37,12 @@ are in `{{config_path}}`.
   with the "touch only your files, commit by path, switch no branch" line.
   Every kickoff carries a `Verify:` line (expected files, tests) and
   "report to `{{prefix}}manager` by name" (the core's Verify a report).
-  Without the tool, the user pastes the kickoff.
+  Without the tool, the user pastes the kickoff. With kickoff files in
+  `.scratch/kickoffs/` (the core's Board, Kickoffs as data): `round.py
+  kickoff check <CODE>`, then `start_session` with `kickoff show <CODE>
+  --json`, then `round.py kickoff start <CODE> --session <id>`; `kickoff
+  done` when its report passes. A board without kickoff files works as
+  before.
 - Sidebar: the manager files itself in the section `managers` (the core's
   Start).
 
