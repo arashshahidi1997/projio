@@ -131,7 +131,7 @@ def test_board_skeleton_auto_blocks_and_gitignore(repo: Path, tmp_path_factory: 
     assert _headings(text) == ["What's up", "Delegate", "Decisions waiting for you", "Sessions, by state",
                                "Waiting on others", "Sync"]
     assert text.startswith("# demo-manager board")
-    assert "name · machine · session id · last contact" in text
+    assert "name · machine · last contact" in text and "· session id" not in text
     sessions = text.split("## Sessions")[1].split("## Waiting")[0]
     assert "<!-- auto:handoffs -->" in sessions and "wiki" in sessions
     assert "<!-- auto:dirty -->" in sessions and "src/b.py" in sessions

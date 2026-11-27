@@ -175,7 +175,8 @@ BOARD_SECTIONS = [
     ("copy", "Delegate",
      "{recommended}\n\nNothing to delegate. Each kickoff goes here under `### <CODE> · <session title>` (a short unique code, "
      "e.g. SPD; the title carries it too: `<prefix><unit> · <CODE> · <item>`, the prompt's first line "
-     "Title this session `…`.), with a tag line (**independent** or **depends on <CODE or what>**) and a ```text block; say "
+     "Title this session `…`., a Verify: line with the files expected to change and the tests, and the line "
+     "report to `<prefix>manager` by name), with a tag line (**independent** or **depends on <CODE or what>**) and a ```text block; say "
      "\"delegated <CODE>\" or \"delegated all\" once started (by you, or by the manager on your go)."),
     ("decisions", "Decisions waiting for you",
      "None open. One line per open question: `- **<question>?** · <option A> / <option B> (rec. A) · YYYY-MM-DD` "
@@ -183,9 +184,9 @@ BOARD_SECTIONS = [
      "\"Recent answers:\" paragraph or struck through."),
     ("sessions", "Sessions, by state", "| Session | State | Notes |\n|---|---|---|"),
     ("waiting", "Waiting on others", "_None._"),
-    ("sync", "Sync", "This manager: {manager} · {host} · `?` (session id)\n\n"
-                     "Other managers (`name · machine · session id · last contact`; the exact name is the address across "
-                     "machines, the id on the same machine only):\n\n- none yet"),
+    ("sync", "Sync", "This manager: {manager} · {host}\n\n"
+                     "Other managers (`name · machine · last contact`; the exact name is the address, never a session "
+                     "id, which changes on restart):\n\n- none yet"),
 ]
 # Delegate opens with the manager's pick; added on top when a board's Delegate has none, kept once hand-written.
 RECOMMENDED = ("**Recommended now** (the manager's pick, in order): none yet. One line per kickoff to start next, "

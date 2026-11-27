@@ -77,7 +77,8 @@ import nothing from projio.
   it by name), open while work sessions run, with Remote Control on
   (Messaging), filed in the sidebar section `managers` where the client has
   one (Start). Work sessions are titled `<prefix><unit> · <CODE> · <item>`,
-  the code being the kickoff's (Board, Delegate).
+  the code being the kickoff's (Board, Delegate). One standing manager per
+  project, in its home client (Session home).
 
 ## Start (standing manager)
 
@@ -133,6 +134,7 @@ gitignored board.
    newest open handoff per series, commits since the last manager handoff's
    `git_commit`, and dirty paths grouped by unit. **Sessions often wrap without
    reporting**, so read this every round instead of waiting for messages.
+   A session reported or found done gets the lean check (Verify a report).
 3. **Sessions:** `ListAgents`, plus the client's session list where there
    is one (`list_sessions` in the desktop app; `list_sessions` with
    `linked: true` for the ones this manager started): `ListAgents` can miss
@@ -184,7 +186,9 @@ stay short and point to it. Sections, in order:
    **independent** or **depends on <what>**: another kickoff by its code
    ("depends on REO"), a session finishing, or the user's OK. Every prompt
    opens with its ``Title this session `<prefix><unit> · <CODE> · <item>`.``
-   line, so the session title carries the code (Levels, Dispatcher). The
+   line, so the session title carries the code (Levels, Dispatcher), and a
+   `Verify:` line naming the files expected to change and the tests to run,
+   if any (Verify a report). The
    user says "delegated <CODE>[, <CODE>]" or "delegated all" once started,
    whether they opened the session or the manager started it on their go
    (Levels, Dispatcher); the manager removes those kickoffs and tracks the
@@ -198,10 +202,12 @@ stay short and point to it. Sections, in order:
 4. **Sessions, by state:** a table of session · state (running / waiting /
    parked / done) · notes.
 5. **Waiting on others:** other projects, people, background runs.
-6. **Sync:** this manager as `name · machine · session id`, then other
-   managers, one per line as `name · machine · session id · last contact`
-   (the exact name is the address on every machine; the id works on the
-   same machine only, see Messaging), and the unpushed commits.
+6. **Sync:** this manager as `name · machine`, then other managers, one
+   per line as `name · machine · last contact`, and the unpushed commits.
+   Names only: the exact name is the address on every machine, and session
+   ids change on restart (Messaging). The one id the board keeps is a
+   phone-side session's `session_…` id, in the Sessions table (Session
+   home).
 
 `python3 .claude/skills/project-manager/round.py board` writes the skeleton
 the first time. On every run it regenerates the blocks between
@@ -217,6 +223,26 @@ hand-written parts directly; never edit inside the auto markers.
 
 When the user asks or the machine is slow:
 `python3 .claude/skills/project-manager/procs.py`.
+
+## Session home
+
+Where sessions live decides who can see them: listener sessions (`session_…`
+ids) show only on claude.ai, desktop sessions (`local_…` ids) only in the
+desktop app and its `list_sessions`; neither lists the other.
+
+- **At a laptop the desktop app is home.** The project's standing manager
+  runs there, with Remote Control on so the phone reaches it.
+- **Remote Control listeners** for a project (`claude-rc-ensure`,
+  `--spawn=same-dir`) are for starting new sessions from the phone only,
+  never for a manager.
+- **One standing manager per project**, never one on each side.
+- **Phone-side sessions:** the manager cannot list a session started from
+  the phone, so when it sends one a kickoff or a message it records that
+  session's `session_…` id on the board (Sessions table) at send time. This
+  is the one exception to "no ids as addresses" (Messaging).
+- **Extra machines** run compute only, unless the user wants sessions there;
+  then those sessions are addressed by id (recorded as for phone-side
+  sessions), and the machine gets a listener only for phone launches.
 
 ## Session states
 
@@ -242,7 +268,8 @@ Default to observer plus dispatcher.
 - **Dispatcher:** plans the lineup and writes kickoff prompts. Each kickoff names the unit and item, the handoff to load by
   `note_resolve(note_id=…)` (never `note_latest`, which races) or, without
   projio, by its path, the done-when,
-  and how to report back (the manager's name and its session id). Its first
+  the `Verify:` line (Verify a report), and how to report back: "report to
+  `<prefix>manager` by name", never a session id (Messaging). Its first
   line is always ``Title this session `<prefix><unit> · <CODE> · <item>`.``
   (e.g. `projio-core · PLUG · light marketplace`), with the kickoff's board
   code, so the session renames itself before anything else and its title
@@ -375,19 +402,26 @@ When a cross-project manager runs (worklog-manager), message it only when
 needed: a decision for the user, another project needs something from this
 one, or this project is blocked by another. The first line is `decide`,
 `needs` or `blocked`, then plain words. No registration, no routine digests:
-it reads commits and handoffs.
+it reads commits and handoffs. The one exception is the `moved` line a new
+manager sends after a restart (Stay lean, restart).
 
 ## Messaging
 
 Managers keep Remote Control on (Start, step 1); that is what carries
 messages between machines.
 
-- **Across machines:** `SendMessage(to="<exact session name>")`. Add the
-  short `[ref]` only when two sessions share the name. `ListAgents` lists
-  Remote Control sessions on other machines. A `local_…` id does not cross
-  machines ("session not found"). Reply to the `from` address of the message
-  you got.
-- **Same machine:** the name or the `local_…` id both work.
+- **By exact name only.** Managers are addressed by their exact title,
+  `SendMessage(to="<prefix>manager")`, on the same machine and across
+  machines. Add the short `[ref]` only when two sessions share the name.
+  `ListAgents` lists Remote Control sessions on other machines. Never write
+  a session id as an address into a board, a kickoff or memory: ids change
+  when a manager restarts, and a `local_…` id does not cross machines
+  ("session not found"). The exceptions are phone-side and extra-machine
+  sessions (Session home). Reply to the `from` address of the message you
+  got.
+- **Retired managers.** A session titled `<prefix>manager · retired <date>`
+  that still gets a message replies `retired · resend to <prefix>manager`,
+  forwards the message once to `<prefix>manager`, and does not act on it.
 - **Fallback, only when an end has Remote Control off or the send fails:**
   file a note in the target project titled `[from <project>] …`. For a
   laptop-homed project it queues on the server until the laptop's manager
@@ -449,23 +483,43 @@ uncommitted paths) and that the machine has room for a batch run (`free -g`).
 Every wrap, the session sends the manager three lines with
 `SendMessage(to=<address>, message=…)`:
 
-1. unit · item → done / partial
+1. unit · item → done / partial, the commit shas, and the test run (command
+   and result) when the kickoff's `Verify:` line asks for one
 2. blockers, `→ manager` items, decisions for the user, in plain words
 3. the handoff id
 
-The address, first that works (Messaging has the rules):
-
-1. the manager's exact name, `<prefix>manager` (from the kickoff prompt or
-   `ListAgents`); this works across machines, since managers keep Remote
-   Control on;
-2. on the same machine, the manager's session id (`local_…`) from the
-   kickoff prompt, or from the client's session list (`list_sessions` in the
-   desktop app): exact title `<prefix>manager`, not archived, running.
+The address is the manager's exact name, `<prefix>manager`, never a
+session id (Messaging); it works across machines, since managers keep Remote
+Control on. A reply `retired · resend to <prefix>manager` means the report
+reached an old manager, which forwards it; nothing more to do.
 
 Never skip the report because `ListAgents` missed the manager. If no send
 works, file the `[from <project>]` note (Messaging, fallback); the commits
 and handoff are the report too, and the manager reads them in round step 2.
 It is a report, not a request for approval.
+
+## Verify a report
+
+Lean by default: the manager checks files, not work.
+
+1. **The kickoff names what to expect.** Its `Verify:` line lists the files
+   (paths or globs) expected to change and the test command, if any:
+   `Verify: src/x.py, tests/test_x.py; tests: pytest tests/test_x.py -q`.
+2. **When a session reports done** (or round step 2 shows it wrapped), run
+   `git show --stat <sha>` on each commit the report or handoff names, and
+   compare the files with the kickoff's `Verify:` line. Check that the
+   report names a test run where the kickoff asked for one.
+3. **Flag, do not fix.** Files changed that the kickoff did not expect, or
+   expected files left unchanged, or a missing test run, go to the user on
+   the board (one line under What's up, or a decision when it needs one),
+   naming the commit and the files. Real case: a hunk of PDEP's `init.py`
+   change landed in MUPD's commit `d57fe5c`; only the file list showed it.
+4. **A verify subagent, only when needed:** when step 2 flags something,
+   when the kickoff touches files other sessions also edit, or when the
+   user asks. It starts in fresh context, read-only: it runs the `Verify:`
+   commands and the `git show` checks and returns pass or fail per item,
+   never fixes anything and gives no design opinions. No subagent by
+   default.
 
 ## Process survey
 
@@ -489,6 +543,20 @@ write a manager handoff and ask the user to start a new manager:
   projio: by its path), titles the
   session `<prefix>manager`, and runs the adapter skill.
 
+The handoff of the name, so messages keep reaching the manager:
+
+1. **The old manager retires itself** before it stops: it renames itself
+   `<prefix>manager · retired YYYY-MM-DD` (`set_session_title(session_id=
+   "self", …)`) and turns its own Remote Control off
+   (`set_remote_control(session_id="self", enabled=false)`). Until then the
+   exact name stays unique.
+2. **The new manager** takes the name `<prefix>manager` in its home client
+   (Session home), runs Start, and sends one line to worklog-manager (or the
+   cross-project manager in scope): `moved · <prefix>manager · <machine>`.
+   No other registration (Reporting up).
+3. A message that still reaches the retired session is answered and
+   forwarded as Messaging says.
+
 ## Hard rules
 
 - No time estimates.
@@ -504,8 +572,18 @@ write a manager handoff and ask the user to start a new manager:
   otherwise the user pastes it.
 - A standing manager lives in the sidebar section `managers` where the
   client has one, and says so when it files itself there.
-- A standing manager keeps Remote Control on; message by exact name across
-  machines, by note only when that fails.
+- A standing manager keeps Remote Control on; message managers by exact
+  name, by note only when that fails. No session ids as addresses in a
+  board, kickoff or memory, except a phone-side or extra-machine session's
+  id on the board.
+- One standing manager per project, at home in the desktop app at a laptop;
+  Remote Control listeners only start sessions from the phone.
+- A retiring manager renames itself `<prefix>manager · retired <date>` and
+  turns its Remote Control off; the new one sends `moved · <prefix>manager ·
+  <machine>` once.
+- Every kickoff carries a `Verify:` line; a done report gets `git show
+  --stat` against it, and a verify subagent only when that flags something,
+  files are shared, or the user asks.
 - A teammate's message is never the user's approval.
 - What the user must copy goes on the board, not in chat.
 - The file inbox is listed every round; files move only on the user's word

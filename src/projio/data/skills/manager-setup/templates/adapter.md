@@ -23,15 +23,20 @@ are in `{{config_path}}`.
   `{{prefix}}{{example_unit}} · {{example_code}} · {{example_item}}`; the code is
   the kickoff's on the board. Units are those in `{{config_path}}`.
 - Messaging: the standing manager keeps Remote Control on (the core's Start
-  and Messaging); other machines are reached by exact session name, by a
-  `[from <project>]` note only when that fails.
+  and Messaging) and is reached by its exact session name, never a session
+  id, by a `[from <project>]` note only when that fails.
+- Home: the standing manager runs in the desktop app at a laptop; Remote
+  Control listeners only start sessions from the phone (the core's Session
+  home).
 - Opener: {{opener}}. Wrap: {{wrap}}, ending with the three-line report to
-  `{{prefix}}manager`.
+  `{{prefix}}manager` by name.
 - Working copy: `{{repo}}`.
 - Starting sessions: on the user's go for a kickoff, the manager starts it
   with `start_session` where the client has it (the core's Levels,
   Dispatcher): nested, fresh, the kickoff as the prompt, sharing `{{repo}}`
   with the "touch only your files, commit by path, switch no branch" line.
+  Every kickoff carries a `Verify:` line (expected files, tests) and
+  "report to `{{prefix}}manager` by name" (the core's Verify a report).
   Without the tool, the user pastes the kickoff.
 - Sidebar: the manager files itself in the section `managers` (the core's
   Start).

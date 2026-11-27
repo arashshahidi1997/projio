@@ -174,20 +174,18 @@ research findings belong in notio result/idea notes, not memory.
 If the manager config (`.projio/manager.yml` or `.claude/manager.yml`) sets a `prefix`, send the manager three lines with
 `SendMessage(to=<address>, message=…)`, every wrap, a partial one included:
 
-1. unit · item → done / partial
+1. unit · item → done / partial, the commit shas, and the test run (command
+   and result) when the kickoff's `Verify:` line asks for one
 2. blockers, items left for the manager (lessons, cross-project notes, tool
    issues), decisions for the user, in plain words
 3. the handoff id
 
-The address, first that works: the manager's exact name `<prefix>manager`
-(managers keep Remote Control on, so the name reaches them across machines;
-add the short `[ref]` only when two sessions share the name); on the same
-machine, its `local_…` id from your kickoff prompt, from the app's note
-when the manager started this session itself (nested under it), or from the
-client's session list (`list_sessions` in the desktop app: exact title
-`<prefix>manager`, not archived, running). A `local_…` id does not cross
-machines. `ListAgents` can miss a running manager, so never skip the report
-on its word alone. Do not turn this session's Remote Control on or off
+The address is the manager's exact name `<prefix>manager`, never a session
+id (managers keep Remote Control on, so the name reaches them on this machine
+and across machines; add the short `[ref]` only when two sessions share the
+name). A reply `retired · resend to <prefix>manager` means an old manager
+got it and forwarded it; nothing more to do. `ListAgents` can miss a running
+manager, so never skip the report on its word alone. Do not turn this session's Remote Control on or off
 unless the user asks. Only if the manager's Remote Control is off or the send
 fails, file a note in the manager's project titled `[from <project>] …` (a
 file in its handoff or inbox folder when it has no worklog). If no manager

@@ -121,11 +121,12 @@ every `{{…}}` placeholder; a placeholder with nothing to say becomes a short
    enabled=true)`; the app may show an approval card) and say so in one line,
    unless the user said otherwise; file itself in the sidebar section
    `managers` where the client has one (the core's Start) and say so in one
-   line; read the first manager handoff (step 7) by
+   line; at a laptop it runs in the desktop app (the core's Session
+   home); read the first manager handoff (step 7) by
    path (or `note_resolve` in projio), load the `<prefix>manager` skill, run a
    round, stay open as observer and dispatcher, the push rule. Write Delegate's **Recommended now** block
-   (`MGR`: start the standing manager) and fill What's up and Sync (this
-   setup session's id).
+   (`MGR`: start the standing manager) and fill What's up and Sync (names
+   only, never a session id: the core's Messaging).
 
 7. **Write the first manager handoff** from `templates/handoff.md` (in
    projio: a notio note of type handoff) with `series: manager`,
@@ -175,7 +176,10 @@ once per machine).
   core's Levels, Dispatcher says); otherwise the user pastes the kickoff.
 - The standing manager files itself in the sidebar section `managers` where
   the client has one.
-- The standing manager keeps Remote Control on and messages other machines
-  by exact session name (the core's Messaging); a `[from <project>]` note
-  only when an end has Remote Control off or the send fails.
+- The standing manager keeps Remote Control on and is addressed by its exact
+  session name, never a session id, in the board, kickoffs and memory (the
+  core's Messaging); a `[from <project>]` note only when an end has Remote
+  Control off or the send fails.
+- One standing manager per project, at a laptop in the desktop app (the
+  core's Session home).
 - Push only by the push rule the user gave.
